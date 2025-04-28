@@ -1,0 +1,58 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "PolyLyzer"
+version = "0.0.1"
+dependencies = [
+  "numpy",
+  "scipy",
+  "pandas",
+  "matplotlib",
+  "networkx"
+]
+
+requires-python = ">=3.8"
+
+authors = [
+  {name = "Katrin Drysch", email = "drysch@thch.uni-bonn.de"}
+]
+
+maintainers = [
+  {name = "Katrin Drysch", email = "drysch@thch.uni-bonn.de"}
+]
+
+description = "PolyLyzer is a tool for obtaining structural insights into polymer networks."
+
+readme = "README.md"
+
+license = { file = "LICENSE.txt" }
+
+keywords = ["polymers", "chemistry", "network analysis"]
+
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Scientists",
+    "Programming Language :: Python"
+]
+
+[project.optional-dependencies]
+test = [
+  "pytest",
+  "pytest-cov",
+  "pytest-benchmark",
+  "tox"
+]
+dev = [
+    "pre-commit"
+]
+
+[project.urls]
+
+[project.scripts]
+PolyLyzer = "PolyLyzer.PolyLyzer:main"
+
+[project.gui-scripts]
+
+[project.entry-points."spam.magical"]

@@ -1,0 +1,14 @@
+numpy
+scipy
+pandas
+matplotlib
+networkx
+
+[dev]
+pre-commit
+
+[test]
+pytest
+pytest-cov
+pytest-benchmark
+tox

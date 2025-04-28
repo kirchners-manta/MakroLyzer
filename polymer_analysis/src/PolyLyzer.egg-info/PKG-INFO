@@ -1,0 +1,39 @@
+Metadata-Version: 2.4
+Name: PolyLyzer
+Version: 0.0.1
+Summary: PolyLyzer is a tool for obtaining structural insights into polymer networks.
+Author-email: Katrin Drysch <drysch@thch.uni-bonn.de>
+Maintainer-email: Katrin Drysch <drysch@thch.uni-bonn.de>
+Keywords: polymers,chemistry,network analysis
+Classifier: Development Status :: 3 - Alpha
+Classifier: Intended Audience :: Scientists
+Classifier: Programming Language :: Python
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+License-File: LICENCE
+Requires-Dist: numpy
+Requires-Dist: scipy
+Requires-Dist: pandas
+Requires-Dist: matplotlib
+Requires-Dist: networkx
+Provides-Extra: test
+Requires-Dist: pytest; extra == "test"
+Requires-Dist: pytest-cov; extra == "test"
+Requires-Dist: pytest-benchmark; extra == "test"
+Requires-Dist: tox; extra == "test"
+Provides-Extra: dev
+Requires-Dist: pre-commit; extra == "dev"
+Dynamic: license-file
+
+# Polymer Analyzer
+
+## Installation
+
+```bash
+pip install .
+```
+## Usage
+
+```bash
+PolyLyzer 
+```

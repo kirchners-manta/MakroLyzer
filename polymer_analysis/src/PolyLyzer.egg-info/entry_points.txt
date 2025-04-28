@@ -1,0 +1,2 @@
+[console_scripts]
+PolyLyzer = PolyLyzer.PolyLyzer:main
