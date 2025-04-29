@@ -14,6 +14,14 @@ def sample_data2():
 @pytest.fixture
 def sample_data3():
     return 'test_structures/03.xyz'
+
+@pytest.fixture
+def sample_data4():
+    return 'test_structures/04.xyz'
+
+@pytest.fixture
+def pattern_data():
+    return 'test_structures/04pattern.txt'
     
 def test_end_to_end(sample_data1):
     xyz = readInput.readXYZ(sample_data1)
@@ -105,4 +113,5 @@ def test_chemicalFormula(sample_data3):
         assert formula[i][1] == refformula[i][1]
         
 
-        
+def test_find_patterns(sample_data4):
+    print("ANANAS")
