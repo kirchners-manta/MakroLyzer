@@ -37,3 +37,7 @@ def main(args, xyz):
         print("End-to-end distances:")
         for distance in distances:
             print(distance)
+            
+    # TEST dihedral angles
+    if args['dihedral']:
+        boxGraph.get_dihedrals()

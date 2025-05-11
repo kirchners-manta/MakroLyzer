@@ -168,6 +168,7 @@ class GraphManager(nx.Graph):
             path = dfs(node, [node], set())
             if len(path) > len(longest):
                 longest = path
+                
         return longest
     
     def distance(self, node1, node2):
@@ -225,12 +226,48 @@ class GraphManager(nx.Graph):
         
         # Calculate the angle between the normal vectors which is 
         # identical to the angle between the two planes (dihedral angle)
-        dihedral = np.arccos(np.dot(n1, n2) / (np.linalg.norm(n1) * np.linalg.norm(n2)))
-        dihedral = np.degrees(dihedral)
+        
+        # absolute value of the angle
+        cos_angle = np.dot(n1, n2) / (np.linalg.norm(n1) * np.linalg.norm(n2))
+        cos_angle = np.clip(cos_angle, -1.0, 1.0)
+        dihedral = np.degrees(np.arccos(cos_angle))
         
         return dihedral
-        
     
+    def get_dihedrals(self):
+        # Remove 1-order nodes, find subgraphs and surrounding atoms
+        GraphWithout1order = self.remove_1order()
+        GraphWithout1order.surrounding()
+        GraphWithout1order.update_degree()
+        # Get the subgraphs of the graph
+        subgraphs = GraphWithout1order.get_subgraphs()
+        dihedrals = []
+        # For each subgraph, find the longest path
+        for subgraph in subgraphs:
+            longestPath = subgraph.find_longest_path()
+            # For each node in the longest path, find the dihedral angles
+            for i in range(len(longestPath) - 3):
+                node1 = longestPath[i]
+                node2 = longestPath[i + 1]
+                node3 = longestPath[i + 2]
+                node4 = longestPath[i + 3]
+                dihedral = subgraph.dihedral(node1, node2, node3, node4)
+                # round dihedral to integers
+                dihedral = round(dihedral)
+                dihedrals.append((dihedral))
+                
+        # Group dihedrals 
+        Dihedrals = dict(sorted({x: dihedrals.count(x) for x in set(dihedrals)}.items(), key=lambda item: item[0]))
+        # Convert the counts to a list of tuples
+        dihedrals = [(k, v) for k, v in Dihedrals.items()]
+        # Sort the dihedrals by size
+        dihedrals = sorted(dihedrals, key=lambda x: x[0])
+        # Print dihedrals to .cvs file
+        with open('dihedrals.csv', 'w', newline='') as csvfile:
+            writer = csv.writer(csvfile, delimiter=';')
+            writer.writerow(['Dihedral', 'Count'])
+            for dihedral in dihedrals:
+                writer.writerow([dihedral[0], dihedral[1]])
     
     def find_and_tag_patterns(self, patterns, startAtom=None):
         """
