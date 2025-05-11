@@ -258,6 +258,10 @@ class GraphManager(nx.Graph):
                 
         # Group dihedrals 
         Dihedrals = dict(sorted({x: dihedrals.count(x) for x in set(dihedrals)}.items(), key=lambda item: item[0]))
+        # Add 0 count for missing dihedrals between 0 and 180
+        for i in range(0, 181):
+            if i not in Dihedrals:
+                Dihedrals[i] = 0
         # Convert the counts to a list of tuples
         dihedrals = [(k, v) for k, v in Dihedrals.items()]
         # Sort the dihedrals by size
