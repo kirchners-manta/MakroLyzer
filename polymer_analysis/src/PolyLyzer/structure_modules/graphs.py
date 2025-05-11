@@ -201,7 +201,7 @@ class GraphManager(nx.Graph):
         coords2 = np.array([self.nodes[node2]['x'], self.nodes[node2]['y'], self.nodes[node2]['z']])
         return coords2 - coords1
     
-    def dihedral(self, node1, node2, node3, node4):
+    def dihedral(self, node1, node2, node3, node4, sign=None):
         """
         Calculate the dihedral angle between four nodes in the graph.
 
@@ -220,21 +220,17 @@ class GraphManager(nx.Graph):
         b2 = self.vector(node2, node3)
         b3 = self.vector(node3, node4)
         
-        # Calculate normal vectors
-        n1 = np.cross(-b1, b2)
-        n2 = np.cross(-b2, b3)
+        # Half planes (https://en.wikipedia.org/wiki/Dihedral_angle - In polymer physics)
+        dihedral = np.arctan2(np.linalg.norm(b2) * np.dot(b1,(np.cross(b2,b3))), np.dot(np.cross(b1,b2),np.cross(b2,b3)))
         
-        # Calculate the angle between the normal vectors which is 
-        # identical to the angle between the two planes (dihedral angle)
-        
-        # absolute value of the angle
-        cos_angle = np.dot(n1, n2) / (np.linalg.norm(n1) * np.linalg.norm(n2))
-        cos_angle = np.clip(cos_angle, -1.0, 1.0)
-        dihedral = np.degrees(np.arccos(cos_angle))
+        if sign is not None:
+            dihedral = np.degrees(dihedral)
+        elif sign is None:
+            dihedral = np.abs(np.degrees(dihedral))
         
         return dihedral
     
-    def get_dihedrals(self):
+    def get_dihedrals(self, sign=None):
         # Remove 1-order nodes, find subgraphs and surrounding atoms
         GraphWithout1order = self.remove_1order()
         GraphWithout1order.surrounding()
@@ -251,17 +247,22 @@ class GraphManager(nx.Graph):
                 node2 = longestPath[i + 1]
                 node3 = longestPath[i + 2]
                 node4 = longestPath[i + 3]
-                dihedral = subgraph.dihedral(node1, node2, node3, node4)
+                dihedral = subgraph.dihedral(node1, node2, node3, node4, sign=sign)
                 # round dihedral to integers
                 dihedral = round(dihedral)
                 dihedrals.append((dihedral))
                 
         # Group dihedrals 
         Dihedrals = dict(sorted({x: dihedrals.count(x) for x in set(dihedrals)}.items(), key=lambda item: item[0]))
-        # Add 0 count for missing dihedrals between 0 and 180
-        for i in range(0, 181):
-            if i not in Dihedrals:
-                Dihedrals[i] = 0
+        # Add 0 count for missing dihedrals between -180/0 and 180
+        if sign is not None:
+            for i in range(-180, 181):
+                if i not in Dihedrals:
+                    Dihedrals[i] = 0
+        elif sign is None:
+            for i in range(0, 181):
+                if i not in Dihedrals:
+                    Dihedrals[i] = 0
         # Convert the counts to a list of tuples
         dihedrals = [(k, v) for k, v in Dihedrals.items()]
         # Sort the dihedrals by size

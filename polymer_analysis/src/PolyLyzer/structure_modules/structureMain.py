@@ -40,4 +40,7 @@ def main(args, xyz):
             
     # TEST dihedral angles
     if args['dihedral']:
-        boxGraph.get_dihedrals()
+        if args['dihedral_range'] == 'nonabs':
+            boxGraph.get_dihedrals(sign=True)
+        else:
+            boxGraph.get_dihedrals()
