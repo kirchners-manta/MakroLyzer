@@ -3,6 +3,7 @@ from IPython.display import display
 
 from PolyLyzer.structure_modules import graphs
 from PolyLyzer.structure_modules import readPatterns
+from PolyLyzer.structure_modules.endToEndDistance import end_to_end_dist
 
 def main(args, xyz):
     """
@@ -29,3 +30,10 @@ def main(args, xyz):
         print("Saturation formulas:")
         for formula in formulas:
             print(formula)
+            
+    # End-to-end distance
+    if args['endToEndDistance']:
+        distances = end_to_end_dist(boxGraph)
+        print("End-to-end distances:")
+        for distance in distances:
+            print(distance)

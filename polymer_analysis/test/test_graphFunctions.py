@@ -2,6 +2,7 @@ import pytest
 
 from src.PolyLyzer.input_handling import readInput
 from src.PolyLyzer.structure_modules import graphs
+from src.PolyLyzer.structure_modules.endToEndDistance import end_to_end_dist
 
 @pytest.fixture
 def sample_data1():
@@ -26,7 +27,7 @@ def pattern_data():
 def test_end_to_end(sample_data1):
     xyz = readInput.readXYZ(sample_data1)
     testGraph = graphs.GraphManager(xyz)
-    distance = testGraph.end_to_end_dist()
+    distance = end_to_end_dist(testGraph)
     correctDistance = 5.595 
     assert distance[0] == pytest.approx(correctDistance, abs=1e-3)
     

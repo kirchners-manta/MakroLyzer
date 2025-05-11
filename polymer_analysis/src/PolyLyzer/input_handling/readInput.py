@@ -19,6 +19,7 @@ def readCommandLine() -> dict:
     parser.add_argument('-p', '--patternFile', help='Path to the TXT file -> Finds repeating units (default: false)')
     parser.add_argument('-s', '--saturation', help='Saturate the ends polymers (default: false)', action='store_true')
     parser.add_argument('-pbc', '--PBC_xyz', nargs=3, type=float, help='Apply periodic boundary conditions in x, y, z (e.g., 150 150 150)')
+    parser.add_argument('-e2e', '--endToEndDistance', help='Calculate end-to-end distance (default: false)', action='store_true')
     parser.parse_args()
     args = vars(parser.parse_args())
     

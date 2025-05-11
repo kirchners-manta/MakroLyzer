@@ -200,73 +200,37 @@ class GraphManager(nx.Graph):
         coords2 = np.array([self.nodes[node2]['x'], self.nodes[node2]['y'], self.nodes[node2]['z']])
         return coords2 - coords1
     
-    
-    def end_to_end_dist(self):
+    def dihedral(self, node1, node2, node3, node4):
         """
-        Calculate the end-to-end distance of the graph.
-        
+        Calculate the dihedral angle between four nodes in the graph.
+
         Args:
-            GraphManager: The graph to calculate the distance for.
+            node1 (int): The index of the first node.
+            node2 (int): The index of the second node.
+            node3 (int): The index of the third node.
+            node4 (int): The index of the fourth node.
 
         Returns:
-            list of floats: The end-to-end distances of all subgraphs.
+            float: The dihedral angle in degrees.
         """
-        subgraphs = self.get_subgraphs()
-        subgraphsWithout1order = []
-        for subgraph in subgraphs:
-            sub = subgraph.remove_1order()
-            sub.update_degree()
-            subgraphsWithout1order.append(sub)
-        distances = []
-        for subgraph in subgraphsWithout1order:
-            longestPath = subgraph.find_longest_path()
-            if len(longestPath) < 2:
-                continue
-            startNode = longestPath[0]
-            endNode = longestPath[-1]
-            distance = subgraph.distance(startNode, endNode)
-            distances.append(distance)
-        distances = np.array(distances)
-        return distances
+        
+        # Get vectors
+        b1 = self.vector(node1, node2)
+        b2 = self.vector(node2, node3)
+        b3 = self.vector(node3, node4)
+        
+        # Calculate normal vectors
+        n1 = np.cross(-b1, b2)
+        n2 = np.cross(-b2, b3)
+        
+        # Calculate the angle between the normal vectors which is 
+        # identical to the angle between the two planes (dihedral angle)
+        dihedral = np.arccos(np.dot(n1, n2) / (np.linalg.norm(n1) * np.linalg.norm(n2)))
+        dihedral = np.degrees(dihedral)
+        
+        return dihedral
+        
     
-    def end_to_end_dist_ensemble(self):
-        """
-        Calculate the ensemble average of the end-to-end distance (root of ⟨R²⟩) 
-        for all subgraphs representing polymer chains.
-
-        Returns:
-            float: Ensemble average of the end-to-end distance.
-        """
-        subgraphs = self.get_subgraphs()
-        subgraphsWithout1order = []
-        for subgraph in subgraphs:
-            sub = subgraph.remove_1order()
-            sub.update_degree()
-            subgraphsWithout1order.append(sub)
-
-        subgraphScalarProduct = []
-        for subgraph in subgraphsWithout1order:
-            longestPath = subgraph.find_longest_path()
-            if len(longestPath) < 2:
-                continue
-            vectors = []
-            for i in range(len(longestPath) - 1):
-                node1 = longestPath[i]
-                node2 = longestPath[i + 1]
-                vector = subgraph.vector(node1, node2)
-                vectors.append(vector)
-
-            vectors = np.array(vectors)
-            # Calculate the scalar product of the vectors
-            R2 = np.sum(vectors @ vectors.T)  
-            subgraphScalarProduct.append(R2)
-
-        if not subgraphScalarProduct:
-            return 0.0  
-
-        ensembleAverageR2 = np.mean(subgraphScalarProduct)
-        return np.sqrt(ensembleAverageR2), np.std(subgraphScalarProduct)
-
     
     def find_and_tag_patterns(self, patterns, startAtom=None):
         """
