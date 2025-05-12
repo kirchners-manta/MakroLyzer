@@ -4,6 +4,7 @@ from IPython.display import display
 from PolyLyzer.structure_modules import graphs
 from PolyLyzer.structure_modules import readPatterns
 from PolyLyzer.structure_modules.endToEndDistance import end_to_end_dist
+from PolyLyzer.structure_modules.dihedrals import get_dihedrals
 
 def main(args, xyz):
     """
@@ -41,6 +42,6 @@ def main(args, xyz):
     # TEST dihedral angles
     if args['dihedral']:
         if args['dihedral_range'] == 'nonabs':
-            boxGraph.get_dihedrals(sign=True)
+            dihedrals = get_dihedrals(boxGraph, sign=True)
         else:
-            boxGraph.get_dihedrals()
+            dihedrals = get_dihedrals(boxGraph)

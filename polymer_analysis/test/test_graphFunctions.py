@@ -3,6 +3,7 @@ import pytest
 from src.PolyLyzer.input_handling import readInput
 from src.PolyLyzer.structure_modules import graphs
 from src.PolyLyzer.structure_modules.endToEndDistance import end_to_end_dist
+from src.PolyLyzer.structure_modules.dihedrals import get_dihedrals
 
 @pytest.fixture
 def sample_data1():
@@ -21,8 +22,25 @@ def sample_data4():
     return 'test_structures/04.xyz'
 
 @pytest.fixture
-def pattern_data():
+def pattern_data04():
     return 'test_structures/04pattern.txt'
+
+@pytest.fixture
+def sample_data5():
+    return 'test_structures/05.xyz'
+
+@pytest.fixture
+def sample_data5cis():
+    return 'test_structures/05cis.xyz'
+
+@pytest.fixture
+def sample_data5cis2():
+    return 'test_structures/05cis2.xyz'
+
+@pytest.fixture
+def sample_data5trans():
+    return 'test_structures/05trans.xyz'
+
     
 def test_end_to_end(sample_data1):
     xyz = readInput.readXYZ(sample_data1)
@@ -115,4 +133,117 @@ def test_chemicalFormula(sample_data3):
         
 
 def test_find_patterns(sample_data4):
-    print("ANANAS")
+    xyz = readInput.readXYZ(sample_data4)
+    testGraph = graphs.GraphManager(xyz)
+    testGraph.find_and_tag_patterns([['C_CCC', 'C_CCC', 'C_CC', 'C_CC', 'C_CC', 'C_CC', 'C_CC', 'C_CC'], ['C_CC', 'C_CCC', 'C_CC', 'C_CC', 'C_CC', 'C_CC', 'C_CC'], ['C_C']])
+    
+    # iterate over nodes and check fragment ID
+    i = 0
+    for node in testGraph.nodes():
+        if i in range(0,4):
+            assert testGraph.nodes[node]['fragmentID'] == 4
+        elif i in range(4, 20):
+            assert testGraph.nodes[node]['fragmentID'] == 0
+        elif i in range(20, 36):
+            assert testGraph.nodes[node]['fragmentID'] == 1
+        elif i in range(36, 52):
+            assert testGraph.nodes[node]['fragmentID'] == 2
+        elif i in range(52, 66):
+            assert testGraph.nodes[node]['fragmentID'] == 3
+        i += 1
+        
+def test_dihedrals1(sample_data5):
+    xyz = readInput.readXYZ(sample_data5)
+    testGraph = graphs.GraphManager(xyz)
+    
+    # absolute dihedrals
+    dihedrals = get_dihedrals(testGraph)
+    for angle, count in dihedrals:
+        if angle == 65:
+            assert count == 1
+        elif angle == 177:
+            assert count == 2
+        elif angle == 180:
+            assert count == 1
+        else:
+            assert count == 0
+            
+    # relative dihedrals
+    dihedrals = get_dihedrals(testGraph, sign=True)
+    for angle, count in dihedrals:
+        if angle == -65:
+            assert count == 1
+        elif angle == -177:
+            assert count == 2
+        elif angle == 180:
+            assert count == 1
+        else:
+            assert count == 0
+            
+def test_dihedrals2(sample_data5cis):
+    xyz = readInput.readXYZ(sample_data5cis)
+    testGraph = graphs.GraphManager(xyz)
+    
+    # absolute dihedrals
+    dihedrals = get_dihedrals(testGraph)
+    for angle, count in dihedrals:
+        if angle == 64:
+            assert count == 1
+        else:
+            assert count == 0
+            
+    # relative dihedrals
+    dihedrals = get_dihedrals(testGraph, sign=True)
+    for angle, count in dihedrals:
+        if angle == -64:
+            assert count == 1
+        else:
+            assert count == 0
+            
+def test_dihedrals3(sample_data5cis2):
+    xyz = readInput.readXYZ(sample_data5cis2)
+    testGraph = graphs.GraphManager(xyz)
+    
+    # absolute dihedrals
+    dihedrals = get_dihedrals(testGraph)
+    for angle, count in dihedrals:
+        if angle == 4:
+            assert count == 1
+        else:
+            assert count == 0
+            
+    # relative dihedrals
+    dihedrals = get_dihedrals(testGraph, sign=True)
+    for angle, count in dihedrals:
+        if angle == 4:
+            assert count == 1
+        else:
+            assert count == 0
+    
+def test_dihedrals4(sample_data5trans):
+    xyz = readInput.readXYZ(sample_data5trans)
+    testGraph = graphs.GraphManager(xyz)
+    
+    # absolute dihedrals
+    dihedrals = get_dihedrals(testGraph)
+    for angle, count in dihedrals:
+        if angle == 180:
+            assert count == 1
+        else:
+            assert count == 0
+            
+    # relative dihedrals
+    dihedrals = get_dihedrals(testGraph, sign=True)
+    for angle, count in dihedrals:
+        if angle == 180:
+            assert count == 1
+        else:
+            assert count == 0
+
+        
+    
+    
+    
+    
+        
+    

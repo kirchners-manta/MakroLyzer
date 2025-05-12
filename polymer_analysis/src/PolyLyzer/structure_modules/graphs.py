@@ -171,6 +171,7 @@ class GraphManager(nx.Graph):
                 
         return longest
     
+    
     def distance(self, node1, node2):
         """
         Calculate the distance between two nodes in the graph.
@@ -178,14 +179,13 @@ class GraphManager(nx.Graph):
         Args:
             node1 (int): The index of the first node.
             node2 (int): The index of the second node.
-
         Returns:
             float: The distance between the two nodes.
         """
         coords1 = np.array([self.nodes[node1]['x'], self.nodes[node1]['y'], self.nodes[node1]['z']])
         coords2 = np.array([self.nodes[node2]['x'], self.nodes[node2]['y'], self.nodes[node2]['z']])
         return np.linalg.norm(coords1 - coords2)
-    
+
     def vector(self, node1, node2):
         """
         Calculate the vector between two nodes in the graph.
@@ -193,14 +193,13 @@ class GraphManager(nx.Graph):
         Args:
             node1 (int): The index of the first node.
             node2 (int): The index of the second node.
-
         Returns:
             np.ndarray: The vector from node1 to node2.
         """
         coords1 = np.array([self.nodes[node1]['x'], self.nodes[node1]['y'], self.nodes[node1]['z']])
         coords2 = np.array([self.nodes[node2]['x'], self.nodes[node2]['y'], self.nodes[node2]['z']])
         return coords2 - coords1
-    
+
     def dihedral(self, node1, node2, node3, node4, sign=None):
         """
         Calculate the dihedral angle between four nodes in the graph.
@@ -210,69 +209,26 @@ class GraphManager(nx.Graph):
             node2 (int): The index of the second node.
             node3 (int): The index of the third node.
             node4 (int): The index of the fourth node.
-
         Returns:
             float: The dihedral angle in degrees.
         """
-        
+
         # Get vectors
         b1 = self.vector(node1, node2)
         b2 = self.vector(node2, node3)
         b3 = self.vector(node3, node4)
-        
+
         # Half planes (https://en.wikipedia.org/wiki/Dihedral_angle - In polymer physics)
         dihedral = np.arctan2(np.linalg.norm(b2) * np.dot(b1,(np.cross(b2,b3))), np.dot(np.cross(b1,b2),np.cross(b2,b3)))
-        
+
         if sign is not None:
             dihedral = np.degrees(dihedral)
         elif sign is None:
             dihedral = np.abs(np.degrees(dihedral))
-        
+
         return dihedral
     
-    def get_dihedrals(self, sign=None):
-        # Remove 1-order nodes, find subgraphs and surrounding atoms
-        GraphWithout1order = self.remove_1order()
-        GraphWithout1order.surrounding()
-        GraphWithout1order.update_degree()
-        # Get the subgraphs of the graph
-        subgraphs = GraphWithout1order.get_subgraphs()
-        dihedrals = []
-        # For each subgraph, find the longest path
-        for subgraph in subgraphs:
-            longestPath = subgraph.find_longest_path()
-            # For each node in the longest path, find the dihedral angles
-            for i in range(len(longestPath) - 3):
-                node1 = longestPath[i]
-                node2 = longestPath[i + 1]
-                node3 = longestPath[i + 2]
-                node4 = longestPath[i + 3]
-                dihedral = subgraph.dihedral(node1, node2, node3, node4, sign=sign)
-                # round dihedral to integers
-                dihedral = round(dihedral)
-                dihedrals.append((dihedral))
-                
-        # Group dihedrals 
-        Dihedrals = dict(sorted({x: dihedrals.count(x) for x in set(dihedrals)}.items(), key=lambda item: item[0]))
-        # Add 0 count for missing dihedrals between -180/0 and 180
-        if sign is not None:
-            for i in range(-180, 181):
-                if i not in Dihedrals:
-                    Dihedrals[i] = 0
-        elif sign is None:
-            for i in range(0, 181):
-                if i not in Dihedrals:
-                    Dihedrals[i] = 0
-        # Convert the counts to a list of tuples
-        dihedrals = [(k, v) for k, v in Dihedrals.items()]
-        # Sort the dihedrals by size
-        dihedrals = sorted(dihedrals, key=lambda x: x[0])
-        # Print dihedrals to .cvs file
-        with open('dihedrals.csv', 'w', newline='') as csvfile:
-            writer = csv.writer(csvfile, delimiter=';')
-            writer.writerow(['Dihedral', 'Count'])
-            for dihedral in dihedrals:
-                writer.writerow([dihedral[0], dihedral[1]])
+
     
     def find_and_tag_patterns(self, patterns, startAtom=None):
         """
