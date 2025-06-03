@@ -5,7 +5,7 @@ from PolyLyzer.structure_modules import graphs
 
 
     
-def get_dihedrals(graph, sign=None):
+def get_dihedrals(graph, file, sign=None):
     """
     Calculate the dihedral angles of the graph.
     The dihedral angles are calculated for each subgraph of the graph.
@@ -53,7 +53,7 @@ def get_dihedrals(graph, sign=None):
     # Sort the dihedrals by size
     dihedrals = sorted(dihedrals, key=lambda x: x[0])
     # Print dihedrals to .cvs file
-    with open('dihedrals.csv', 'w', newline='') as csvfile:
+    with open(file, 'w', newline='') as csvfile:
         writer = csv.writer(csvfile, delimiter=';')
         writer.writerow(['Dihedral', 'Count'])
         for d in dihedrals:

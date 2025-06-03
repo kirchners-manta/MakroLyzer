@@ -47,6 +47,11 @@ def readCommandLine() -> dict:
                         choices=['abs', 'nonabs'],
                         default='abs'
     )
+    parser.add_argument(
+                        '--dihedral-file',
+                        help='Output file name (default: dihedrals.csv)',
+                        default='dihedrals.csv'
+    )
 
     
     args = vars(parser.parse_args())

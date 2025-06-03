@@ -41,7 +41,8 @@ def main(args, xyz):
             
     # TEST dihedral angles
     if args['dihedral']:
-        if args['dihedral_range'] == 'nonabs':
-            dihedrals = get_dihedrals(boxGraph, sign=True)
-        else:
-            dihedrals = get_dihedrals(boxGraph)
+        # test if --dihedral-range and --dihedral-file are provided
+        if args['dihedral_range'] == 'abs':
+            dihedrals = get_dihedrals(boxGraph, file=args['dihedral_file'], sign=None)
+        elif args['dihedral_range'] == 'nonabs':
+            dihedrals = get_dihedrals(boxGraph,  file=args['dihedral_file'], sign=True)

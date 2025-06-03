@@ -157,7 +157,7 @@ def test_dihedrals1(sample_data5):
     testGraph = graphs.GraphManager(xyz)
     
     # absolute dihedrals
-    dihedrals = get_dihedrals(testGraph)
+    dihedrals = get_dihedrals(testGraph, file="dihedrals.csv")
     for angle, count in dihedrals:
         if angle == 65:
             assert count == 1
@@ -169,7 +169,7 @@ def test_dihedrals1(sample_data5):
             assert count == 0
             
     # relative dihedrals
-    dihedrals = get_dihedrals(testGraph, sign=True)
+    dihedrals = get_dihedrals(testGraph, file="dihedrals.csv", sign=True)
     for angle, count in dihedrals:
         if angle == -65:
             assert count == 1
@@ -185,7 +185,7 @@ def test_dihedrals2(sample_data5cis):
     testGraph = graphs.GraphManager(xyz)
     
     # absolute dihedrals
-    dihedrals = get_dihedrals(testGraph)
+    dihedrals = get_dihedrals(testGraph, file="dihedrals.csv")
     for angle, count in dihedrals:
         if angle == 64:
             assert count == 1
@@ -193,7 +193,7 @@ def test_dihedrals2(sample_data5cis):
             assert count == 0
             
     # relative dihedrals
-    dihedrals = get_dihedrals(testGraph, sign=True)
+    dihedrals = get_dihedrals(testGraph, file="dihedrals.csv", sign=True)
     for angle, count in dihedrals:
         if angle == -64:
             assert count == 1
@@ -205,7 +205,7 @@ def test_dihedrals3(sample_data5cis2):
     testGraph = graphs.GraphManager(xyz)
     
     # absolute dihedrals
-    dihedrals = get_dihedrals(testGraph)
+    dihedrals = get_dihedrals(testGraph, file="dihedrals.csv")
     for angle, count in dihedrals:
         if angle == 4:
             assert count == 1
@@ -213,7 +213,7 @@ def test_dihedrals3(sample_data5cis2):
             assert count == 0
             
     # relative dihedrals
-    dihedrals = get_dihedrals(testGraph, sign=True)
+    dihedrals = get_dihedrals(testGraph, file="dihedrals.csv", sign=True)
     for angle, count in dihedrals:
         if angle == 4:
             assert count == 1
@@ -225,7 +225,7 @@ def test_dihedrals4(sample_data5trans):
     testGraph = graphs.GraphManager(xyz)
     
     # absolute dihedrals
-    dihedrals = get_dihedrals(testGraph)
+    dihedrals = get_dihedrals(testGraph, file="dihedrals.csv")
     for angle, count in dihedrals:
         if angle == 180:
             assert count == 1
@@ -233,7 +233,7 @@ def test_dihedrals4(sample_data5trans):
             assert count == 0
             
     # relative dihedrals
-    dihedrals = get_dihedrals(testGraph, sign=True)
+    dihedrals = get_dihedrals(testGraph, file="dihedrals.csv", sign=True)
     for angle, count in dihedrals:
         if angle == 180:
             assert count == 1
