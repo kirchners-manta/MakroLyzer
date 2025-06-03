@@ -52,6 +52,17 @@ def readCommandLine() -> dict:
                         help='Output file name (default: dihedrals.csv)',
                         default='dihedrals.csv'
     )
+    parser.add_argument(
+                        '-ct', '--cisTrans',
+                        help='Calculate cis and trans counts (default: false)',
+                        action='store_true'
+    )
+    parser.add_argument(
+                        '--CisTrans-file',
+                        help='Output file name (default: CisTrans.csv)',
+                        default='CisTrans.csv'
+    )
+                        
 
     
     args = vars(parser.parse_args())

@@ -5,12 +5,11 @@ from PolyLyzer.structure_modules import graphs
 
 
     
-def get_dihedrals(graph, file, sign=None):
+def get_dihedrals(graph, sign=None):
     """
     Calculate the dihedral angles of the graph.
     The dihedral angles are calculated for each subgraph of the graph.
-    The dihedral angles are sorted and counted.
-    The dihedral angles are written to a .csv file.
+    The default for the sign is None, which means the dihedrals are in the range of 0 to 180 degrees.
 
     Args:
         GraphManager: The graph to calculate the dihedral angles for.
@@ -37,6 +36,31 @@ def get_dihedrals(graph, file, sign=None):
             d = round(d)
             dihedrals.append(d)
             
+    return dihedrals
+            
+
+
+
+def get_all_dihedrals(graph, file, sign=None):
+    """
+    Get all dihedrals of the graph and write them to a .csv file.
+    The dihedrals are sorted, counted and written to a .csv file with two columns: Dihedral and Count.
+    They are in the range of -180 to 180 degrees if sign is True, otherwise in the range of 0 to 180 degrees.
+
+    Args:
+        graph (GraphManager): The graph to calculate the dihedral angles for.
+        file (str): The name of the .csv file to write the dihedrals to.
+        sign (bool, optional): If True, dihedrals are in the range of -180 to 180 degrees.
+        
+    Returns:
+        list: A list of tuples containing the dihedral angles and their counts.
+    """
+    
+    dihedrals = get_dihedrals(graph, sign=sign)
+    
+    # round dihedrals to integers
+    dihedrals = [round(d) for d in dihedrals]
+
     # Group dihedrals 
     Dihedrals = dict(sorted({x: dihedrals.count(x) for x in set(dihedrals)}.items(), key=lambda item: item[0]))
     # Add 0 count for missing dihedrals between -180/0 and 180
@@ -60,3 +84,31 @@ def get_dihedrals(graph, file, sign=None):
             writer.writerow([d[0], d[1]])
             
     return dihedrals
+
+def get_CisTrans(graph, file):
+    """
+    Get the cis and trans counts of the graph and write them to a .csv file.
+    Args:
+        graph (GraphManager): The graph to calculate the cis and trans counts for.
+        file (str): The name of the .csv file to write the cis and trans counts to.
+        
+    Returns:
+        list: A list containing the counts of cis and trans.
+    """
+    
+    dihedrals = get_dihedrals(graph, sign=None)
+    
+    # 0 to 90 degrees are cis, 90 to 180 degrees are trans
+    cis = sum(1 for d in dihedrals if 0 <= d <=90)
+    trans = sum(1 for d in dihedrals if 90 < d <=180)
+    
+    # Write to csv file
+    with open(file, 'w', newline='') as csvfile:
+        writer = csv.writer(csvfile, delimiter=';')
+        writer.writerow(['Cis', cis])
+        writer.writerow(['Trans', trans])
+        
+    # create a list with the counts
+    cisTrans = [('Cis', cis), ('Trans', trans)]
+    
+    return cisTrans

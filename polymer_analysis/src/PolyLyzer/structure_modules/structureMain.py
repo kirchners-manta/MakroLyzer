@@ -4,7 +4,7 @@ from IPython.display import display
 from PolyLyzer.structure_modules import graphs
 from PolyLyzer.structure_modules import readPatterns
 from PolyLyzer.structure_modules.endToEndDistance import end_to_end_dist
-from PolyLyzer.structure_modules.dihedrals import get_dihedrals
+from PolyLyzer.structure_modules.dihedrals import get_all_dihedrals, get_CisTrans
 
 def main(args, xyz):
     """
@@ -39,10 +39,14 @@ def main(args, xyz):
         for distance in distances:
             print(distance)
             
-    # TEST dihedral angles
+    # Dihedral angles
     if args['dihedral']:
         # test if --dihedral-range and --dihedral-file are provided
         if args['dihedral_range'] == 'abs':
-            dihedrals = get_dihedrals(boxGraph, file=args['dihedral_file'], sign=None)
+            dihedrals = get_all_dihedrals(boxGraph, file=args['dihedral_file'], sign=None)
         elif args['dihedral_range'] == 'nonabs':
-            dihedrals = get_dihedrals(boxGraph,  file=args['dihedral_file'], sign=True)
+            dihedrals = get_all_dihedrals(boxGraph,  file=args['dihedral_file'], sign=True)
+            
+    # Cis and Trans counts
+    if args['cisTrans']:
+        ct = get_CisTrans(boxGraph, file=args['CisTrans_file'])
