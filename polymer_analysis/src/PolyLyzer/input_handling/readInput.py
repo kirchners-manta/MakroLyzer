@@ -17,7 +17,6 @@ def readCommandLine() -> dict:
     # Add arguments
     parser.add_argument('-xyz', '--xyzFile', 
                         help='Path to the XYZ file', 
-                        metavar='', 
                         required=True) 
     
     parser.add_argument('-p', '--patternFile', 
