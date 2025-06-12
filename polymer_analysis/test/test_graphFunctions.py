@@ -4,6 +4,7 @@ from src.PolyLyzer.input_handling import readInput
 from src.PolyLyzer.structure_modules import graphs
 from src.PolyLyzer.structure_modules.endToEndDistance import end_to_end_dist
 from src.PolyLyzer.structure_modules.dihedrals import get_all_dihedrals, get_CisTrans
+from src.PolyLyzer.structure_modules.radiusOfGyration import get_radius_of_gyration
 
 @pytest.fixture
 def sample_data1():
@@ -44,6 +45,10 @@ def sample_data5trans():
 @pytest.fixture
 def sample_data6():
     return 'test_structures/06.xyz'
+
+@pytest.fixture
+def sample_data7():
+    return 'test_structures/07.xyz'
 
     
 def test_end_to_end(sample_data1):
@@ -324,8 +329,26 @@ def test_dihedrals5(sample_data6):
             assert count == 0
         
     
+# Radius of gyration tests
+def test_radius_of_gyration(sample_data7):
+    xyz = readInput.readXYZ(sample_data7)
+    testGraph = graphs.GraphManager(xyz)
     
+    print(testGraph.size())
     
+    # test center of mass
+    com = testGraph.get_com()
+    assert com[0] == pytest.approx(-0.6814, abs=1e-3) 
+    assert com[1] == pytest.approx(-0.8874, abs=1e-3)
+    assert com[2] == pytest.approx(0.0000, abs=1e-3)
     
-        
+    # Calculate radius of gyration
+    Rg_subgraphs, R_whole = get_radius_of_gyration(testGraph, file="radiusOfGyration.csv")
     
+    # Check radius of gyration for the whole graph
+    assert R_whole == pytest.approx(3.6197, abs=1e-3)  
+    
+    # Check radius of gyration for subgraphs
+    assert len(Rg_subgraphs) == 4 
+    for R in Rg_subgraphs:
+        assert R == pytest.approx(0.0, abs=1e-4)

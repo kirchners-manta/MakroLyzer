@@ -66,6 +66,18 @@ class GraphManager(nx.Graph):
         # Add bond order
         for node in self.nodes:
             self.nodes[node]['degree'] = self.degree[node]
+            
+    def get_coordinates(self, node):
+        """
+        Get the coordinates of a node in the graph.
+
+        Args:
+            node (int): The index of the node.
+        
+        Returns:
+            np.ndarray: The coordinates of the node.
+        """
+        return np.array([self.nodes[node]['x'], self.nodes[node]['y'], self.nodes[node]['z']])
     
 
     def remove_1order(self):
@@ -91,6 +103,27 @@ class GraphManager(nx.Graph):
         for node in self.nodes:
             self.nodes[node]['degree'] = self.degree[node]
         return self
+    
+    def get_com(self):
+        """
+        Calculate the center of mass of the graph.
+
+        Returns:
+            np.ndarray: The coordinates of the center of mass.
+        """
+        total_mass = 0.0
+        com = np.zeros(3)
+        
+        for node in self.nodes:
+            element = self.nodes[node]['element']
+            mass = dictionaries.dictMass().get(element, 1.0)
+            total_mass += mass
+            com += mass * np.array([self.nodes[node]['x'], self.nodes[node]['y'], self.nodes[node]['z']])
+        if total_mass == 0:
+            raise ValueError("Total mass is zero, cannot compute center of mass.")
+        
+        com /= total_mass
+        return com           
     
     
     def surrounding(self):

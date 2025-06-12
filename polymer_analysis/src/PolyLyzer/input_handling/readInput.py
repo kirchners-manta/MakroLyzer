@@ -61,6 +61,16 @@ def readCommandLine() -> dict:
                         help='Output file name (default: CisTrans.csv)',
                         default='CisTrans.csv'
     )
+    parser.add_argument(
+                        '-r', '--radiusOfGyration',
+                        help='Calculate radius of gyration (default: false)',
+                        action='store_true'
+    )
+    parser.add_argument(
+                        '--Rg-file',
+                        help='Output file name (default: radiusOfGyration.csv)',
+                        default='radiusOfGyration.csv'
+    )
                         
 
     

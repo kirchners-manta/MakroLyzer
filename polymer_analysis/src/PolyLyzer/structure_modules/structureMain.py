@@ -5,6 +5,7 @@ from PolyLyzer.structure_modules import graphs
 from PolyLyzer.structure_modules import readPatterns
 from PolyLyzer.structure_modules.endToEndDistance import end_to_end_dist
 from PolyLyzer.structure_modules.dihedrals import get_all_dihedrals, get_CisTrans
+from PolyLyzer.structure_modules.radiusOfGyration import get_radius_of_gyration
 
 def main(args, xyz):
     """
@@ -50,3 +51,7 @@ def main(args, xyz):
     # Cis and Trans counts
     if args['cisTrans']:
         ct = get_CisTrans(boxGraph, file=args['CisTrans_file'])
+        
+    # Radius of gyration
+    if args['radiusOfGyration']:
+        Rg_subgraphs, R_whole = get_radius_of_gyration(boxGraph, file=args['Rg_file'])
