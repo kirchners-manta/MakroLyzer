@@ -2,7 +2,6 @@ import sys
 
 from PolyLyzer.input_handling import readInput
 from PolyLyzer.input_handling import checkInput
-from IPython.display import display
 
 def main(args):
     """
@@ -22,9 +21,6 @@ def main(args):
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
         sys.exit(1)
-        
-    xyzFilePath = args['xyzFile']
-    xyz = readInput.readXYZ(xyzFilePath)
     
     # Wrap the XYZ coordinates if periodic boundary conditions are applied
     if args['PBC_xyz']:
@@ -33,4 +29,4 @@ def main(args):
         z = args['PBC_xyz'][2]
         xyz = readInput.wrapXYZ(xyz, x, y, z)
         
-    return args, xyz
+    return args

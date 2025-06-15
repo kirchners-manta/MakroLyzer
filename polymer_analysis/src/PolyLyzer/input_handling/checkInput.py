@@ -37,7 +37,7 @@ def checkInput(args):
     # Check if the file is empty
     if os.path.getsize(xyzFilePath) == 0:
         raise EmptyFileError(f"File '{xyzFilePath}' is empty.")
-    
+        
     
     #---Repeating Units---#
     if args['patternFile'] is not None:

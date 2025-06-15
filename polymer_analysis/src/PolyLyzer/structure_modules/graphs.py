@@ -601,11 +601,11 @@ class GraphManager(nx.Graph):
         plt.title('3D Scatter Plot of Graph Nodes')
         plt.show()
         
-    def write_xyz(self, filename='saturatedGraph.xyz'):
+    def write_xyz(self, file):
         """
         Write the graph data to an XYZ file.
         """
-        with open(filename, 'w') as f:
+        with open(file, 'w') as f:
             f.write(f"{len(self.nodes)}\n")
             f.write("Graph data\n")
             for node in self.nodes:
@@ -616,14 +616,14 @@ class GraphManager(nx.Graph):
                 f.write(f"{element} {x} {y} {z}\n")
 
 
-    def write_fragment_data_to_csv(self, filename):
+    def write_fragment_data_to_csv(self, file):
         """
         Write the fragment data to a CSV file.
 
         Args:
             filename (str): The name of the output CSV file.
         """
-        with open(filename, 'w', newline='') as csvfile:
+        with open(file, 'w', newline='') as csvfile:
             writer = csv.writer(csvfile, delimiter=';')
             writer.writerow(['Index', 'Element', 'X', 'Y', 'Z', 'FragmentID'])
 

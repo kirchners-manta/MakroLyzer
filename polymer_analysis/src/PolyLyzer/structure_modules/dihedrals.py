@@ -41,7 +41,7 @@ def get_dihedrals(graph, sign=None):
 
 
 
-def get_all_dihedrals(graph, file, sign=None):
+def get_all_dihedrals(graph, sign=None):
     """
     Get all dihedrals of the graph and write them to a .csv file.
     The dihedrals are sorted, counted and written to a .csv file with two columns: Dihedral and Count.
@@ -76,16 +76,10 @@ def get_all_dihedrals(graph, file, sign=None):
     dihedrals = [(k, v) for k, v in Dihedrals.items()]
     # Sort the dihedrals by size
     dihedrals = sorted(dihedrals, key=lambda x: x[0])
-    # Print dihedrals to .cvs file
-    with open(file, 'w', newline='') as csvfile:
-        writer = csv.writer(csvfile, delimiter=';')
-        writer.writerow(['Dihedral', 'Count'])
-        for d in dihedrals:
-            writer.writerow([d[0], d[1]])
             
     return dihedrals
 
-def get_CisTrans(graph, file):
+def get_CisTrans(graph):
     """
     Get the cis and trans counts of the graph and write them to a .csv file.
     Args:
@@ -102,13 +96,6 @@ def get_CisTrans(graph, file):
     cis = sum(1 for d in dihedrals if 0 <= d <=90)
     trans = sum(1 for d in dihedrals if 90 < d <=180)
     
-    # Write to csv file
-    with open(file, 'w', newline='') as csvfile:
-        writer = csv.writer(csvfile, delimiter=';')
-        writer.writerow(['Cis', cis])
-        writer.writerow(['Trans', trans])
-        
-    # create a list with the counts
     cisTrans = [('Cis', cis), ('Trans', trans)]
     
     return cisTrans

@@ -1,6 +1,7 @@
 import pytest
 
-from src.PolyLyzer.input_handling import readInput
+from src.PolyLyzer.input_handling import readXYZ
+from src.PolyLyzer.input_handling import readXYZ
 from src.PolyLyzer.structure_modules import graphs
 from src.PolyLyzer.structure_modules.endToEndDistance import end_to_end_dist
 from src.PolyLyzer.structure_modules.dihedrals import get_all_dihedrals, get_CisTrans
@@ -72,14 +73,14 @@ def sample_data12():
     return 'test_structures/12.xyz'
     
 def test_end_to_end(sample_data1):
-    xyz = readInput.readXYZ(sample_data1)
+    xyz = next(readXYZ.readXYZ(sample_data1))
     testGraph = graphs.GraphManager(xyz)
     distance = end_to_end_dist(testGraph)
     correctDistance = 5.595 
     assert distance[0] == pytest.approx(correctDistance, abs=1e-3)
     
 def test_remove_1order(sample_data1):
-    xyz = readInput.readXYZ(sample_data1)
+    xyz = next(readXYZ.readXYZ(sample_data1))
     testGraph = graphs.GraphManager(xyz)
     
     # number of nodes
@@ -92,7 +93,7 @@ def test_remove_1order(sample_data1):
         assert newGraph.nodes[node]['element'] == 'C'
         
 def test_update_degree(sample_data1):
-    xyz = readInput.readXYZ(sample_data1)
+    xyz = next(readXYZ.readXYZ(sample_data1))
     testGraph = graphs.GraphManager(xyz)
     testGraph.surrounding()
     
@@ -111,7 +112,7 @@ def test_update_degree(sample_data1):
             assert newGraph.nodes[node]['degree'] == 1
         
 def test_longest_path(sample_data1):
-    xyz = readInput.readXYZ(sample_data1)
+    xyz = next(readXYZ.readXYZ(sample_data1))
     testGraph = graphs.GraphManager(xyz)
     testGraph.surrounding()
     
@@ -131,7 +132,7 @@ def test_longest_path(sample_data1):
         assert testGraph.nodes[longestPath[i]]['surroundingAtoms'] == path[i]
     
 def test_surrounding(sample_data2):
-    xyz = readInput.readXYZ(sample_data2)
+    xyz = next(readXYZ.readXYZ(sample_data2))
     testGraph = graphs.GraphManager(xyz)
     testGraph.surrounding()
     
@@ -149,7 +150,7 @@ def test_surrounding(sample_data2):
             assert testGraph.nodes[node]['surroundingAtoms'] == 'Mg_CH'
             
 def test_chemicalFormula(sample_data3):
-    xyz = readInput.readXYZ(sample_data3)
+    xyz = next(readXYZ.readXYZ(sample_data3))
     testGraph = graphs.GraphManager(xyz)
     testGraph.surrounding()
     refformula = [('C1H6Mg1N1O1P1', 2), ('C1H5Mg1N1O1P1', 1)]
@@ -162,7 +163,7 @@ def test_chemicalFormula(sample_data3):
         
 
 def test_find_patterns(sample_data4):
-    xyz = readInput.readXYZ(sample_data4)
+    xyz = next(readXYZ.readXYZ(sample_data4))
     testGraph = graphs.GraphManager(xyz)
     testGraph.find_and_tag_patterns([['C_CCC', 'C_CCC', 'C_CC', 'C_CC', 'C_CC', 'C_CC', 'C_CC', 'C_CC'], ['C_CC', 'C_CCC', 'C_CC', 'C_CC', 'C_CC', 'C_CC', 'C_CC'], ['C_C']])
     
@@ -182,11 +183,11 @@ def test_find_patterns(sample_data4):
         i += 1
         
 def test_dihedrals1(sample_data5):
-    xyz = readInput.readXYZ(sample_data5)
+    xyz = next(readXYZ.readXYZ(sample_data5))
     testGraph = graphs.GraphManager(xyz)
     
     # absolute dihedrals
-    dihedrals = get_all_dihedrals(testGraph, file="dihedrals.csv")
+    dihedrals = get_all_dihedrals(testGraph)
     for angle, count in dihedrals:
         if angle == 65:
             assert count == 1
@@ -198,12 +199,12 @@ def test_dihedrals1(sample_data5):
             assert count == 0
             
     # cis trans counts
-    cisTrans = get_CisTrans(testGraph, file="CisTrans.csv")
+    cisTrans = get_CisTrans(testGraph)
     assert cisTrans[0][1] == 1
     assert cisTrans[1][1] == 3
             
     # relative dihedrals
-    dihedrals = get_all_dihedrals(testGraph, file="dihedrals.csv", sign=True)
+    dihedrals = get_all_dihedrals(testGraph, sign=True)
     for angle, count in dihedrals:
         if angle == -65:
             assert count == 1
@@ -215,11 +216,11 @@ def test_dihedrals1(sample_data5):
             assert count == 0
             
 def test_dihedrals2(sample_data5cis):
-    xyz = readInput.readXYZ(sample_data5cis)
+    xyz = next(readXYZ.readXYZ(sample_data5cis))
     testGraph = graphs.GraphManager(xyz)
     
     # absolute dihedrals
-    dihedrals = get_all_dihedrals(testGraph, file="dihedrals.csv")
+    dihedrals = get_all_dihedrals(testGraph)
     for angle, count in dihedrals:
         if angle == 64:
             assert count == 1
@@ -227,12 +228,12 @@ def test_dihedrals2(sample_data5cis):
             assert count == 0
             
     # cis trans counts
-    cisTrans = get_CisTrans(testGraph, file="CisTrans.csv")
+    cisTrans = get_CisTrans(testGraph)
     assert cisTrans[0][1] == 1
     assert cisTrans[1][1] == 0
             
     # relative dihedrals
-    dihedrals = get_all_dihedrals(testGraph, file="dihedrals.csv", sign=True)
+    dihedrals = get_all_dihedrals(testGraph, sign=True)
     for angle, count in dihedrals:
         if angle == -64:
             assert count == 1
@@ -240,11 +241,11 @@ def test_dihedrals2(sample_data5cis):
             assert count == 0
             
 def test_dihedrals3(sample_data5cis2):
-    xyz = readInput.readXYZ(sample_data5cis2)
+    xyz = next(readXYZ.readXYZ(sample_data5cis2))
     testGraph = graphs.GraphManager(xyz)
     
     # absolute dihedrals
-    dihedrals = get_all_dihedrals(testGraph, file="dihedrals.csv")
+    dihedrals = get_all_dihedrals(testGraph)
     for angle, count in dihedrals:
         if angle == 4:
             assert count == 1
@@ -252,12 +253,12 @@ def test_dihedrals3(sample_data5cis2):
             assert count == 0
             
     # cis trans counts
-    cisTrans = get_CisTrans(testGraph, file="CisTrans.csv")
+    cisTrans = get_CisTrans(testGraph)
     assert cisTrans[0][1] == 1
     assert cisTrans[1][1] == 0
             
     # relative dihedrals
-    dihedrals = get_all_dihedrals(testGraph, file="dihedrals.csv", sign=True)
+    dihedrals = get_all_dihedrals(testGraph, sign=True)
     for angle, count in dihedrals:
         if angle == 4:
             assert count == 1
@@ -265,11 +266,11 @@ def test_dihedrals3(sample_data5cis2):
             assert count == 0
     
 def test_dihedrals4(sample_data5trans):
-    xyz = readInput.readXYZ(sample_data5trans)
+    xyz = next(readXYZ.readXYZ(sample_data5trans))
     testGraph = graphs.GraphManager(xyz)
     
     # absolute dihedrals
-    dihedrals = get_all_dihedrals(testGraph, file="dihedrals.csv")
+    dihedrals = get_all_dihedrals(testGraph)
     for angle, count in dihedrals:
         if angle == 180:
             assert count == 1
@@ -277,12 +278,12 @@ def test_dihedrals4(sample_data5trans):
             assert count == 0
             
     # cis trans counts
-    cisTrans = get_CisTrans(testGraph, file="CisTrans.csv")
+    cisTrans = get_CisTrans(testGraph)
     assert cisTrans[0][1] == 0
     assert cisTrans[1][1] == 1
             
     # relative dihedrals
-    dihedrals = get_all_dihedrals(testGraph, file="dihedrals.csv", sign=True)
+    dihedrals = get_all_dihedrals(testGraph, sign=True)
     for angle, count in dihedrals:
         if angle == 180:
             assert count == 1
@@ -290,11 +291,11 @@ def test_dihedrals4(sample_data5trans):
             assert count == 0
 
 def test_dihedrals5(sample_data6):
-    xyz = readInput.readXYZ(sample_data6)
+    xyz = next(readXYZ.readXYZ(sample_data6))
     testGraph = graphs.GraphManager(xyz)
     
     # absolute dihedrals
-    dihedrals = get_all_dihedrals(testGraph, file="dihedrals.csv")
+    dihedrals = get_all_dihedrals(testGraph)
     for angle, count in dihedrals:
         if angle == 2:
             assert count == 1
@@ -318,12 +319,12 @@ def test_dihedrals5(sample_data6):
             assert count == 0
             
     # cis trans counts
-    cisTrans = get_CisTrans(testGraph, file="CisTrans.csv")
+    cisTrans = get_CisTrans(testGraph)
     assert cisTrans[0][1] == 4
     assert cisTrans[1][1] == 9
     
     # relative dihedrals
-    dihedrals = get_all_dihedrals(testGraph, file="dihedrals.csv", sign=True)
+    dihedrals = get_all_dihedrals(testGraph, sign=True)
     for angle, count in dihedrals:
         if angle == -180:
             assert count == 2
@@ -351,7 +352,7 @@ def test_dihedrals5(sample_data6):
     
 # Radius of gyration tests
 def test_radius_of_gyration(sample_data7):
-    xyz = readInput.readXYZ(sample_data7)
+    xyz = next(readXYZ.readXYZ(sample_data7))
     testGraph = graphs.GraphManager(xyz)
     
     print(testGraph.size())
@@ -363,7 +364,7 @@ def test_radius_of_gyration(sample_data7):
     assert com[2] == pytest.approx(0.0000, abs=1e-3)
     
     # Calculate radius of gyration
-    Rg_subgraphs, R_whole = get_radius_of_gyration(testGraph, file="radiusOfGyration.csv")
+    Rg_subgraphs, R_whole = get_radius_of_gyration(testGraph)
     
     # Check radius of gyration for the whole graph
     assert R_whole == pytest.approx(3.6197, abs=1e-3)  
@@ -376,7 +377,7 @@ def test_radius_of_gyration(sample_data7):
         
 # Hbond tests
 def test_hbond(sample_data8):
-    xyz = readInput.readXYZ(sample_data8)
+    xyz = next(readXYZ.readXYZ(sample_data8))
     testGraph = graphs.GraphManager(xyz)
     
     TypesDistances = [('O', 2.15)]
@@ -410,7 +411,7 @@ def test_hbond(sample_data8):
     
     
 def test_hbond2(sample_data9):
-    xyz = readInput.readXYZ(sample_data9)
+    xyz = next(readXYZ.readXYZ(sample_data9))
     testGraph = graphs.GraphManager(xyz)
     
     TypesDistances = [('O', 2.15)]
@@ -423,7 +424,7 @@ def test_hbond2(sample_data9):
     assert hbonds[0][2] == 6
     
 def test_hbond3(sample_data10):
-    xyz = readInput.readXYZ(sample_data10)
+    xyz = next(readXYZ.readXYZ(sample_data10))
     testGraph = graphs.GraphManager(xyz)
     
     TypesDistances = [('O', 2.15)]
@@ -436,7 +437,7 @@ def test_hbond3(sample_data10):
     assert hbonds[0][2] == 8
     
 def test_hbond4(sample_data10):
-    xyz = readInput.readXYZ(sample_data10)
+    xyz = next(readXYZ.readXYZ(sample_data10))
     testGraph = graphs.GraphManager(xyz)
     
     TypesDistances = [('N',2.5), ('O',2.15)]
@@ -452,7 +453,7 @@ def test_hbond4(sample_data10):
     assert hbonds[1][2] == 8
     
 def test_hbond4(sample_data11):
-    xyz = readInput.readXYZ(sample_data11)
+    xyz = next(readXYZ.readXYZ(sample_data11))
     testGraph = graphs.GraphManager(xyz)
     
     TypesDistances = [('N',2.1), ('O',2.15)]
@@ -468,7 +469,7 @@ def test_hbond4(sample_data11):
     assert hbonds[1][2] == 0
     
 def test_hbond4(sample_data12):
-    xyz = readInput.readXYZ(sample_data12)
+    xyz = next(readXYZ.readXYZ(sample_data12))
     testGraph = graphs.GraphManager(xyz)
     
     TypesDistances = [('N',2.1), ('O',2.15)]

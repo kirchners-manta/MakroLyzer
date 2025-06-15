@@ -3,7 +3,7 @@ import csv
 
 from PolyLyzer.structure_modules import graphs
 
-def get_radius_of_gyration(graph, file):
+def get_radius_of_gyration(graph):
     """
     Calculate the radius of gyration of each subgraph in the graph and of the entire graph.
     The radius of gyration is calculated as the square root of the average of the squared distances of each atom from the center of mass.
@@ -31,14 +31,6 @@ def get_radius_of_gyration(graph, file):
         )
         R_sub = np.sqrt(R_sub)
         radius_of_gyration_subgraphs.append(R_sub)
-        
-    # Write the radius of gyration to a CSV file
-    with open(file, 'w', newline='') as csvfile:
-        writer = csv.writer(csvfile)
-        writer.writerow(['Subgraph Index', 'Radius of Gyration / Å'])
-        for i, R in enumerate(radius_of_gyration_subgraphs):
-            writer.writerow([i, R])
-        writer.writerow(['Whole Graph', R_whole])
         
     return radius_of_gyration_subgraphs, R_whole
     

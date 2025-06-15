@@ -16,15 +16,36 @@ def readCommandLine() -> dict:
     
     # Add arguments
     parser.add_argument('-xyz', '--xyzFile', 
-                        help='Path to the XYZ file', 
+                        help='Path to the XYZ/trajectory file', 
                         required=True) 
     
     parser.add_argument('-p', '--patternFile', 
-                        help='Path to the TXT file -> Finds repeating units (default: false)')
+                        help='Path to the TXT file -> Finds repeating units (default: false)'
+    )
+    
+    parser.add_argument('--repeatingUnits-file',
+                        help='Output file name for repeating units (default: repeatingUnits.csv)',
+                        default='repeatingUnits.csv'
+    )
     
     parser.add_argument('-s', '--saturation', 
                         help='Saturate the ends polymers (default: false)', 
-                        action='store_true')
+                        action='store_true'
+    )
+    
+    parser.add_argument('--saturation-file',
+                        help='Output file name for saturated polymers (default: saturatedPolymers.xyz)',
+                        default='saturatedPolymers.xyz'
+    )
+    
+    parser.add_argument('-f', '--formula',
+                        help='Get chemical formulas of the polymer (default: false)', 
+                        action='store_true'
+    )
+    parser.add_argument('--formula-file',
+                        help='Output file name for chemical formulas (default: chemicalFormulas.csv)',
+                        default='chemicalFormulas.csv'
+    )
     
     parser.add_argument('-pbc', '--PBC_xyz', 
                         nargs=3, 
@@ -33,7 +54,14 @@ def readCommandLine() -> dict:
     
     parser.add_argument('-e2e', '--endToEndDistance', 
                         help='Calculate end-to-end distance (default: false)', 
-                        action='store_true')
+                        action='store_true'
+    )
+    
+    parser.add_argument(
+                        '--e2e-file',
+                        help='Output file name for end-to-end distances (default: endToEndDistances.csv)',
+                        default='endToEndDistances.csv'
+    )
     
     parser.add_argument(
                         '-d', '--dihedral',
@@ -77,8 +105,12 @@ def readCommandLine() -> dict:
         help="List of (element:distance) tuples for hydrogen bonds (e.g., -hb O:3.5 N:2.8)",
         type=element_distance_tuple
     )
-
-                        
+    
+    parser.add_argument(
+        '--hbonds-file',
+        help='Output file name for hydrogen bonds (default: hydrogenBonds.csv)',
+        default='hydrogenBonds.csv'
+    )
 
     
     args = vars(parser.parse_args())
@@ -99,38 +131,7 @@ def element_distance_tuple(value):
         raise argparse.ArgumentTypeError(
             f"Invalid format: '{value}'. Expected format: ELEMENT:DISTANCE (e.g., O:3.5)"
         )
-
-
-def readXYZ(xyzFilePath: str) -> pd.DataFrame:
-    
-    """
-    Read XYZ file and extract coordinates.
-    
-    Args:
-        xyzFilePath (str): Path to the XYZ file.
-        
-    Returns:
-        pd.DataFrame: DataFrame containing the coordinates of atoms.
-    """    
-    
-    data = []
-    with open(xyzFilePath, 'r') as file:
-        # Skip header lines
-        lines = file.readlines()[2:]  
-        for line in lines:
-            parts = line.split()
-            if len(parts) == 4: 
-                atom, x, y, z = parts
-                data.append([atom, float(x), float(y), float(z)])
-            else:
-                print(f"Invalid line format: {line.strip()}")
-                continue
-
-    # Create DataFrame from the list of data
-    df = pd.DataFrame(data, columns=['atom', 'x', 'y', 'z'])
-    # add a column with the index
-    df['index'] = df.index
-    return df            
+          
 
 def wrapXYZ(xyz: pd.DataFrame, x: float, y: float, z: float) -> pd.DataFrame:
     

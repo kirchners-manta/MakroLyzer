@@ -25,11 +25,5 @@ def get_Hbonds(graph, TypesDistances):
         numberOfHbonds.append(len(hbonds))
         
     hbonds = [(elementType, distance, num) for (elementType, distance), num in zip(TypesDistances, numberOfHbonds)]
-    # Write the hydrogen bonds to a CSV file
-    with open('hydrogen_bonds.csv', 'w', newline='') as csvfile:
-        writer = csv.writer(csvfile)
-        writer.writerow(['Element Type', 'Distance', 'Number of Hydrogen Bonds'])
-        for element, distance, count in hbonds:
-            writer.writerow([element, distance, count]) 
         
     return hbonds
