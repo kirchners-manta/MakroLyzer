@@ -71,6 +71,13 @@ def readCommandLine() -> dict:
                         help='Output file name (default: radiusOfGyration.csv)',
                         default='radiusOfGyration.csv'
     )
+    parser.add_argument(
+        '-hb', '--hydrogenBonds',
+        nargs='+',
+        help="List of (element:distance) tuples for hydrogen bonds (e.g., -hb O:3.5 N:2.8)",
+        type=element_distance_tuple
+    )
+
                         
 
     
@@ -83,6 +90,15 @@ def readCommandLine() -> dict:
         sys.exit(1)
     
     return args
+
+def element_distance_tuple(value):
+    try:
+        element, distance = value.split(':')
+        return (element, float(distance))
+    except ValueError:
+        raise argparse.ArgumentTypeError(
+            f"Invalid format: '{value}'. Expected format: ELEMENT:DISTANCE (e.g., O:3.5)"
+        )
 
 
 def readXYZ(xyzFilePath: str) -> pd.DataFrame:

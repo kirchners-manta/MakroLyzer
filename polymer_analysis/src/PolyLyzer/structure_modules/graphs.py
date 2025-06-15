@@ -261,6 +261,48 @@ class GraphManager(nx.Graph):
 
         return dihedral
     
+    def get_hbonds(self, elementType2, distance):
+        
+        """
+        Get the hydrogen bonds between two types of elements in the graph.
+
+        Args:
+            elementType2 (str): The second element type.
+
+        Returns:
+            list of tuples: A list of tuples representing the hydrogen bonds, and the number of hydrogen bonds.
+        """
+        
+        elementType1 = "H"
+
+        nodes1 = [n for n in self.nodes if self.nodes[n]['element'] == elementType1]
+        nodes2 = [n for n in self.nodes if self.nodes[n]['element'] == elementType2]
+        
+        # if nodes have the same element type, throw an error
+        if elementType1 == elementType2:
+            raise ValueError("Element types must be different for hydrogen bond detection.")
+
+        hbonds = []
+        for node1 in nodes1:
+            for node2 in nodes2:
+                # Check if the nodes are connected
+                if self.has_edge(node1, node2):
+                    continue
+                if self.distance(node1, node2) <= distance:
+                    # Hbond angle check
+                    neighbor1 = next(iter(self.neighbors(node1)), None)
+                    if neighbor1 is None:
+                        raise ValueError(f"Node {node1} has no neighbors.")
+                    h_neighborVector = self.vector(node1, neighbor1)
+                    h_elementVector = self.vector(node1, node2)
+                    angle = np.degrees(np.arccos(np.clip(np.dot(h_neighborVector, h_elementVector) /
+                                                          (np.linalg.norm(h_neighborVector) * np.linalg.norm(h_elementVector)), -1.0, 1.0)))
+                    if angle < 30 or angle > 150:
+                        hbonds.append((node1, node2))
+                    
+        return hbonds
+
+    
 
     
     def find_and_tag_patterns(self, patterns, startAtom=None):
