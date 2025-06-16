@@ -73,7 +73,7 @@ def main(args):
                 
         # Cis Trans counts
         if args['cisTrans']:
-            results['cisTrans'].append(get_CisTrans(boxGraph, file=f"{args['CisTrans_file']}_frame_{i}.csv"))
+            results['cisTrans'].append(get_CisTrans(boxGraph))
            
         # Radius of gyration 
         if args['radiusOfGyration']:
