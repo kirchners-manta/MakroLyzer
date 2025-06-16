@@ -1,10 +1,13 @@
 from PolyLyzer.input_handling import readXYZ
+from PolyLyzer.input_handling import estimateFrames
 from PolyLyzer.structure_modules import graphs
 from PolyLyzer.structure_modules import readPatterns
 from PolyLyzer.structure_modules.endToEndDistance import end_to_end_dist
 from PolyLyzer.structure_modules.dihedrals import get_all_dihedrals, get_CisTrans
 from PolyLyzer.structure_modules.radiusOfGyration import get_radius_of_gyration
 from PolyLyzer.structure_modules.hbonds import get_Hbonds
+
+from tqdm import tqdm
 
 def main(args):
     """
@@ -32,9 +35,10 @@ def main(args):
         'hbonds_file': args['hbonds_file']
     }
     
+    n_frames = estimateFrames.estimateFrames(trajectoryFilePath)
     
-    for i, xyz_frame in enumerate(readXYZ.readXYZ(trajectoryFilePath)):
-        print(f"Processing frame {i}")
+    for i, xyz_frame in enumerate(tqdm(readXYZ.readXYZ(trajectoryFilePath),total=n_frames, desc="Creating something magical", unit="frame", ncols=100)):
+
         # Get Graph object of the polymer box
         boxGraph = graphs.GraphManager(xyz_frame)
         

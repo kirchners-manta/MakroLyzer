@@ -27,45 +27,112 @@ class GraphManager(nx.Graph):
             self.create_graph(data, pbc)
 
 
+    #def create_graph(self, atomData, pbc=None):
+    #    """
+    #    Create a graph from the atom data - Part of the constructor.
+    #    """
+    #    covalentRadii = dictionaries.dictCovalent()
+    #    bondDistances = {}
+    #    for e1 in covalentRadii:
+    #        for e2 in covalentRadii:
+    #            d = (covalentRadii[e1] + covalentRadii[e2]) * 1.15
+    #            bondDistances[(e1, e2)] = d
+    #            bondDistances[(e2, e1)] = d  
+    #
+    #    elements = atomData['atom'].values
+    #    coordinates = atomData[['x', 'y', 'z']]
+    #    coords = coordinates.values
+    #    tree = cKDTree(coords)
+    #
+    #    # Add nodes with atom labels and indices
+    #    for row in atomData.itertuples(index=True):
+    #        self.add_node(row.Index, index=row.Index, element=row.atom, x=row.x, y=row.y, z=row.z)
+    #
+    #    # Find pairs of atoms within the max possible bond distance
+    #    maxBondDistance = max(bondDistances.values())
+    #    possibleBonds = tree.query_pairs(maxBondDistance)
+    #    
+    #    start = time.time()
+    #    for i, j in possibleBonds:
+    #        element_pair = (elements[i], elements[j])
+    #        maxDistance = bondDistances.get(element_pair, float('inf'))
+    #        distance = np.linalg.norm(coords[i] - coords[j])
+    #        # PBC
+    #        if pbc is not None:
+    #            xdist = coordinates.iloc[i]['x'] - coordinates.iloc[j]['x']
+    #            ydist = coordinates.iloc[i]['y'] - coordinates.iloc[j]['y']
+    #            zdist = coordinates.iloc[i]['z'] - coordinates.iloc[j]['z']
+    #            # Apply periodic boundary conditions
+    #            x_distance = xdist - pbc[0] * np.round((xdist) / pbc[0])
+    #            y_distance = ydist - pbc[1] * np.round((ydist) / pbc[1])
+    #            z_distance = zdist - pbc[2] * np.round((zdist) / pbc[2])
+    #            distance = np.sqrt(x_distance**2 + y_distance**2 + z_distance**2)
+    #            
+    #        if distance <= maxDistance:
+    #            self.add_edge(i, j)
+    #            
+    #    end = time.time()
+    #    print(end-start)
+    #
+    #    # Add bond order
+    #    for node in self.nodes:
+    #        self.nodes[node]['degree'] = self.degree[node]
+    
     def create_graph(self, atomData, pbc=None):
-        """
-        Create a graph from the atom data - Part of the constructor.
-        """
         covalentRadii = dictionaries.dictCovalent()
-        bondDistances = {(e1, e2): (covalentRadii[e1] + covalentRadii[e2]) * 1.15 
-                         for e1 in covalentRadii for e2 in covalentRadii}
-        elements = atomData['atom']
-        coordinates = atomData[['x', 'y', 'z']]
-        tree = cKDTree(coordinates.values)
+        elements = atomData['atom'].values
+        coords = atomData[['x','y','z']].values
 
-        # Add nodes with atom labels and indices
-        for index, row in atomData.iterrows():
-            self.add_node(index, index=index, element=row['atom'], x=row['x'], y=row['y'], z=row['z'])
- 
-        # Find pairs of atoms within the max possible bond distance
-        maxBondDistance = max(bondDistances.values())
-        possibleBonds = tree.query_pairs(maxBondDistance)
-        for i, j in possibleBonds:
-            element_pair = (elements[i], elements[j])
-            maxDistance = bondDistances.get(element_pair, float('inf'))
-            distance = np.linalg.norm(coordinates.iloc[i] - coordinates.iloc[j])
-            # PBC
-            if pbc is not None:
-                xdist = coordinates.iloc[i]['x'] - coordinates.iloc[j]['x']
-                ydist = coordinates.iloc[i]['y'] - coordinates.iloc[j]['y']
-                zdist = coordinates.iloc[i]['z'] - coordinates.iloc[j]['z']
-                # Apply periodic boundary conditions
-                x_distance = xdist - pbc[0] * np.round((xdist) / pbc[0])
-                y_distance = ydist - pbc[1] * np.round((ydist) / pbc[1])
-                z_distance = zdist - pbc[2] * np.round((zdist) / pbc[2])
-                distance = np.sqrt(x_distance**2 + y_distance**2 + z_distance**2)
-                
-            if distance <= maxDistance:
-                self.add_edge(i, j)
+        # Map each unique element to a small integer index
+        # unique_elems returns a sorted array of its distinct values.
+        # return_inverse=True returns an array of the same length as the original 'elements'.
+        # Each entry of inverse is an integer index pointing into the unique_elements array,
+        # tellingcwhich unique value the original element was.
+        # EXAMPLE: elements=np.array(['H', 'C', 'O', 'H', 'C', 'N', 'O', 'O'])
+        #          unique_elems=np.array(['C' 'H' 'N' 'O'])
+        #          inverse=np.array([1, 0, 3, 1, 0, 2, 3, 3])
+        unique_elems, inverse = np.unique(elements, return_inverse=True)
+        M = len(unique_elems)
 
-        # Add bond order
-        for node in self.nodes:
-            self.nodes[node]['degree'] = self.degree[node]
+        # Build an M×M matrix of squared max distances
+        maxd2 = np.zeros((M, M), dtype=float)
+        for i, e1 in enumerate(unique_elems):
+            for j, e2 in enumerate(unique_elems):
+                d = (covalentRadii[e1] + covalentRadii[e2]) * 1.15
+                maxd2[i, j] = d * d
+
+        # Build KD-tree 
+        tree = cKDTree(coords)
+
+        # Add all nodes 
+        nodes = [
+           (idx, {"index": idx, "element": elements[idx],
+                  "x": coords[idx,0],
+                  "y": coords[idx,1],
+                  "z": coords[idx,2]})
+           for idx in range(len(coords))
+        ]
+        self.add_nodes_from(nodes)
+
+        # Find all candidate pairs up to the global max radius
+        global_max = np.sqrt(maxd2.max())
+        pairs = tree.query_pairs(global_max)
+
+        # squared distances -> lookup in precomputed MxM matrix
+        edge_list = []
+        for i, j in pairs:
+            ei, ej = inverse[i], inverse[j]
+            dx, dy, dz = coords[i] - coords[j]
+            if dx*dx + dy*dy + dz*dz <= maxd2[ei, ej]:
+                edge_list.append((i, j))
+        # Add edges
+        self.add_edges_from(edge_list)
+
+        # Add node’s degree
+        deg = dict(self.degree())
+        for n, d in deg.items():
+            self.nodes[n]['degree'] = d
+
             
     def get_coordinates(self, node):
         """

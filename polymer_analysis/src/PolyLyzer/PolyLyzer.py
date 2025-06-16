@@ -11,7 +11,6 @@ def main():
     """
     Main function to run the PolyLyzer program.
     """
-    
     # Get command line arguments and xyz data
     args = inputHandlingMain.main(sys.argv)
     
