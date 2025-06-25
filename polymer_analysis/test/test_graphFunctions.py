@@ -7,6 +7,7 @@ from src.PolyLyzer.structure_modules.endToEndDistance import end_to_end_dist
 from src.PolyLyzer.structure_modules.dihedrals import get_all_dihedrals, get_CisTrans
 from src.PolyLyzer.structure_modules.radiusOfGyration import get_radius_of_gyration
 from src.PolyLyzer.structure_modules.anisotropy import get_anisotropy_factor
+from src.PolyLyzer.structure_modules.asphericityParameter import get_asphericity_parameter
 from src.PolyLyzer.structure_modules.hbonds import get_Hbonds
 
 @pytest.fixture
@@ -519,3 +520,10 @@ def test_anisotropy_factor3(sample_data15):
     assert anisotropyFactor == pytest.approx(0.00, abs=1e-3) 
     
     
+# Asphericity parameter tests
+def test_asphericity_parameter(sample_data15):
+    xyz = next(readXYZ.readXYZ(sample_data15))
+    testGraph = graphs.GraphManager(xyz)
+    
+    asphericityParameter = get_asphericity_parameter(testGraph)
+    assert asphericityParameter == pytest.approx(0.0, abs=1e-3)

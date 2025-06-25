@@ -135,6 +135,18 @@ def readCommandLine() -> dict:
                         help='Output file name for anisotropy factor (default: anisotropyFactor.csv)',
                         default='anisotropyFactor.csv'
     )
+    
+    parser.add_argument(
+                        '-as', '--asphericityParameter',
+                        help='Calculate asphericity parameter (default: false)',
+                        action='store_true'
+    )
+    
+    parser.add_argument(
+                        '--asphericity-file',
+                        help='Output file name for asphericity parameter (default: asphericityParameter.csv)',
+                        default='asphericityParameter.csv'
+    )
 
     
     args = vars(parser.parse_args())

@@ -115,5 +115,14 @@ def main(results):
             file.write("Frame, Anisotropy Factor\n")
             for frame, anisotropy in enumerate(results['anisotropy_factor']):
                 file.write(f"{frame},{anisotropy:.3f}\n")
+                
+    # Asphericity Parameter #
+    # If asphericity parameter is requested, write it to a file.
+    if results.get('asphericity_parameter'):
+        asphericity_file = results['asphericity_file']
+        with open(asphericity_file, 'w') as file:
+            file.write("Frame, Asphericity Parameter\n")
+            for frame, asphericity in enumerate(results['asphericity_parameter']):
+                file.write(f"{frame},{asphericity:.3f}\n")
 
         
