@@ -5,7 +5,9 @@ from PolyLyzer.structure_modules import readPatterns
 from PolyLyzer.structure_modules.endToEndDistance import end_to_end_dist
 from PolyLyzer.structure_modules.dihedrals import get_all_dihedrals, get_CisTrans
 from PolyLyzer.structure_modules.radiusOfGyration import get_radius_of_gyration
+from PolyLyzer.structure_modules.anisotropy import get_anisotropy_factor
 from PolyLyzer.structure_modules.hbonds import get_Hbonds
+from PolyLyzer.structure_modules.subgraphCoords import get_subgraph_coords
 
 from tqdm import tqdm
 
@@ -25,6 +27,8 @@ def main(args):
         'cisTrans': [],
         'Rg': [],
         'hbonds': [],
+        'subgraph_coords': [],
+        'anisotropy_factor': [],
         
         # Output file names
         'formulas_file': args['formula_file'],
@@ -32,7 +36,9 @@ def main(args):
         'dihedrals_file': args['dihedral_file'],
         'cisTrans_file': args['CisTrans_file'],
         'Rg_file': args['Rg_file'],
-        'hbonds_file': args['hbonds_file']
+        'hbonds_file': args['hbonds_file'],
+        'subgraph_coords_file': args['subgraph_coord_file'],
+        'anisotropy_file': args['anisotropy_file'],
     }
     
     n_frames = estimateFrames.estimateFrames(trajectoryFilePath)
@@ -57,6 +63,7 @@ def main(args):
         # Saturation
         if args['saturation']:
             boxGraph.saturate()
+            saturation_file = f"{args['saturation_file'].rsplit('.', 1)[0]}_frame_{i}.xyz"
             boxGraph.write_xyz(args['saturation_file'])
             
         # Chemical formulas
@@ -87,6 +94,14 @@ def main(args):
         if args['hydrogenBonds']:
             TypesDistances = args['hydrogenBonds']
             results['hbonds'].append(get_Hbonds(boxGraph, TypesDistances))
+            
+        # Subgraph coordinates
+        if args['subgraph_coords']:
+            results['subgraph_coords'].append(get_subgraph_coords(boxGraph))
+            
+        # Anisotropy factor
+        if args['anisotropyFactor']:
+            results['anisotropy_factor'].append(get_anisotropy_factor(boxGraph))
             
 
     return results

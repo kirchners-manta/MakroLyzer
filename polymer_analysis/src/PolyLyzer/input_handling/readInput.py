@@ -100,16 +100,40 @@ def readCommandLine() -> dict:
                         default='radiusOfGyration.csv'
     )
     parser.add_argument(
-        '-hb', '--hydrogenBonds',
-        nargs='+',
-        help="List of (element:distance) tuples for hydrogen bonds (e.g., -hb O:3.5 N:2.8)",
-        type=element_distance_tuple
+                        '-hb', '--hydrogenBonds',
+                        nargs='+',
+                        help="List of (element:distance) tuples for hydrogen bonds (e.g., -hb O:3.5 N:2.8)",
+                        type=element_distance_tuple
     )
     
     parser.add_argument(
-        '--hbonds-file',
-        help='Output file name for hydrogen bonds (default: hydrogenBonds.csv)',
-        default='hydrogenBonds.csv'
+                        '--hbonds-file',
+                        help='Output file name for hydrogen bonds (default: hydrogenBonds.csv)',
+                        default='hydrogenBonds.csv'
+    )
+    
+    parser.add_argument(
+                        '-sub', '--subgraph-coords',
+                        help='Get subgraph-coordinates (default: false)',
+                        action='store_true'   
+    )
+    
+    parser.add_argument(
+                        '--subgraph-coord-file',
+                        help='Output file name for subgraph coordinates (default: subgraphCoordinates.csv)',
+                        default='subgraphCoordinates.xyz'
+    )
+    
+    parser.add_argument(
+                        '-af', '--anisotropyFactor',
+                        help='Calculate anisotropy factor (default: false)',
+                        action='store_true'
+    )
+    
+    parser.add_argument(
+                        '--anisotropy-file',
+                        help='Output file name for anisotropy factor (default: anisotropyFactor.csv)',
+                        default='anisotropyFactor.csv'
     )
 
     

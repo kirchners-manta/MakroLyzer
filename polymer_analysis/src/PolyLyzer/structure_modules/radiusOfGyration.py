@@ -1,5 +1,4 @@
 import numpy as np
-import csv
 
 from PolyLyzer.structure_modules import graphs
 
@@ -33,6 +32,58 @@ def get_radius_of_gyration(graph):
         radius_of_gyration_subgraphs.append(R_sub)
         
     return radius_of_gyration_subgraphs, R_whole
+
+
+def get_radius_of_gyration_tensor(graph):
+    """"
+        Calculate the radius of gyration tensor for the graph.
+        Arkin, H.; Janke, W. Ground-state properties of a polymer chain in an attractive sphere. J. Phys. Chem. B 2012, 116, 10379-10386.
+        
+                  (∑_i (x_i - x_cm)²)  (∑_i (x_i - x_cm)(y_i - y_cm))  (∑_i (x_i - x_cm)(z_i - z_cm))
+        S = 1/N * (∑_i (y_i - y_cm)(x_i - x_cm))  (∑_i (y_i - y_cm)²)  (∑_i (y_i - y_cm)(z_i - z_cm))
+                  (∑_i (z_i - z_cm)(x_i - x_cm))  (∑_i (z_i - z_cm)(y_i - y_cm))  (∑_i (z_i - z_cm)²)
+        
+        where: 
+            N is the number of atoms in the graph,
+            (x_cm, y_cm, z_cm) is the center of mass of the graph,
+            (x_i, y_i, z_i) are the coordinates of atom i.
+            -> S is a symmetric 3x3 matrix.
+            Unit of S is Å².
+
+    Args:
+        graph (GraphManager): The graph to calculate the radius of gyration tensor for.
+    Returns:
+        Eigenvalues, Eigenvectors: The eigenvalues and eigenvectors of the radius of gyration tensor.
+    """
     
+    # Get the com
+    com = graph.get_com()
+    
+    # Initialize the tensor
+    S = np.zeros((3, 3))
+    
+    # Calculate the tensor
+    for node in graph.nodes():
+        coords = graph.get_coordinates(node)
+        x, y, z = coords - com
+        
+        S[0, 0] += x**2
+        S[1, 1] += y**2
+        S[2, 2] += z**2
+        S[0, 1] += x * y
+        S[0, 2] += x * z
+        S[1, 2] += y * z
+        
+    S[1,0] = S[0, 1]
+    S[2,0] = S[0, 2]
+    S[2,1] = S[1, 2]
+        
+    # Normalize and Diagonalize the tensor
+    S /= graph.number_of_nodes()
+    eigenvalues, eigenvectors = np.linalg.eigh(S)
+    
+    return eigenvalues, eigenvectors
+
+
     
     

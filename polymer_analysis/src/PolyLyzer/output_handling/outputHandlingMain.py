@@ -90,4 +90,30 @@ def main(results):
                 for element_type, distance, count in hbonds:
                     file.write(f"{frame},{element_type},{distance:.3f},{count}\n")
 
+    # Subgraph Coordinates #
+    # If subgraph coordinates are requested, write them to a file.
+    if results.get('subgraph_coords'):
+        base = results['subgraph_coords_file']
+        if base.endswith('.xyz'):
+            base = base[:-4]
+        for frame_idx, frame_subgraphs in enumerate(results['subgraph_coords']):
+            out_path = f"{base}_frame_{frame_idx}.xyz"
+            with open(out_path, 'w') as f:
+                for sg in frame_subgraphs:
+                    # number of atoms in this subgraph
+                    f.write(f" {len(sg)}\n")
+                    f.write("\n")
+                    for element, x, y, z in sg:
+                        # space‐separated element and coords
+                        f.write(f"{element} {x:.3f} {y:.3f} {z:.3f}\n")
+                        
+    # Anisotropy Factor #
+    # If anisotropy factor is requested, write it to a file.
+    if results.get('anisotropy_factor'):
+        anisotropy_file = results['anisotropy_file']
+        with open(anisotropy_file, 'w') as file:
+            file.write("Frame, Anisotropy Factor\n")
+            for frame, anisotropy in enumerate(results['anisotropy_factor']):
+                file.write(f"{frame},{anisotropy:.3f}\n")
+
         

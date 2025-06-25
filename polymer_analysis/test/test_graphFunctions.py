@@ -6,6 +6,7 @@ from src.PolyLyzer.structure_modules import graphs
 from src.PolyLyzer.structure_modules.endToEndDistance import end_to_end_dist
 from src.PolyLyzer.structure_modules.dihedrals import get_all_dihedrals, get_CisTrans
 from src.PolyLyzer.structure_modules.radiusOfGyration import get_radius_of_gyration
+from src.PolyLyzer.structure_modules.anisotropy import get_anisotropy_factor
 from src.PolyLyzer.structure_modules.hbonds import get_Hbonds
 
 @pytest.fixture
@@ -71,6 +72,18 @@ def sample_data11():
 @pytest.fixture
 def sample_data12():        
     return 'test_structures/12.xyz'
+
+@pytest.fixture
+def sample_data13():
+    return 'test_structures/13.xyz'
+
+@pytest.fixture
+def sample_data14():
+    return 'test_structures/14.xyz'
+
+@pytest.fixture
+def sample_data15():
+    return 'test_structures/15.xyz'
     
 def test_end_to_end(sample_data1):
     xyz = next(readXYZ.readXYZ(sample_data1))
@@ -407,9 +420,6 @@ def test_hbond(sample_data8):
     assert hbonds[0][1] == 2.5
     assert hbonds[0][2] == 1
     
-    
-    
-    
 def test_hbond2(sample_data9):
     xyz = next(readXYZ.readXYZ(sample_data9))
     testGraph = graphs.GraphManager(xyz)
@@ -480,3 +490,32 @@ def test_hbond4(sample_data12):
     assert hbonds[0][0] == 'N'
     assert hbonds[0][1] == 2.1
     assert hbonds[0][2] == 8
+    
+    
+# Anisotropy factor tests
+
+# Linear chain
+def test_anisotropy_factor(sample_data13):
+    xyz = next(readXYZ.readXYZ(sample_data13))
+    testGraph = graphs.GraphManager(xyz)
+    
+    anisotropyFactor = get_anisotropy_factor(testGraph)
+    assert anisotropyFactor == pytest.approx(1.0, abs=1e-3)
+    
+# Planar high symmetry
+def test_anisotropy_factor2(sample_data14):
+    xyz = next(readXYZ.readXYZ(sample_data14))
+    testGraph = graphs.GraphManager(xyz)
+    
+    anisotropyFactor = get_anisotropy_factor(testGraph)
+    assert anisotropyFactor == pytest.approx(0.25, abs=1e-3)
+    
+# 3D structure with high symmetry
+def test_anisotropy_factor3(sample_data15):
+    xyz = next(readXYZ.readXYZ(sample_data15))
+    testGraph = graphs.GraphManager(xyz)
+    
+    anisotropyFactor = get_anisotropy_factor(testGraph)
+    assert anisotropyFactor == pytest.approx(0.00, abs=1e-3) 
+    
+    
