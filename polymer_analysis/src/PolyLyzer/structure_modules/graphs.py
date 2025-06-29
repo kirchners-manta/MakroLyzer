@@ -9,7 +9,7 @@ import csv
 from PolyLyzer import dictionaries
 
 class GraphManager(nx.Graph):
-    def __init__(self, data=None, pbc=None):
+    def __init__(self, data=None):
         super().__init__()
         if data is None:
             # Handle the case where no data is provided
@@ -24,61 +24,10 @@ class GraphManager(nx.Graph):
             self.add_edges_from(data.edges(data=True))
         else:
             # Handle other types of data, such as initialization from raw data
-            self.create_graph(data, pbc)
+            self.create_graph(data)
 
-
-    #def create_graph(self, atomData, pbc=None):
-    #    """
-    #    Create a graph from the atom data - Part of the constructor.
-    #    """
-    #    covalentRadii = dictionaries.dictCovalent()
-    #    bondDistances = {}
-    #    for e1 in covalentRadii:
-    #        for e2 in covalentRadii:
-    #            d = (covalentRadii[e1] + covalentRadii[e2]) * 1.15
-    #            bondDistances[(e1, e2)] = d
-    #            bondDistances[(e2, e1)] = d  
-    #
-    #    elements = atomData['atom'].values
-    #    coordinates = atomData[['x', 'y', 'z']]
-    #    coords = coordinates.values
-    #    tree = cKDTree(coords)
-    #
-    #    # Add nodes with atom labels and indices
-    #    for row in atomData.itertuples(index=True):
-    #        self.add_node(row.Index, index=row.Index, element=row.atom, x=row.x, y=row.y, z=row.z)
-    #
-    #    # Find pairs of atoms within the max possible bond distance
-    #    maxBondDistance = max(bondDistances.values())
-    #    possibleBonds = tree.query_pairs(maxBondDistance)
-    #    
-    #    start = time.time()
-    #    for i, j in possibleBonds:
-    #        element_pair = (elements[i], elements[j])
-    #        maxDistance = bondDistances.get(element_pair, float('inf'))
-    #        distance = np.linalg.norm(coords[i] - coords[j])
-    #        # PBC
-    #        if pbc is not None:
-    #            xdist = coordinates.iloc[i]['x'] - coordinates.iloc[j]['x']
-    #            ydist = coordinates.iloc[i]['y'] - coordinates.iloc[j]['y']
-    #            zdist = coordinates.iloc[i]['z'] - coordinates.iloc[j]['z']
-    #            # Apply periodic boundary conditions
-    #            x_distance = xdist - pbc[0] * np.round((xdist) / pbc[0])
-    #            y_distance = ydist - pbc[1] * np.round((ydist) / pbc[1])
-    #            z_distance = zdist - pbc[2] * np.round((zdist) / pbc[2])
-    #            distance = np.sqrt(x_distance**2 + y_distance**2 + z_distance**2)
-    #            
-    #        if distance <= maxDistance:
-    #            self.add_edge(i, j)
-    #            
-    #    end = time.time()
-    #    print(end-start)
-    #
-    #    # Add bond order
-    #    for node in self.nodes:
-    #        self.nodes[node]['degree'] = self.degree[node]
     
-    def create_graph(self, atomData, pbc=None):
+    def create_graph(self, atomData):
         covalentRadii = dictionaries.dictCovalent()
         elements = atomData['atom'].values
         coords = atomData[['x','y','z']].values

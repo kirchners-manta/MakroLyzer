@@ -21,12 +21,5 @@ def main(args):
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
         sys.exit(1)
-    
-    # Wrap the XYZ coordinates if periodic boundary conditions are applied
-    if args['PBC_xyz']:
-        x = args['PBC_xyz'][0]
-        y = args['PBC_xyz'][1]
-        z = args['PBC_xyz'][2]
-        xyz = readInput.wrapXYZ(xyz, x, y, z)
         
     return args
