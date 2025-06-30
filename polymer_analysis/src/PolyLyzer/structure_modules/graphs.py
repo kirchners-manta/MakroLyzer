@@ -277,48 +277,72 @@ class GraphManager(nx.Graph):
 
         return dihedral
     
-    def get_hbonds(self, elementType2, distance):
-        
-        """
-        Get the hydrogen bonds between two types of elements in the graph.
-
-        Args:
-            elementType2 (str): The second element type.
-
-        Returns:
-            list of tuples: A list of tuples representing the hydrogen bonds, and the number of hydrogen bonds.
-        """
-        
-        elementType1 = "H"
-
-        nodes1 = [n for n in self.nodes if self.nodes[n]['element'] == elementType1]
-        nodes2 = [n for n in self.nodes if self.nodes[n]['element'] == elementType2]
-        
-        # if nodes have the same element type, throw an error
-        if elementType1 == elementType2:
-            raise ValueError("Element types must be different for hydrogen bond detection.")
-
-        hbonds = []
-        for node1 in nodes1:
-            for node2 in nodes2:
-                # Check if the nodes are connected
-                if self.has_edge(node1, node2):
-                    continue
-                if self.distance(node1, node2) <= distance:
-                    # Hbond angle check
-                    neighbor1 = next(iter(self.neighbors(node1)), None)
-                    if neighbor1 is None:
-                        raise ValueError(f"Node {node1} has no neighbors.")
-                    h_neighborVector = self.vector(node1, neighbor1)
-                    h_elementVector = self.vector(node1, node2)
-                    angle = np.degrees(np.arccos(np.clip(np.dot(h_neighborVector, h_elementVector) /
-                                                          (np.linalg.norm(h_neighborVector) * np.linalg.norm(h_elementVector)), -1.0, 1.0)))
-                    if angle < 30 or angle > 150:
-                        hbonds.append((node1, node2))
-                    
-        return hbonds
-
     
+    def get_hbonds(self, elementType2, max_dist):
+        H_type = "H"
+        if elementType2 == H_type:
+            raise ValueError("Element types must differ for H-bond detection.")
+
+        # Collect H atoms and "other" atoms
+        H_nodes, H_pos = [], []
+        type2_nodes, type2_pos = [], []
+        for node, data in self.nodes(data=True):
+            pos = np.array([data['x'], data['y'], data['z']])
+            if data['element'] == H_type:
+                H_nodes.append(node)
+                H_pos.append(pos)
+            elif data['element'] == elementType2:
+                type2_nodes.append(node)
+                type2_pos.append(pos)
+
+        # exit if no H's or no potential acceptors are found
+        # -> no H-bonds can be formed
+        if not H_nodes or not type2_nodes:
+            return []
+
+        # vertically stack the positions
+        H_pos     = np.vstack(H_pos)      # shape (n_H, 3)
+        type2_pos = np.vstack(type2_pos)  # shape (n_other, 3)
+
+        # Build KD-tree on acceptor positions, because then we can query
+        # for all candidates within max_dist in O(log n) time.
+        # -> we dont have to check all pairs
+        tree = cKDTree(type2_pos)
+
+        # Precompute normalized bonded-atom vectors for each H
+        H_vecs = []
+        for nodeH in H_nodes:
+            neigbors = list(self.neighbors(nodeH))
+            if not neigbors:
+                raise ValueError(f"H atom {nodeH} has no bonded neighbor.")
+            # take first bonded neighbor
+            # H has only one bonded neighbor, but just in case
+            v = np.asarray(self.vector(nodeH, neigbors[0]), dtype=float)
+            H_vecs.append(v / np.linalg.norm(v))
+        H_vecs = np.vstack(H_vecs)
+
+        # Query for all H-bonds
+        hbonds = []
+        for i, nodeH in enumerate(H_nodes):
+            # candidate indices within max_dist
+            # query_ball_point(x, r)
+            # x : The point or points to search for neighbors of.
+            # r : The radius within which to search for neighbors.
+            # -> returns indices of all neighbors within radius r of x
+            idxs = tree.query_ball_point(H_pos[i], r=max_dist)
+            for j in idxs:
+                node2 = type2_nodes[j]
+                # skip if already covalently bonded
+                if self.has_edge(nodeH, node2):
+                    continue
+                # Convert the input to an array.
+                v2 = np.asarray(self.vector(nodeH, node2), dtype=float)
+                cosang = np.dot(H_vecs[i], v2) / np.linalg.norm(v2)
+                angle = np.degrees(np.arccos(np.clip(cosang, -1.0, 1.0)))
+                if angle < 30 or angle > 150:
+                    hbonds.append((nodeH, node2))
+
+        return hbonds
 
     
     def find_and_tag_patterns(self, patterns, startAtom=None):
