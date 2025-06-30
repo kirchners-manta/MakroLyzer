@@ -22,6 +22,9 @@ def end_to_end_dist(graph):
     distances = []
     for subgraph in prepared:
         longestPath = subgraph.find_longest_path()
+        
+        if len(longestPath) < 2:
+            print("Subgraph has less than 2 nodes, skipping distance calculation.")
 
         startNode = longestPath[0]
         endNode = longestPath[-1]
