@@ -232,6 +232,18 @@ class GraphManager(nx.Graph):
             if len(path) > len(longest):
                 longest = path
                 
+        # fallback for cycle graphs
+        # -> DFS from all nodes with degree != 1
+        if not longest:
+            for node in self.nodes:
+                # If provided startAtom is not in the graph, skip it
+                if startAtom is not None and self.nodes[node]['element'] != startAtom:
+                    continue
+                # Perform DFS from the current node
+                path = dfs(node, [node], set())
+                if len(path) > len(longest):
+                    longest = path
+                
         return longest
     
     
