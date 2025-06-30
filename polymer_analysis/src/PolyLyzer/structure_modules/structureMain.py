@@ -67,7 +67,7 @@ def main(args):
         if args['saturation']:
             boxGraph.saturate()
             saturation_file = f"{args['saturation_file'].rsplit('.', 1)[0]}_frame_{i}.xyz"
-            boxGraph.write_xyz(args['saturation_file'])
+            boxGraph.write_xyz(saturation_file)
             
         # Chemical formulas
         if args['formula']:
