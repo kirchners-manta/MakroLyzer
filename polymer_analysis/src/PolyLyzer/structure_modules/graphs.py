@@ -210,6 +210,13 @@ class GraphManager(nx.Graph):
             max_path = path
 
             for neighbor in self.neighbors(current):
+                # if we see the first node again, we have a cycle and stop
+                if neighbor == path[0] and len(path) > 1:
+                    cycle = path + [neighbor]
+                    if len(cycle) > len(max_path):
+                        max_path = cycle
+                    continue
+                    
                 if neighbor not in visited:
                     new_path = dfs(neighbor, path + [neighbor], visited)
                     if len(new_path) > len(max_path):
