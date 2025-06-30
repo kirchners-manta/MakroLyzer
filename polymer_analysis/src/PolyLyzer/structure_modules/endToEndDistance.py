@@ -13,23 +13,22 @@ def end_to_end_dist(graph):
         list of floats: The end-to-end distances of all subgraphs.
     """
     subgraphs = graph.get_subgraphs()
-    print(subgraphs.__len__(), "subgraphs found")
-    subgraphsWithout1order = []
+    prepared = []
     for subgraph in subgraphs:
         sub = subgraph.remove_1order()
         sub.update_degree()
-        subgraphsWithout1order.append(sub)
+        prepared.append(sub)
+        
     distances = []
-    for subgraph in subgraphsWithout1order:
+    for subgraph in prepared:
         longestPath = subgraph.find_longest_path()
-        if len(longestPath) < 2:
-            continue
+
         startNode = longestPath[0]
         endNode = longestPath[-1]
         distance = subgraph.distance(startNode, endNode)
         distances.append(distance)
-    distances = np.array(distances)
-    return distances
+    
+    return np.array(distances)
 
 
 def end_to_end_dist_ensemble(graph):

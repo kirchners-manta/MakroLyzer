@@ -76,7 +76,8 @@ def main(args):
            
         # End-to-end distance     
         if args['endToEndDistance']:
-            results['distances'].append(end_to_end_dist(boxGraph))
+            dist = end_to_end_dist(boxGraph)
+            results.setdefault('distances', []).append(dist)
           
         # Dihedral angles      
         if args['dihedral']:
