@@ -95,6 +95,20 @@ class GraphManager(nx.Graph):
         """
         return np.array([self.nodes[node]['x'], self.nodes[node]['y'], self.nodes[node]['z']])
     
+    def get_all_coordinates(self):
+        """
+        Get the coordinates of all nodes in the graph in a single (N, D) array.
+
+        Returns:
+            nodes (list): The list of node IDs, in the same order as rows of coords.
+            coords (np.ndarray): Array of shape (N, 3) where N is the number of nodes.
+        """
+        nodes = list(self.nodes())                # ordering
+        coords = np.stack([                       # (N,3) array
+            self.get_coordinates(n) for n in nodes
+        ], axis=0)
+        return nodes, coords
+    
 
     def remove_1order(self):
         """

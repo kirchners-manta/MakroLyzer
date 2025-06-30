@@ -1,4 +1,5 @@
 import numpy as np
+import time
 
 from PolyLyzer.structure_modules import graphs
 
@@ -15,23 +16,22 @@ def get_radius_of_gyration(graph):
         tuple: A tuple containing the radius of gyration for each subgraph and the entire graph.
     """
     # Radius of gyration for the entire graph
-    R_whole = 1/graph.number_of_nodes() * np.sum(
-        [(graph.get_coordinates(node) - graph.get_com())**2 for node in graph.nodes()]
-    )
-    R_whole = np.sqrt(R_whole)
+    _, coords = graph.get_all_coordinates()
+    com = graph.get_com()
+    squared_distances = np.sum((coords - com)**2, axis=1)
+    R_whole = np.sqrt(np.mean(squared_distances)) # 1/N * squared_distances
     
     # Radius of gyration for each subgraph
-    subgraphs = graph.get_subgraphs()
-    radius_of_gyration_subgraphs = []
+    r_subgraphs = []
+    for subgraph in graph.get_subgraphs():
+        _, coords_sub = subgraph.get_all_coordinates()
+        com_sub = subgraph.get_com()
+        squared_distances_sub = np.sum((coords_sub - com_sub)**2, axis=1)
+        R_sub = np.sqrt(np.mean(squared_distances_sub))
+        r_subgraphs.append(R_sub)
     
-    for subgraph in subgraphs:
-        R_sub = 1/subgraph.number_of_nodes() * np.sum(
-            [(subgraph.get_coordinates(node) - subgraph.get_com())**2 for node in subgraph.nodes()]
-        )
-        R_sub = np.sqrt(R_sub)
-        radius_of_gyration_subgraphs.append(R_sub)
-        
-    return radius_of_gyration_subgraphs, R_whole
+                
+    return r_subgraphs, R_whole
 
 
 def get_radius_of_gyration_tensor(graph):
