@@ -144,6 +144,17 @@ def test_longest_path(sample_data1):
     path = (['C_CHHH', 'C_CCHH', 'C_CCHH', 'C_CCHH', 'C_CCHH', 'C_CCHH', 'C_CCHH', 'C_CHHH'])
     for i in range(len(longestPath)):
         assert testGraph.nodes[longestPath[i]]['surroundingAtoms'] == path[i]
+        
+def test_longest_path_cycle(sample_data14):
+    xyz = next(readXYZ.readXYZ(sample_data14))
+    testGraph = graphs.GraphManager(xyz)
+    
+    # get longest path 
+    longestPath = testGraph.find_longest_path()
+    assert len(longestPath) == 4
+    path = (['C_C', 'C_C', 'C_C', 'C_C'])
+    for i in range(len(longestPath)):
+        assert testGraph.nodes[longestPath[i]]
     
 def test_surrounding(sample_data2):
     xyz = next(readXYZ.readXYZ(sample_data2))

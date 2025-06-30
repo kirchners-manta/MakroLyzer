@@ -212,7 +212,7 @@ class GraphManager(nx.Graph):
             for neighbor in self.neighbors(current):
                 # if we see the first node again, we have a cycle and stop
                 if neighbor == path[0] and len(path) > 1:
-                    cycle = path + [neighbor]
+                    cycle = path 
                     if len(cycle) > len(max_path):
                         max_path = cycle
                     continue
@@ -240,16 +240,13 @@ class GraphManager(nx.Graph):
                 longest = path
                 
         # fallback for cycle graphs
-        # -> DFS from all nodes with degree != 1
+        # -> DFS one random node with degree = 2
         if not longest:
+            # get the first node with degree 2
             for node in self.nodes:
-                # If provided startAtom is not in the graph, skip it
-                if startAtom is not None and self.nodes[node]['element'] != startAtom:
-                    continue
-                # Perform DFS from the current node
-                path = dfs(node, [node], set())
-                if len(path) > len(longest):
-                    longest = path
+                if self.degree[node] == 2:
+                    longest = dfs(node, [node], set())
+                    break            
                 
         return longest
     
