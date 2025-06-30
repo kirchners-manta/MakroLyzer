@@ -13,6 +13,7 @@ def end_to_end_dist(graph):
         list of floats: The end-to-end distances of all subgraphs.
     """
     subgraphs = graph.get_subgraphs()
+    print(subgraphs.__len__(), "subgraphs found")
     subgraphsWithout1order = []
     for subgraph in subgraphs:
         sub = subgraph.remove_1order()
