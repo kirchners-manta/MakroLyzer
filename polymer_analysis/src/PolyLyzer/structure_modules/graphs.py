@@ -314,13 +314,24 @@ class GraphManager(nx.Graph):
             raise ValueError("Element types must differ for H-bond detection.")
 
         # Collect H atoms and "other" atoms
-        H_nodes, H_pos = [], []
+        H_nodes, H_pos, H_neighbor, H_vectors = [], [], [], []
         type2_nodes, type2_pos = [], []
         for node, data in self.nodes(data=True):
             pos = np.array([data['x'], data['y'], data['z']])
             if data['element'] == H_type:
-                H_nodes.append(node)
-                H_pos.append(pos)
+                # H is only considered when bound to a heavy atom
+                neighbor = list(self.neighbors(node))
+                if len(neighbor) == 1 and self.nodes[neighbor[0]]['element'] != "C":
+                    H_nodes.append(node)
+                    H_pos.append(pos)
+                    H_neighbor.append(neighbor[0])
+                    # vector of H node to covalently bound atom
+                    vector = np.asarray(self.vector(node, neighbor[0]), dtype=float)
+                    H_vectors.append(vector / np.linalg.norm(vector))
+                elif len(neighbor) == 0:
+                    raise ValueError(f"H atom is not covalently bound.")
+                elif len(neighbor) > 1:
+                    raise ValueError(f"H atom is covalently bound to multiple atoms.")
             elif data['element'] == elementType2:
                 type2_nodes.append(node)
                 type2_pos.append(pos)
@@ -339,18 +350,6 @@ class GraphManager(nx.Graph):
         # -> we dont have to check all pairs
         tree = cKDTree(type2_pos)
 
-        # Precompute normalized bonded-atom vectors for each H
-        H_vecs = []
-        for nodeH in H_nodes:
-            neigbors = list(self.neighbors(nodeH))
-            if not neigbors:
-                raise ValueError(f"H atom {nodeH} has no bonded neighbor.")
-            # take first bonded neighbor
-            # H has only one bonded neighbor, but just in case
-            v = np.asarray(self.vector(nodeH, neigbors[0]), dtype=float)
-            H_vecs.append(v / np.linalg.norm(v))
-        H_vecs = np.vstack(H_vecs)
-
         # Query for all H-bonds
         hbonds = []
         for i, nodeH in enumerate(H_nodes):
@@ -366,8 +365,10 @@ class GraphManager(nx.Graph):
                 if self.has_edge(nodeH, node2):
                     continue
                 # Convert the input to an array.
-                v2 = np.asarray(self.vector(nodeH, node2), dtype=float)
-                cosang = np.dot(H_vecs[i], v2) / np.linalg.norm(v2)
+                # vector from H to Type2 atom
+                HType2_vector = np.asarray(self.vector(nodeH, node2), dtype=float)
+                HType2_vector /= np.linalg.norm(HType2_vector)
+                cosang = np.dot(H_vectors[i], HType2_vector)
                 angle = np.degrees(np.arccos(np.clip(cosang, -1.0, 1.0)))
                 if angle < 30 or angle > 150:
                     hbonds.append((nodeH, node2))

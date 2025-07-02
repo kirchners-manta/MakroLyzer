@@ -85,6 +85,10 @@ def sample_data14():
 @pytest.fixture
 def sample_data15():
     return 'test_structures/15.xyz'
+
+@pytest.fixture
+def sample_data16():
+    return 'test_structures/16.xyz'
     
 def test_end_to_end(sample_data1):
     xyz = next(readXYZ.readXYZ(sample_data1))
@@ -474,7 +478,7 @@ def test_hbond4(sample_data10):
     assert hbonds[1][1] == 2.15
     assert hbonds[1][2] == 8
     
-def test_hbond4(sample_data11):
+def test_hbond5(sample_data11):
     xyz = next(readXYZ.readXYZ(sample_data11))
     testGraph = graphs.GraphManager(xyz)
     
@@ -490,7 +494,7 @@ def test_hbond4(sample_data11):
     assert hbonds[1][1] == 2.15
     assert hbonds[1][2] == 0
     
-def test_hbond4(sample_data12):
+def test_hbond6(sample_data12):
     xyz = next(readXYZ.readXYZ(sample_data12))
     testGraph = graphs.GraphManager(xyz)
     
@@ -503,6 +507,19 @@ def test_hbond4(sample_data12):
     assert hbonds[0][1] == 2.1
     assert hbonds[0][2] == 8
     
+    
+def test_hbonds7(sample_data16):
+    xyz = next(readXYZ.readXYZ(sample_data16))
+    testGraph = graphs.GraphManager(xyz)
+    
+    TypesDistances = [('O', 2.5)]
+    
+    hbonds = get_Hbonds(testGraph, TypesDistances)
+    
+    assert len(hbonds) == 1
+    assert hbonds[0][0] == 'O'
+    assert hbonds[0][1] == 2.5
+    assert hbonds[0][2] == 1
     
 # Anisotropy factor tests
 
