@@ -163,26 +163,3 @@ def element_distance_tuple(value):
             f"Invalid format: '{value}'. Expected format: ELEMENT:DISTANCE (e.g., O:3.5)"
         )
           
-
-def wrapXYZ(xyz: pd.DataFrame, x: float, y: float, z: float) -> pd.DataFrame:
-    
-    """
-    Apply periodic boundary conditions to the XYZ coordinates.
-    
-    Args:
-        xyz (pd.DataFrame): DataFrame containing the coordinates of atoms.
-        x (float): Box length in x-direction.
-        y (float): Box length in y-direction.
-        z (float): Box length in z-direction.
-        
-    Returns:
-        pd.DataFrame: DataFrame with wrapped coordinates.
-    """
-    
-    # Wrap coordinates
-    wrapped_xyz = xyz.copy()
-    wrapped_xyz['x'] = wrapped_xyz['x'] % x
-    wrapped_xyz['y'] = wrapped_xyz['y'] % y
-    wrapped_xyz['z'] = wrapped_xyz['z'] % z
-    
-    return wrapped_xyz
