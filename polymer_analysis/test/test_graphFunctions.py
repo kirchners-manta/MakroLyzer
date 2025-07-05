@@ -89,6 +89,18 @@ def sample_data15():
 @pytest.fixture
 def sample_data16():
     return 'test_structures/16.xyz'
+
+@pytest.fixture
+def sample_data18():
+    return 'test_structures/18.xyz'
+
+@pytest.fixture
+def sample_data19():
+    return 'test_structures/19.xyz'
+
+@pytest.fixture
+def sample_data20():
+    return 'test_structures/20.xyz'
     
 def test_end_to_end(sample_data1):
     xyz = next(readXYZ.readXYZ(sample_data1))
@@ -152,13 +164,46 @@ def test_longest_path(sample_data1):
 def test_longest_path_cycle(sample_data14):
     xyz = next(readXYZ.readXYZ(sample_data14))
     testGraph = graphs.GraphManager(xyz)
+    testGraph.surrounding()
     
     # get longest path 
     longestPath = testGraph.find_longest_path()
     assert len(longestPath) == 4
-    path = (['C_C', 'C_C', 'C_C', 'C_C'])
+    path = (['C_CC', 'C_CC', 'C_CC', 'C_CC'])
     for i in range(len(longestPath)):
-        assert testGraph.nodes[longestPath[i]]
+        assert testGraph.nodes[longestPath[i]]['surroundingAtoms'] == path[i]
+        
+def test_longest_path_cycle2(sample_data18):
+    xyz = next(readXYZ.readXYZ(sample_data18))
+    testGraph = graphs.GraphManager(xyz)
+    testGraph = testGraph.remove_1order()
+    testGraph.surrounding()
+    
+    
+    path = (['C_CC', 'C_CC', 'C_CCC', 'C_CC', 'C_CCC', 'C_CC', 'C_CC', 'C_CCC', 'C_CC', 'C_CC', 'C_CCC'])
+    # get longest path 
+    longestPath = testGraph.find_longest_path()
+    assert len(longestPath) == 11
+    for i in range(len(longestPath)):
+        assert testGraph.nodes[longestPath[i]]['surroundingAtoms'] == path[i]
+        
+def test_longest_path_cycle3(sample_data19):
+    xyz = next(readXYZ.readXYZ(sample_data19))
+    testGraph = graphs.GraphManager(xyz)
+    testGraph = testGraph.remove_1order()
+    testGraph.surrounding()
+    
+    longestPath = testGraph.find_longest_path()
+    assert len(longestPath) == 28
+    
+def test_longest_path_cycle4(sample_data20):
+    xyz = next(readXYZ.readXYZ(sample_data20))
+    testGraph = graphs.GraphManager(xyz)
+    testGraph = testGraph.remove_1order()
+    testGraph.surrounding()
+    
+    longestPath = testGraph.find_longest_path()
+    assert len(longestPath) == 42
     
 def test_surrounding(sample_data2):
     xyz = next(readXYZ.readXYZ(sample_data2))

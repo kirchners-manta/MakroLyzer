@@ -195,7 +195,7 @@ class GraphManager(nx.Graph):
         return subgraphs
     
     
-    def find_longest_path(self, startAtom=None, cycle=None):
+    def find_longest_path(self, startAtom=None):
         """
         Find the longest path in the graph using Depth First Search (DFS).
 
@@ -210,12 +210,8 @@ class GraphManager(nx.Graph):
             max_path = path
 
             for neighbor in self.neighbors(current):
-                # if we see the first node again, we have a cycle and stop
                 if neighbor == path[0] and len(path) > 1:
-                    cycle = path 
-                    if len(cycle) > len(max_path):
-                        max_path = cycle
-                    break
+                    continue
                     
                 if neighbor not in visited:
                     new_path = dfs(neighbor, path + [neighbor], visited)
@@ -239,50 +235,15 @@ class GraphManager(nx.Graph):
             if len(path) > len(longest):
                 longest = path
                 
-        # fallback for cycle graphs
-        # -> DFS one random node with degree = 2
-        #if not longest:
-        #    # get the first node with degree 2
-        #    for node in self.nodes:
-        #        if self.degree[node] == 2:
-        #            longest = dfs(node, [node], set())
-        #            break        
-        
-        #### CYCLES ####
-        # dfs for finding cycles
-        def dfs_cycle(current, path, visited):
-            visited.add(current)
-            
-            for neighbor in self.neighbors(current):
-                new_path = dfs_cycle(neighbor, path + [neighbor], visited)
-                path = new_path
-                # check if all nodes are visited
-                if len(visited.unique()) == len(self.nodes):
-                    return path
-                
-            visited.remove(current)
-            return path
-        
-
-        
-        # fallback for cycle graphs
-        if cycle is not None:
-            for node in self.nodes:
-                if self.degree[node] == 2:
-                    cycle = dfs_cycle(node, [node], set())
-                    break
-                
-        # Now we have a list with the nodes of the longest path ordered by dfs.
-        # We need to identify all cycles in the path.
-        def find_all_cycles(path):
-            cycles = []
-            visited = set()
-            for i in range(len(path)):
-                if path[i]
-                
-            
-                
-                
+        # Fallback for cycle graphs
+        longest_cycle = []
+        cycles = nx.cycle_basis(self)
+        if cycles:
+            longest_cycle = max(cycles, key=len)
+             
+        if len(longest_cycle) > len(longest):
+            longest = longest_cycle
+                   
         return longest
     
     
