@@ -210,11 +210,7 @@ class GraphManager(nx.Graph):
             max_path = path
 
             for neighbor in self.neighbors(current):
-                # if we see the first node again, we have a cycle and stop
                 if neighbor == path[0] and len(path) > 1:
-                    cycle = path 
-                    if len(cycle) > len(max_path):
-                        max_path = cycle
                     continue
                     
                 if neighbor not in visited:
@@ -239,15 +235,15 @@ class GraphManager(nx.Graph):
             if len(path) > len(longest):
                 longest = path
                 
-        # fallback for cycle graphs
-        # -> DFS one random node with degree = 2
-        if not longest:
-            # get the first node with degree 2
-            for node in self.nodes:
-                if self.degree[node] == 2:
-                    longest = dfs(node, [node], set())
-                    break            
-                
+        # Fallback for cycle graphs
+        longest_cycle = []
+        cycles = nx.cycle_basis(self)
+        if cycles:
+            longest_cycle = max(cycles, key=len)
+             
+        if len(longest_cycle) > len(longest):
+            longest = longest_cycle
+                   
         return longest
     
     
