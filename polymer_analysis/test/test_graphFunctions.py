@@ -422,6 +422,20 @@ def test_dihedrals5(sample_data6):
             assert count == 2
         else:
             assert count == 0
+            
+def test_dihedrals6(sample_data14):
+    xyz = next(readXYZ.readXYZ(sample_data14))
+    testGraph = graphs.GraphManager(xyz)
+    
+    # absolute dihedrals
+    dihedrals = get_all_dihedrals(testGraph)    
+    
+    dihedrals = get_all_dihedrals(testGraph, sign=True)
+    for angle, count in dihedrals:
+        if angle == 0:
+            assert count == 1
+        else:
+            assert count == 0
         
     
 # Radius of gyration tests
