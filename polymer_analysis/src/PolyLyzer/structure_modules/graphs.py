@@ -304,13 +304,13 @@ class GraphManager(nx.Graph):
         return dihedral
     
     
-    def get_hbonds(self, elementType2, max_dist):
+    def get_hbonds(self, Acceptor, HAcceptor_dist, DonorAcceptor_dist, Angle_cut):
         H_type = "H"
-        if elementType2 == H_type:
+        if Acceptor == H_type:
             raise ValueError("Element types must differ for H-bond detection.")
 
         # Collect H atoms and "other" atoms
-        H_nodes, H_pos, H_neighbor, H_vectors = [], [], [], []
+        H_nodes, H_pos, Donor_pos, H_vectors = [], [], [], []
         type2_nodes, type2_pos = [], []
         for node, data in self.nodes(data=True):
             pos = np.array([data['x'], data['y'], data['z']])
@@ -320,7 +320,7 @@ class GraphManager(nx.Graph):
                 if len(neighbor) == 1 and self.nodes[neighbor[0]]['element'] != "C":
                     H_nodes.append(node)
                     H_pos.append(pos)
-                    H_neighbor.append(neighbor[0])
+                    Donor_pos.append(self.get_coordinates(neighbor[0]))
                     # vector of H node to covalently bound atom
                     vector = np.asarray(self.vector(node, neighbor[0]), dtype=float)
                     H_vectors.append(vector / np.linalg.norm(vector))
@@ -328,7 +328,7 @@ class GraphManager(nx.Graph):
                     raise ValueError(f"H atom is not covalently bound.")
                 elif len(neighbor) > 1:
                     raise ValueError(f"H atom is covalently bound to multiple atoms.")
-            elif data['element'] == elementType2:
+            elif data['element'] == Acceptor:
                 type2_nodes.append(node)
                 type2_pos.append(pos)
 
@@ -342,19 +342,22 @@ class GraphManager(nx.Graph):
         type2_pos = np.vstack(type2_pos)  # shape (n_other, 3)
 
         # Build KD-tree on acceptor positions, because then we can query
-        # for all candidates within max_dist in O(log n) time.
+        # for all candidates within HAcceptor_dist in O(log n) time.
         # -> we dont have to check all pairs
         tree = cKDTree(type2_pos)
 
         # Query for all H-bonds
         hbonds = []
         for i, nodeH in enumerate(H_nodes):
-            # candidate indices within max_dist
+            # candidate indices within HAcceptor_dist
             # query_ball_point(x, r)
             # x : The point or points to search for neighbors of.
             # r : The radius within which to search for neighbors.
             # -> returns indices of all neighbors within radius r of x
-            idxs = tree.query_ball_point(H_pos[i], r=max_dist)
+            idxs_HA = tree.query_ball_point(H_pos[i], r=HAcceptor_dist) 
+            idxs_DA = tree.query_ball_point(Donor_pos[i], r=DonorAcceptor_dist)
+            # Only intersect the two sets of indices
+            idxs = set(idxs_HA).intersection(idxs_DA)       
             for j in idxs:
                 node2 = type2_nodes[j]
                 # skip if already covalently bonded
@@ -366,7 +369,7 @@ class GraphManager(nx.Graph):
                 HType2_vector /= np.linalg.norm(HType2_vector)
                 cosang = np.dot(H_vectors[i], HType2_vector)
                 angle = np.degrees(np.arccos(np.clip(cosang, -1.0, 1.0)))
-                if angle < 30 or angle > 150:
+                if angle < Angle_cut or angle > (180-Angle_cut):
                     hbonds.append((nodeH, node2))
 
         return hbonds

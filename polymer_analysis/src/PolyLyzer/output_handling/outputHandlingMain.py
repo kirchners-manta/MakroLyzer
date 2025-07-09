@@ -85,10 +85,10 @@ def main(results):
     if 'hbonds' in results and results['hbonds']:
         hbonds_file = results['hbonds_file']
         with open(hbonds_file, 'w') as file:
-            file.write("Frame, Element Type, Distance / Å, Number of Hydrogen Bonds\n")
+            file.write("Frame, Element Type, H-Acceptor dist / Å, Donor-Acceptor dist / Å, Angle cutoff / °, Number of Hydrogen Bonds\n")
             for frame, hbonds in enumerate(results['hbonds']):
-                for element_type, distance, count in hbonds:
-                    file.write(f"{frame},{element_type},{distance:.3f},{count}\n")
+                for element_type, HAcceptor_dist, DonorAcceptor_dist, Angle_cut, count in hbonds:
+                    file.write(f"{frame},{element_type},{HAcceptor_dist:.3f},{DonorAcceptor_dist:.3f},{Angle_cut:.3f},{count}\n")
 
     # Subgraph Coordinates #
     # If subgraph coordinates are requested, write them to a file.

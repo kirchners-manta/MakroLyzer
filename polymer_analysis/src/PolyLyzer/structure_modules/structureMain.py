@@ -96,8 +96,8 @@ def main(args):
           
         # Hydrogen bonds  
         if args['hydrogenBonds']:
-            TypesDistances = args['hydrogenBonds']
-            results['hbonds'].append(get_Hbonds(boxGraph, TypesDistances))
+            cutoffs = args['hydrogenBonds']
+            results['hbonds'].append(get_Hbonds(boxGraph, cutoffs))
             
         # Subgraph coordinates
         if args['subgraph_coords']:

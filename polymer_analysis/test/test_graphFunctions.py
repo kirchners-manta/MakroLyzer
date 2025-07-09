@@ -468,117 +468,171 @@ def test_hbond(sample_data8):
     xyz = next(readXYZ.readXYZ(sample_data8))
     testGraph = graphs.GraphManager(xyz)
     
-    TypesDistances = [('O', 2.15)]
+    TypesDistances = [('O', 2.15, 3.8, 30)]
     
     hbonds = get_Hbonds(testGraph, TypesDistances)
     
     assert len(hbonds) == 1
     assert hbonds[0][0] == 'O'
     assert hbonds[0][1] == 2.15
-    assert hbonds[0][2] == 1
+    assert hbonds[0][4] == 1
     
-    TypesDistances = [('O', 1.78)]
+    TypesDistances = [('O', 1.78, 3.5, 30)]
     
     hbonds = get_Hbonds(testGraph, TypesDistances)
     
     assert len(hbonds) == 1
     assert hbonds[0][0] == 'O'
     assert hbonds[0][1] == 1.78
-    assert hbonds[0][2] == 0
+    assert hbonds[0][4] == 0
     
-    TypesDistances = [('O', 2.5)]
+    TypesDistances = [('O', 2.5, 3.8, 30)]
     
     hbonds = get_Hbonds(testGraph, TypesDistances)
     
     assert len(hbonds) == 1
     assert hbonds[0][0] == 'O'
     assert hbonds[0][1] == 2.5
-    assert hbonds[0][2] == 1
+    assert hbonds[0][4] == 1
     
 def test_hbond2(sample_data9):
     xyz = next(readXYZ.readXYZ(sample_data9))
     testGraph = graphs.GraphManager(xyz)
     
-    TypesDistances = [('O', 2.15)]
+    TypesDistances = [('O', 2.15, 3.8, 30)]
     
     hbonds = get_Hbonds(testGraph, TypesDistances)
     
     assert len(hbonds) == 1
     assert hbonds[0][0] == 'O'
     assert hbonds[0][1] == 2.15
-    assert hbonds[0][2] == 6
+    assert hbonds[0][4] == 6
     
 def test_hbond3(sample_data10):
     xyz = next(readXYZ.readXYZ(sample_data10))
     testGraph = graphs.GraphManager(xyz)
     
-    TypesDistances = [('O', 2.15)]
+    TypesDistances = [('O', 2.15, 3.8, 30)]
     
     hbonds = get_Hbonds(testGraph, TypesDistances)
     
     assert len(hbonds) == 1
     assert hbonds[0][0] == 'O'
     assert hbonds[0][1] == 2.15
-    assert hbonds[0][2] == 8
+    assert hbonds[0][4] == 8
     
 def test_hbond4(sample_data10):
     xyz = next(readXYZ.readXYZ(sample_data10))
     testGraph = graphs.GraphManager(xyz)
     
-    TypesDistances = [('N',2.5), ('O',2.15)]
+    TypesDistances = [('N',2.5, 3.8, 30), ('O',2.15, 3.9, 30)]
     
     hbonds = get_Hbonds(testGraph, TypesDistances)
     
     assert len(hbonds) == 2
     assert hbonds[0][0] == 'N'
     assert hbonds[0][1] == 2.5
-    assert hbonds[0][2] == 0
+    assert hbonds[0][4] == 0
     assert hbonds[1][0] == 'O'
     assert hbonds[1][1] == 2.15
-    assert hbonds[1][2] == 8
+    assert hbonds[1][4] == 8
     
 def test_hbond5(sample_data11):
     xyz = next(readXYZ.readXYZ(sample_data11))
     testGraph = graphs.GraphManager(xyz)
     
-    TypesDistances = [('N',2.1), ('O',2.15)]
+    TypesDistances = [('N',2.1, 3.8, 30), ('O',2.15, 3.8, 30)]
     
     hbonds = get_Hbonds(testGraph, TypesDistances)
     
     assert len(hbonds) == 2
     assert hbonds[0][0] == 'N'
     assert hbonds[0][1] == 2.1
-    assert hbonds[0][2] == 2
+    assert hbonds[0][4] == 2
     assert hbonds[1][0] == 'O'
     assert hbonds[1][1] == 2.15
-    assert hbonds[1][2] == 0
+    assert hbonds[1][4] == 0
     
 def test_hbond6(sample_data12):
     xyz = next(readXYZ.readXYZ(sample_data12))
     testGraph = graphs.GraphManager(xyz)
     
-    TypesDistances = [('N',2.1), ('O',2.15)]
+    TypesDistances = [('N',2.1, 3.8, 30), ('O',2.15, 3.8, 30)]
     
     hbonds = get_Hbonds(testGraph, TypesDistances)
     
     assert len(hbonds) == 2
     assert hbonds[0][0] == 'N'
     assert hbonds[0][1] == 2.1
-    assert hbonds[0][2] == 8
+    assert hbonds[0][4] == 8
     
     
 def test_hbonds7(sample_data16):
     xyz = next(readXYZ.readXYZ(sample_data16))
     testGraph = graphs.GraphManager(xyz)
     
-    TypesDistances = [('O', 2.5)]
+    TypesDistances = [('O', 2.5, 3.8, 30)]
     
     hbonds = get_Hbonds(testGraph, TypesDistances)
     
     assert len(hbonds) == 1
     assert hbonds[0][0] == 'O'
     assert hbonds[0][1] == 2.5
-    assert hbonds[0][2] == 1
+    assert hbonds[0][4] == 1
+    
+def test_hbond8(sample_data10):
+    xyz = next(readXYZ.readXYZ(sample_data10))
+    testGraph = graphs.GraphManager(xyz)
+    
+    TypesDistances = [('O', 2.15, 3.0, 30)]
+    
+    hbonds = get_Hbonds(testGraph, TypesDistances)
+    
+    assert len(hbonds) == 1
+    assert hbonds[0][0] == 'O'
+    assert hbonds[0][1] == 2.15
+    assert hbonds[0][4] == 7
+    
+def test_hbond8(sample_data10):
+    xyz = next(readXYZ.readXYZ(sample_data10))
+    testGraph = graphs.GraphManager(xyz)
+    
+    TypesDistances = [('O', 2.15, 3.0, 31)]
+    
+    hbonds = get_Hbonds(testGraph, TypesDistances)
+    
+    assert len(hbonds) == 1
+    assert hbonds[0][0] == 'O'
+    assert hbonds[0][1] == 2.15
+    assert hbonds[0][4] == 8
+    
+def test_hbond9(sample_data10):
+    xyz = next(readXYZ.readXYZ(sample_data10))
+    testGraph = graphs.GraphManager(xyz)
+    
+    TypesDistances = [('O', 2.15, 3.0, 40)]
+    
+    hbonds = get_Hbonds(testGraph, TypesDistances)
+    
+    assert len(hbonds) == 1
+    assert hbonds[0][0] == 'O'
+    assert hbonds[0][1] == 2.15
+    assert hbonds[0][4] == 9
+    
+def test_hbond10(sample_data10):
+    xyz = next(readXYZ.readXYZ(sample_data10))
+    testGraph = graphs.GraphManager(xyz)
+    
+    TypesDistances = [('O', 2.0, 2.944, 30)]
+    
+    hbonds = get_Hbonds(testGraph, TypesDistances)
+    
+    assert len(hbonds) == 1
+    assert hbonds[0][0] == 'O'
+    assert hbonds[0][1] == 2.0
+    assert hbonds[0][2] == 2.944
+    assert hbonds[0][3] == 30
+    assert hbonds[0][4] == 5
     
 # Anisotropy factor tests
 

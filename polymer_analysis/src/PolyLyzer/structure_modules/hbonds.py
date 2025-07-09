@@ -3,7 +3,7 @@ import csv
 
 from PolyLyzer.structure_modules import graphs
 
-def get_Hbonds(graph, TypesDistances):
+def get_Hbonds(graph, cutoffs):
     """
     Calculate the hydrogen bonds in the graph.
     The hydrogen bonds are calculated for each subgraph of the graph.
@@ -19,11 +19,10 @@ def get_Hbonds(graph, TypesDistances):
     
     numberOfHbonds = []
     
-    for elementType, distance in TypesDistances:        
+    for elementType, HAcceptor_dist, DonorAcceptor_dist, Angle_cut in cutoffs:        
         # Get the hydrogen bonds for the element type
-        hbonds = graph.get_hbonds(elementType, distance)
+        hbonds = graph.get_hbonds(elementType, HAcceptor_dist, DonorAcceptor_dist, Angle_cut)
         numberOfHbonds.append(len(hbonds))
         
-    hbonds = [(elementType, distance, num) for (elementType, distance), num in zip(TypesDistances, numberOfHbonds)]
-        
+    hbonds = [(elementType, HAcceptor_dist, DonorAcceptor_dist, Angle_cut, num) for (elementType, HAcceptor_dist, DonorAcceptor_dist, Angle_cut), num in zip(cutoffs, numberOfHbonds)]
     return hbonds

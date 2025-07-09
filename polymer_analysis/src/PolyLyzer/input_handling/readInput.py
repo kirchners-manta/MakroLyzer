@@ -97,7 +97,7 @@ def readCommandLine() -> dict:
     parser.add_argument(
                         '-hb', '--hydrogenBonds',
                         nargs='+',
-                        help="List of (element:distance) tuples for hydrogen bonds (e.g., -hb O:3.5 N:2.8)",
+                        help="List of (Acceptor:H-Acceptor-Distance:Donor-Acceptor-Distance:(D-H-A)Angle-Cutoff) tuples for hydrogen bonds (e.g., -hb O:2.4:3.4:30 N:2.8:3.9:25)",
                         type=element_distance_tuple
     )
     
@@ -155,11 +155,19 @@ def readCommandLine() -> dict:
     return args
 
 def element_distance_tuple(value):
+    parts = value.split(':')
+    if len(parts) != 4:
+        raise argparse.ArgumentTypeError(
+            f"Invalid format: '{value}'. Expected format: <element>:H-Acceptor-Distance:Donor-Acceptor-Distance:Angle-Cutoff"
+        )
+    element, HAcceptor_dist, DonorAcceptor_dist, Angle_cut = parts
     try:
-        element, distance = value.split(':')
-        return (element, float(distance))
+        HAcceptor_dist = float(HAcceptor_dist)
+        DonorAcceptor_dist = float(DonorAcceptor_dist)
+        Angle_cut = float(Angle_cut)
     except ValueError:
         raise argparse.ArgumentTypeError(
-            f"Invalid format: '{value}'. Expected format: ELEMENT:DISTANCE (e.g., O:3.5)"
+            f"Invalid numeric values in '{value}'. Expected format: <element>:H-Acceptor-Distance:Donor-Acceptor-Distance:Angle-Cutoff"
         )
+    return (element, HAcceptor_dist, DonorAcceptor_dist, Angle_cut)
           
