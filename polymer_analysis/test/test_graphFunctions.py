@@ -101,6 +101,10 @@ def sample_data19():
 @pytest.fixture
 def sample_data20():
     return 'test_structures/20.xyz'
+
+@pytest.fixture
+def sample_data21():
+    return 'test_structures/21.xyz'
     
 def test_end_to_end(sample_data1):
     xyz = next(readXYZ.readXYZ(sample_data1))
@@ -668,3 +672,15 @@ def test_asphericity_parameter(sample_data15):
     
     asphericityParameter = get_asphericity_parameter(testGraph)
     assert asphericityParameter == pytest.approx(0.0, abs=1e-3)
+    
+# PBC
+def test_pbc(sample_data21):
+    xyz = next(readXYZ.readXYZ(sample_data21))
+    testGraph = graphs.GraphManager(xyz, boxSize=12)
+    
+    refformula = [('C8H18', 1)]
+    formula = testGraph.get_chemicalFormulas()
+    
+    for i in range(len(refformula)):
+        assert formula[i][0] == refformula[i][0]
+        assert formula[i][1] == refformula[i][1]

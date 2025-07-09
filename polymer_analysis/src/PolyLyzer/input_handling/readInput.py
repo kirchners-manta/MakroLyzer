@@ -19,8 +19,13 @@ def readCommandLine() -> dict:
                         help='Path to the XYZ/trajectory file', 
                         required=True) 
     
+    parser.add_argument('-bs', '--BoxSize', 
+                        help='Box size for periodic boundary conditions. (default: None)',
+                        type=float
+    )
+    
     parser.add_argument('-p', '--patternFile', 
-                        help='Path to the TXT file -> Finds repeating units (default: false)'
+                        help='Path to the TXT file -> Finds repeating units (default: false)',
     )
     
     parser.add_argument('--repeatingUnits-file',
@@ -170,4 +175,6 @@ def element_distance_tuple(value):
             f"Invalid numeric values in '{value}'. Expected format: <element>:H-Acceptor-Distance:Donor-Acceptor-Distance:Angle-Cutoff"
         )
     return (element, HAcceptor_dist, DonorAcceptor_dist, Angle_cut)
+
+
           

@@ -9,11 +9,19 @@ import csv
 from PolyLyzer import dictionaries
 
 class GraphManager(nx.Graph):
-    def __init__(self, data=None):
+    def __init__(self, data=None, boxSize=None, **kwargs):
+        """
+        Args:
+            data : elements together with their coordinates.
+            boxSize : optional, size of the box for periodic boundary conditions.
+            **kwargs : additional keyword arguments for graph initialization.
+        """
+        
         super().__init__()
+        
         if data is None:
-            # Handle the case where no data is provided
             pass
+        
         elif isinstance(data, GraphManager):
             # Copy constructor from another GraphManager instance
             self.add_nodes_from(data.nodes(data=True))
@@ -24,10 +32,13 @@ class GraphManager(nx.Graph):
             self.add_edges_from(data.edges(data=True))
         else:
             # Handle other types of data, such as initialization from raw data
-            self.create_graph(data)
+            kwargs = {}
+            if boxSize is not None:
+                kwargs['boxSize'] = boxSize
+            self.create_graph(data, **kwargs)
 
     
-    def create_graph(self, atomData):
+    def create_graph(self, atomData, boxSize=None):
         covalentRadii = dictionaries.dictCovalent()
         elements = atomData['atom'].values
         coords = atomData[['x','y','z']].values
@@ -51,7 +62,14 @@ class GraphManager(nx.Graph):
                 maxd2[i, j] = d * d
 
         # Build KD-tree 
-        tree = cKDTree(coords)
+        if boxSize is not None:
+            # wrap coordinates into (0, Lx], (0, Ly], (0, Lz] for periodic boundary conditions
+            # since cKDTree wants coordinates in the range [0, boxSize)
+            coords = np.mod(coords, boxSize)  
+            # Create a cKDTree with periodic boundary conditions
+            tree = cKDTree(coords, boxsize=boxSize)
+        else:
+            tree = cKDTree(coords)
 
         # Add all nodes 
         nodes = [
@@ -71,7 +89,11 @@ class GraphManager(nx.Graph):
         edge_list = []
         for i, j in pairs:
             ei, ej = inverse[i], inverse[j]
-            dx, dy, dz = coords[i] - coords[j]
+            # Get minimum image distance
+            if boxSize is not None:
+                dx, dy, dz = min_image_distance(coords[i], coords[j], boxSize)
+            else:
+                dx, dy, dz = coords[i] - coords[j]
             if dx*dx + dy*dy + dz*dz <= maxd2[ei, ej]:
                 edge_list.append((i, j))
         # Add edges
@@ -708,3 +730,21 @@ class GraphManager(nx.Graph):
                     data['fragmentID']
                 ])
 
+
+
+def min_image_distance(pos1, pos2, boxSize) -> tuple:
+    """
+    Calculate the minimum image distance between two positions in a periodic box.
+    
+    Args:
+        pos1 (np.ndarray): The first position.
+        pos2 (np.ndarray): The second position.
+        boxSize (float or np.ndarray): The size of the box.
+        
+    Returns:
+        float: The minimum image distance.
+    """
+    
+    delta = pos1 - pos2
+    delta -= np.round(delta / boxSize) * boxSize
+    return delta[0], delta[1], delta[2]

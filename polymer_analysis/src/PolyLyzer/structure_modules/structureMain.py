@@ -45,11 +45,12 @@ def main(args):
     }
     
     n_frames = estimateFrames.estimateFrames(trajectoryFilePath)
+    boxSize = args.get('BoxSize', None)
     
     for i, xyz_frame in enumerate(tqdm(readXYZ.readXYZ(trajectoryFilePath),total=n_frames, desc="Creating something magical", unit="frame", ncols=100)):
 
         # Get Graph object of the polymer box
-        boxGraph = graphs.GraphManager(xyz_frame)
+        boxGraph = graphs.GraphManager(xyz_frame, boxSize=boxSize)
         
         # Repeating units for the Polymer
         if args['patternFile']:
