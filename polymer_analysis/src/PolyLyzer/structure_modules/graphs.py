@@ -68,6 +68,8 @@ class GraphManager(nx.Graph):
             coords = np.mod(coords, boxSize)  
             # Create a cKDTree with periodic boundary conditions
             tree = cKDTree(coords, boxsize=boxSize)
+            # shift coordinates to be within the periodic box
+            coords = shift_coordinates(coords, boxSize)
         else:
             tree = cKDTree(coords)
 
@@ -748,3 +750,44 @@ def min_image_distance(pos1, pos2, boxSize) -> tuple:
     delta = pos1 - pos2
     delta -= np.round(delta / boxSize) * boxSize
     return delta[0], delta[1], delta[2]
+
+
+
+def shift_coordinates(coords: np.ndarray, box_size):
+    """
+    Shift coordinates to be within the periodic box.
+
+    Args:
+        coords (np.ndarray): The coordinates to shift, shape (N, 3).
+        box_size (float | np.ndarray): Box length (scalar) or per-axis lengths.
+
+    Returns:
+        np.ndarray: A copy of the coordinates with (hopefully) no particles split across the periodic boundary.
+    """
+    # Ensure that the particle is not split across the periodic boundary
+    # For each direction (x,y,z), get the minimum and maximum coordinates
+    coords   = np.asarray(coords, dtype=float)
+    box_size = np.asarray(box_size, dtype=float)
+
+    # So far only one boxSize can be given, so we repeat it for all three axes
+    if box_size.ndim == 0:
+        box_size = np.repeat(box_size, 3)
+
+    shifted = coords.copy()                
+    lower   = 0.05 * box_size              # 5 % threshold
+    upper   = 0.95 * box_size              # 95 % threshold
+    step    = 0.10 * box_size              # 10 % shift step
+
+    # Iterate over the three Cartesian axes
+    for ax in range(3):
+        # Do that until the minimum is >5 % and the maximum is <95 % of the box size,
+        # or we try 9 times (shift of 90%)
+        for i in range(9):
+            min_i, max_i = shifted[:, ax].min(), shifted[:, ax].max()
+            if not (min_i < lower[ax] and max_i > upper[ax]):
+                break
+            # Shift the coordinates up by 10 % of the box size in this direction
+            # and put them back into the box using modulo
+            shifted[:, ax] = np.mod(shifted[:, ax] + step[ax], box_size[ax])
+
+    return shifted
