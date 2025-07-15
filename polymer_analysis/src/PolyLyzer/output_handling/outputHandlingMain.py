@@ -124,5 +124,14 @@ def main(results):
             file.write("Frame, Asphericity Parameter\n")
             for frame, asphericity in enumerate(results['asphericity_parameter']):
                 file.write(f"{frame},{asphericity:.3f}\n")
+                
+    # Order Parameter #
+    # If order parameter is requested, write it to a file.
+    if results.get('orderParameter'):
+        order_file = results['orderParameter_file']
+        with open(order_file, 'w') as file:
+            file.write("Frame, Order Parameter S\n")
+            for frame, order_param in enumerate(results['orderParameter']):
+                file.write(f"{frame},{order_param:.3f}\n")
 
         

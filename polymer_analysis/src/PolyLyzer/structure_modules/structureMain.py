@@ -9,6 +9,7 @@ from PolyLyzer.structure_modules.anisotropy import get_anisotropy_factor
 from PolyLyzer.structure_modules.asphericityParameter import get_asphericity_parameter
 from PolyLyzer.structure_modules.hbonds import get_Hbonds
 from PolyLyzer.structure_modules.subgraphCoords import get_subgraph_coords
+from PolyLyzer.structure_modules.orderParameter import get_order_parameter
 
 from tqdm import tqdm
 
@@ -31,6 +32,7 @@ def main(args):
         'subgraph_coords': [],
         'anisotropy_factor': [],
         'asphericity_parameter': [],
+        'orderParameter': [],
         
         # Output file names
         'formulas_file': args['formula_file'],
@@ -41,7 +43,8 @@ def main(args):
         'hbonds_file': args['hbonds_file'],
         'subgraph_coords_file': args['subgraph_coord_file'],
         'anisotropy_file': args['anisotropy_file'],
-        'asphericity_file': args['asphericity_file']
+        'asphericity_file': args['asphericity_file'],
+        'orderParameter_file': args['order_file']
     }
     
     n_frames = estimateFrames.estimateFrames(trajectoryFilePath)
@@ -113,5 +116,10 @@ def main(args):
         if args['asphericityParameter']:
             results['asphericity_parameter'].append(get_asphericity_parameter(boxGraph))
             
+        # Order parameter
+        if args['orderParameter']:
+            boxSize, n, unitSize = args['orderParameter']
+            results['orderParameter'].append(get_order_parameter(
+                boxGraph, boxSize, n, unitSize))
 
     return results

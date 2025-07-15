@@ -1,6 +1,6 @@
 import argparse
 import sys
-import pandas as pd
+import argparse
 
 def readCommandLine() -> dict:
     
@@ -147,6 +147,18 @@ def readCommandLine() -> dict:
                         help='Output file name for asphericity parameter (default: asphericityParameter.csv)',
                         default='asphericityParameter.csv'
     )
+    
+    parser.add_argument(
+                        '-op', '--orderParameter',
+                        help='Calculate order parameter S (default: false). Parameters: BoxSize(x, y, z):n(nx, ny, nz):unitSize',
+                        type=OrderParam
+    )
+    
+    parser.add_argument(
+                        '--order-file',
+                        help='Output file name for order parameter (default: orderParameter.csv)',
+                        default='orderParameter.csv'
+    )
 
     
     args = vars(parser.parse_args())
@@ -177,4 +189,13 @@ def element_distance_tuple(value):
     return (element, HAcceptor_dist, DonorAcceptor_dist, Angle_cut)
 
 
-          
+def OrderParam(value):
+    parts = value.split(':')
+    if len(parts) != 3:
+        raise argparse.ArgumentTypeError(
+            f"Invalid format: '{value}'. Expected format: BoxSize(x, y, z):n(nx, ny, nz):unitSize"
+        )
+    boxSize = tuple(map(float, parts[0].split(',')))
+    n = tuple(map(int, parts[1].split(',')))
+    unitSize = int(parts[2])
+    return (boxSize, n, unitSize)
