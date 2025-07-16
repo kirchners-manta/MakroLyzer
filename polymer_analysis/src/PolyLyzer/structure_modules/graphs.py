@@ -422,23 +422,20 @@ class GraphManager(nx.Graph):
             unitSize = len(path)-1
             
         vecToPos = defaultdict(list)
-        
-        # Get all coordinates of the nodes in the path
         coords = np.array([self.get_coordinates(node) for node in path])
         
         # Iterate over the path and calculate vectors
         for i in range(0, len(path) - unitSize, unitSize):
-            # Get coords of the start and end nodes
-            start_coords = coords[i]
-            end_coords = coords[i + unitSize]
-            # Calculate the vector between the start and end nodes
+            # Get coords of the start and end nodes and calculate the vector
+            start_coords, end_coords = coords[i], coords[i + unitSize]
             vector = end_coords - start_coords
-            vector /= np.linalg.norm(vector)  
-            # Calculate position of the vector
-            position = start_coords + vector / 2.0
-            vecKey = tuple(np.round(vector, decimals=6))  
+            norm = np.linalg.norm(vector)
+            if norm == 0:
+                continue
+            unitVector = vector / norm
+            midpoint = tuple(start_coords + vector / 2.0)
             
-            vecToPos[vecKey].append(position)
+            vecToPos[midpoint].append(unitVector)
             
         return dict(vecToPos)
     

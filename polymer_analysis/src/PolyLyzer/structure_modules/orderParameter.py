@@ -1,5 +1,6 @@
 import numpy as np 
 from collections import defaultdict
+from scipy.spatial import cKDTree
 
 from PolyLyzer.math import Box
 from PolyLyzer.structure_modules import graphs
@@ -32,35 +33,47 @@ def get_unit_vectors(graph, unitSize):
         # Get dictionary for the longest path of the subgraph
         pathDict = subgraph.get_vectors_and_positions_along_path(longestPath, unitSize)
         
-        # append pathDict to vecAndPos. Vectors can have multiple positions.
-        for key, value in pathDict.items():
-            vecAndPos[key].extend(value)
+        # append pathDict to vecAndPos
+        # pathDict is a dictionary with: keys = midpoints and values = vectors
+        for midpoint, vector in pathDict.items():
+            vecAndPos[midpoint].extend(vector)
         
     return dict(vecAndPos)
 
-def get_unit_vectors_in_cell(cell, vecAndPos):
+def get_unit_vectors_in_cell(cell, vecAndPos, midpoints, tree):
     """
     Get all vectors that are in a specific cell.
     
     Args:
         cell (tuple): The cell to check for vectors with format [(x_start, x_end), (y_start, y_end), (z_start, z_end)].
-        vecAndPos (dict): The dictionary with vectors and their positions.
+        vecAndPos (dict): keys = midpoints, values = vectors.
+                         The midpoints are the positions of the vectors.
     Returns:
         list: list with all vectors that are in the cell.
               If a vector has multiple positions, its returned multiple times.
-    """
-    
+    """  
     # Unpack the cell boundaries
     (x0, x1), (y0, y1), (z0, z1) = cell
     
     vectorsInCell = []
     
-    for key, value in vecAndPos.items():
-        nInCell = sum( x0 <= pos[0] < x1 and y0 <= pos[1] < y1 and z0 <= pos[2] < z1
-                      for pos in value)
-        if nInCell:
-            vectorsInCell.extend([np.asanyarray(key, dtype=float)] * nInCell)
-            
+    # Query the tree for all midpoints within the cell
+    # the midpoint of the cells is taken as the center for the query
+    cellCenter = ((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2)
+    # and the radius is half the size of the cell in the largest dimension
+    halfCellDiagonal = np.linalg.norm([(x1 - x0) / 2, (y1 - y0) / 2, (z1 - z0) / 2])
+    # This ensures that we get all midpoints that are within the cell
+    # we obtain the indices of the midpoints that are potentially in the cell
+    indices = tree.query_ball_point([cellCenter], r=halfCellDiagonal)
+    
+    # we need to filter the midpoints that are actually in the cell
+    for idx in indices[0]:
+        midpoint = midpoints[idx]
+        # check if the midpoint is within the cell boundaries
+        if x0 <= midpoint[0] < x1 and y0 <= midpoint[1] < y1 and z0 <= midpoint[2] < z1:
+            # if yes, we add the corresponding vectors to the list
+            vectorsInCell.extend(vecAndPos[tuple(midpoint)])
+          
     return vectorsInCell
 
 def get_unit_orientation(vectors):
@@ -136,10 +149,14 @@ def get_order_parameter(graph, boxSize, n, unitSize):
     # Get unit vectors for the graph
     vecAndPos = get_unit_vectors(graph, unitSize)
     
+    # build a cKDTree from the midpoints for fast spatial queries 
+    midpoints = np.asarray(list(vecAndPos.keys()), dtype=float)
+    tree = cKDTree(midpoints)
+    
     order_params = []
     for cell in cells:
         # Get the vectors in the cell
-        vectors = get_unit_vectors_in_cell(cell, vecAndPos)
+        vectors = get_unit_vectors_in_cell(cell, vecAndPos, midpoints, tree)
         # if there are more than 3 vectors in the cell, calculate the order parameter
         if len(vectors) < 3:
             continue    

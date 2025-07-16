@@ -105,6 +105,14 @@ def sample_data20():
 @pytest.fixture
 def sample_data21():
     return 'test_structures/21.xyz'
+
+@pytest.fixture
+def sample_data22():
+    return 'test_structures/22.xyz'
+
+@pytest.fixture
+def sample_data23():
+    return 'test_structures/23.xyz'
     
 def test_end_to_end(sample_data1):
     xyz = next(readXYZ.readXYZ(sample_data1))
@@ -684,3 +692,40 @@ def test_pbc(sample_data21):
     for i in range(len(refformula)):
         assert formula[i][0] == refformula[i][0]
         assert formula[i][1] == refformula[i][1]
+        
+# get_vectors_and_positions_along_path
+def test_get_vectors_and_positions_along_path(sample_data23):
+    xyz = next(readXYZ.readXYZ(sample_data23))
+    testGraph = graphs.GraphManager(xyz)
+    
+    # remove 1-order nodes
+    testGraph = testGraph.remove_1order()
+    testGraph.update_degree()
+    
+    # get subgraphs
+    subgraphs = testGraph.get_subgraphs()
+    
+    for subgraph in subgraphs:
+        longestPath = subgraph.find_longest_path()
+        if len(longestPath) < 2:
+            continue
+        
+        # get vectors and positions along path
+        pathDict = subgraph.get_vectors_and_positions_along_path(longestPath, unitSize=1)
+        print(pathDict)
+        
+        assert len(pathDict) == 2
+        
+        position = list(pathDict.keys())
+        vector = list(pathDict.values())
+        
+        assert len(vector) == 2
+        assert vector[0][0][0] == pytest.approx(0.911446, abs=1e-5)
+        assert vector[0][0][1] == pytest.approx(0.410612, abs=1e-5)
+        assert vector[0][0][2] == pytest.approx(-0.025753, abs=1e-5)
+        
+        assert len(position) == 2
+        assert position[0][0] == pytest.approx(-3.023285, abs=1e-5)
+        assert position[0][1] == pytest.approx(-0.12005, abs=1e-5)
+        assert position[0][2] == pytest.approx(-0.021475, abs=1e-5)
+        
