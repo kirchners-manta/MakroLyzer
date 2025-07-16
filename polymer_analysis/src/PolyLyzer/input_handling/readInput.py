@@ -150,7 +150,7 @@ def readCommandLine() -> dict:
     
     parser.add_argument(
                         '-op', '--orderParameter',
-                        help='Calculate order parameter S (default: false). Parameters: BoxSize(x, y, z):n(nx, ny, nz):unitSize',
+                        help='Calculate order parameter S (default: false). Parameters have to be given like this BoxSize:n:unitSize where n specifies the number of bins in each direction and unitSize is the number of atoms to be used for a vector.',
                         type=OrderParam
     )
     
@@ -196,6 +196,10 @@ def OrderParam(value):
             f"Invalid format: '{value}'. Expected format: BoxSize(x, y, z):n(nx, ny, nz):unitSize"
         )
     boxSize = tuple(map(float, parts[0].split(',')))
+    if len(boxSize) != 3:
+        boxSize = (boxSize[0], boxSize[0], boxSize[0]) 
     n = tuple(map(int, parts[1].split(',')))
+    if len(n) != 3:
+        n = (n[0], n[0], n[0])
     unitSize = int(parts[2])
     return (boxSize, n, unitSize)

@@ -48,7 +48,15 @@ def main(args):
     }
     
     n_frames = estimateFrames.estimateFrames(trajectoryFilePath)
+    
+    # Get the box size
     boxSize = args.get('BoxSize', None)
+    if not boxSize:
+        # check if the order parameter is provided
+        if args['orderParameter']:
+            BoxSize, n, unitSize = args['orderParameter']
+            boxSize = BoxSize[0]
+            
     
     for i, xyz_frame in enumerate(tqdm(readXYZ.readXYZ(trajectoryFilePath),total=n_frames, desc="Creating something magical", unit="frame", ncols=100)):
 
