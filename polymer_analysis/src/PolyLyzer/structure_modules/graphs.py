@@ -262,7 +262,7 @@ class GraphManager(nx.Graph):
                 
         # Fallback for cycle graphs
         longest_cycle = []
-        cycles = nx.cycle_basis(self)
+        cycles = nx.cycle_basis(self, startAtom)
         if cycles:
             longest_cycle = max(cycles, key=len)
              

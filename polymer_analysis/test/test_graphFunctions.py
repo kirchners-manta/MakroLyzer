@@ -113,6 +113,14 @@ def sample_data22():
 @pytest.fixture
 def sample_data23():
     return 'test_structures/23.xyz'
+
+@pytest.fixture
+def sample_data25():
+    return 'test_structures/25.xyz'
+
+@pytest.fixture
+def sample_data26():
+    return 'test_structures/26.xyz'
     
 def test_end_to_end(sample_data1):
     xyz = next(readXYZ.readXYZ(sample_data1))
@@ -185,6 +193,11 @@ def test_longest_path_cycle(sample_data14):
     for i in range(len(longestPath)):
         assert testGraph.nodes[longestPath[i]]['surroundingAtoms'] == path[i]
         
+    it = iter(testGraph.nodes())    
+    startAtom = next(it)
+    longestPath = testGraph.find_longest_path(startAtom=startAtom)
+    assert len(longestPath) == 4
+        
 def test_longest_path_cycle2(sample_data18):
     xyz = next(readXYZ.readXYZ(sample_data18))
     testGraph = graphs.GraphManager(xyz)
@@ -198,6 +211,16 @@ def test_longest_path_cycle2(sample_data18):
     assert len(longestPath) == 11
     for i in range(len(longestPath)):
         assert testGraph.nodes[longestPath[i]]['surroundingAtoms'] == path[i]
+        
+    it = iter(testGraph.nodes())    
+    startAtom = next(it)
+    longestPath = testGraph.find_longest_path(startAtom=startAtom)
+    assert len(longestPath) == 11
+    
+    it = iter(testGraph.nodes())    
+    startAtom = next(it)
+    longestPath = testGraph.find_longest_path(startAtom=startAtom)
+    assert len(longestPath) == 11
         
 def test_longest_path_cycle3(sample_data19):
     xyz = next(readXYZ.readXYZ(sample_data19))
@@ -214,9 +237,142 @@ def test_longest_path_cycle4(sample_data20):
     testGraph = testGraph.remove_1order()
     testGraph.surrounding()
     
-    longestPath = testGraph.find_longest_path()
+    it = iter(testGraph.nodes())
+    
+    startAtom = next(it)
+    longestPath = testGraph.find_longest_path(startAtom=startAtom)
     assert len(longestPath) == 42
     
+    startAtom = next(it)
+    longestPath = testGraph.find_longest_path(startAtom=startAtom)
+    assert len(longestPath) == 42
+    
+    startAtom = next(it)
+    longestPath = testGraph.find_longest_path(startAtom=startAtom)
+    assert len(longestPath) == 42
+    
+    startAtom = next(it)
+    longestPath = testGraph.find_longest_path(startAtom=startAtom)
+    assert len(longestPath) == 42
+    
+    startAtom = next(it)
+    longestPath = testGraph.find_longest_path(startAtom=startAtom)
+    assert len(longestPath) == 42
+    
+def test_longest_path_cycle5(sample_data25):
+    xyz = next(readXYZ.readXYZ(sample_data25))
+    testGraph = graphs.GraphManager(xyz)
+    testGraph = testGraph.remove_1order()
+    testGraph.surrounding()
+    
+    it = iter(testGraph.nodes())
+    
+    startAtom = next(it)
+    longestPath = testGraph.find_longest_path(startAtom=startAtom)
+    assert len(longestPath) == 12
+    
+    startAtom = next(it)
+    longestPath = testGraph.find_longest_path(startAtom=startAtom)
+    assert len(longestPath) == 12
+    
+    startAtom = next(it)
+    longestPath = testGraph.find_longest_path(startAtom=startAtom)
+    assert len(longestPath) == 12
+    
+    startAtom = next(it)
+    longestPath = testGraph.find_longest_path(startAtom=startAtom)
+    assert len(longestPath) == 12
+    
+    startAtom = next(it)
+    longestPath = testGraph.find_longest_path(startAtom=startAtom)
+    assert len(longestPath) == 12    
+    
+def test_longest_path_cycle6(sample_data26):
+    xyz = next(readXYZ.readXYZ(sample_data26))
+    testGraph = graphs.GraphManager(xyz)
+    testGraph = testGraph.remove_1order()
+    testGraph.surrounding()
+    
+    path1 = (['C_CCC', 'C_CC', 'C_CC', 'C_CC', 'C_CC', 'C_CC'])
+    path2 = (['C_CC', 'C_CCC', 'C_CC', 'C_CC', 'C_CC', 'C_CC'])
+    path3 = (['C_CC', 'C_CC', 'C_CCC', 'C_CC', 'C_CC', 'C_CC'])
+    path4 = (['C_CC', 'C_CC', 'C_CC', 'C_CCC', 'C_CC', 'C_CC'])
+    path5 = (['C_CC', 'C_CC', 'C_CC', 'C_CC', 'C_CCC', 'C_CC'])
+    path6 = (['C_CC', 'C_CC', 'C_CC', 'C_CC', 'C_CC', 'C_CCC'])
+    
+    it = iter(testGraph.nodes())
+    
+    startAtom = next(it)
+    longestPath = testGraph.find_longest_path(startAtom=startAtom)
+    assert len(longestPath) == 6
+    
+    for i in range(len(longestPath)):
+        assert testGraph.nodes[longestPath[i]]['surroundingAtoms'] == path5[i]  
+    
+    startAtom = next(it)
+    longestPath = testGraph.find_longest_path(startAtom=startAtom)
+    assert len(longestPath) == 6
+    
+    for i in range(len(longestPath)):
+        assert testGraph.nodes[longestPath[i]]['surroundingAtoms'] == path6[i]  
+    
+    startAtom = next(it)
+    longestPath = testGraph.find_longest_path(startAtom=startAtom)
+    assert len(longestPath) == 6
+    
+    for i in range(len(longestPath)):
+        assert testGraph.nodes[longestPath[i]]['surroundingAtoms'] == path1[i]    
+
+    startAtom = next(it)
+    longestPath = testGraph.find_longest_path(startAtom=startAtom)
+    assert len(longestPath) == 6 
+    
+    for i in range(len(longestPath)):
+        assert testGraph.nodes[longestPath[i]]['surroundingAtoms'] == path2[i]  
+    
+    startAtom = next(it)
+    longestPath = testGraph.find_longest_path(startAtom=startAtom)
+    assert len(longestPath) == 6     
+    
+    for i in range(len(longestPath)):
+        assert testGraph.nodes[longestPath[i]]['surroundingAtoms'] == path3[i]  
+    
+    startAtom = next(it)
+    longestPath = testGraph.find_longest_path(startAtom=startAtom)
+    assert len(longestPath) == 6
+    
+    for i in range(len(longestPath)):
+        assert testGraph.nodes[longestPath[i]]['surroundingAtoms'] == path2[i]  
+    
+    startAtom = next(it)
+    longestPath = testGraph.find_longest_path(startAtom=startAtom)
+    assert len(longestPath) == 6
+    
+    for i in range(len(longestPath)):
+        assert testGraph.nodes[longestPath[i]]['surroundingAtoms'] == path6[i]  
+    
+    startAtom = next(it)
+    longestPath = testGraph.find_longest_path(startAtom=startAtom)
+    assert len(longestPath) == 6
+    
+    for i in range(len(longestPath)):
+        assert testGraph.nodes[longestPath[i]]['surroundingAtoms'] == path6[i]  
+    
+    startAtom = next(it)
+    longestPath = testGraph.find_longest_path(startAtom=startAtom)
+    assert len(longestPath) == 6
+    
+    for i in range(len(longestPath)):
+        assert testGraph.nodes[longestPath[i]]['surroundingAtoms'] == path6[i]  
+    
+    startAtom = next(it)
+    longestPath = testGraph.find_longest_path(startAtom=startAtom)
+    assert len(longestPath) == 6 
+    
+    for i in range(len(longestPath)):
+        assert testGraph.nodes[longestPath[i]]['surroundingAtoms'] == path6[i]  
+    
+
 def test_surrounding(sample_data2):
     xyz = next(readXYZ.readXYZ(sample_data2))
     testGraph = graphs.GraphManager(xyz)
