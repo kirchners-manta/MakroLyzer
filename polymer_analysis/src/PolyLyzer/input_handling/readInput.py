@@ -1,6 +1,6 @@
 import argparse
 import sys
-import pandas as pd
+import argparse
 
 def readCommandLine() -> dict:
     
@@ -147,6 +147,18 @@ def readCommandLine() -> dict:
                         help='Output file name for asphericity parameter (default: asphericityParameter.csv)',
                         default='asphericityParameter.csv'
     )
+    
+    parser.add_argument(
+                        '-op', '--orderParameter',
+                        help='Calculate order parameter S (default: false). Parameters have to be given like this BoxSize:n:unitSize where n specifies the number of bins in each direction and unitSize is the number of atoms to be used for a vector.',
+                        type=OrderParam
+    )
+    
+    parser.add_argument(
+                        '--order-file',
+                        help='Output file name for order parameter (default: orderParameter.csv)',
+                        default='orderParameter.csv'
+    )
 
     
     args = vars(parser.parse_args())
@@ -177,4 +189,17 @@ def element_distance_tuple(value):
     return (element, HAcceptor_dist, DonorAcceptor_dist, Angle_cut)
 
 
-          
+def OrderParam(value):
+    parts = value.split(':')
+    if len(parts) != 3:
+        raise argparse.ArgumentTypeError(
+            f"Invalid format: '{value}'. Expected format: BoxSize(x, y, z):n(nx, ny, nz):unitSize"
+        )
+    boxSize = tuple(map(float, parts[0].split(',')))
+    if len(boxSize) != 3:
+        boxSize = (boxSize[0], boxSize[0], boxSize[0]) 
+    n = tuple(map(int, parts[1].split(',')))
+    if len(n) != 3:
+        n = (n[0], n[0], n[0])
+    unitSize = int(parts[2])
+    return (boxSize, n, unitSize)

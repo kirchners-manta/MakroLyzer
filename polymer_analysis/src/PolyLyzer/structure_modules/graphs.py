@@ -5,6 +5,7 @@ from IPython.display import display
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import csv
+from collections import defaultdict
 
 from PolyLyzer import dictionaries
 
@@ -397,7 +398,50 @@ class GraphManager(nx.Graph):
                     hbonds.append((nodeH, node2))
 
         return hbonds
+    
+    def get_vectors_and_positions_along_path(self, path, unitSize=None):
+        """
+        Get vectors between nodes in a path. The number of atoms that correspond to a 
+        vector is specified by the unitSize parameter.
 
+        Args:
+            path in the form of a list of node indices.
+            unitSize : size of the unit vector, i.e. how many atoms correspond to a vector.
+                       If None, the unitSize is set to 1.
+        Returns:
+            Dict: A dictionary with keys 'vectors' and 'positions'.
+                   'vectors' is a list of vectors between nodes in the path.
+                   Each vector is given as a tuple of (x, y, z) coordinates, corrsponding to the
+                   position of the nodes corresponding to the vector.
+        """
+        if unitSize is None:
+            unitSize = 2
+        elif unitSize < 2:
+            raise ValueError("unitSize must be greater than or equal to 2.")
+        elif unitSize > len(path):
+            unitSize = len(path)
+            
+        # Adjust unitSize to be the number of atoms that correspond to a vector
+        unitSize = unitSize - 1  
+            
+        vecToPos = defaultdict(list)
+        coords = np.array([self.get_coordinates(node) for node in path])
+        
+        # Iterate over the path and calculate vectors
+        for i in range(0, len(path) - unitSize, unitSize):
+            # Get coords of the start and end nodes and calculate the vector
+            start_coords, end_coords = coords[i], coords[i + unitSize]
+            vector = end_coords - start_coords
+            norm = np.linalg.norm(vector)
+            if norm == 0:
+                continue
+            unitVector = vector / norm
+            midpoint = tuple(start_coords + vector / 2.0)
+            
+            vecToPos[midpoint].append(unitVector)
+            
+        return dict(vecToPos)
+    
     
     def find_and_tag_patterns(self, patterns, startAtom=None):
         """
@@ -782,7 +826,7 @@ def shift_coordinates(coords: np.ndarray, box_size):
     for ax in range(3):
         # Do that until the minimum is >5 % and the maximum is <95 % of the box size,
         # or we try 9 times (shift of 90%)
-        for i in range(9):
+        for i in range(10):
             min_i, max_i = shifted[:, ax].min(), shifted[:, ax].max()
             if not (min_i < lower[ax] and max_i > upper[ax]):
                 break
