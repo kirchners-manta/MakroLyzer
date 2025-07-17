@@ -415,11 +415,14 @@ class GraphManager(nx.Graph):
                    position of the nodes corresponding to the vector.
         """
         if unitSize is None:
-            unitSize = 1
-        elif unitSize < 1:
-            raise ValueError("unitSize must be greater than or equal to 1.")
+            unitSize = 2
+        elif unitSize < 2:
+            raise ValueError("unitSize must be greater than or equal to 2.")
         elif unitSize > len(path):
-            unitSize = len(path)-1
+            unitSize = len(path)
+            
+        # Adjust unitSize to be the number of atoms that correspond to a vector
+        unitSize = unitSize - 1  
             
         vecToPos = defaultdict(list)
         coords = np.array([self.get_coordinates(node) for node in path])

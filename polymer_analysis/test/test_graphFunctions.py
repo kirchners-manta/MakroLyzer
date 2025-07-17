@@ -711,7 +711,7 @@ def test_get_vectors_and_positions_along_path(sample_data23):
             continue
         
         # get vectors and positions along path
-        pathDict = subgraph.get_vectors_and_positions_along_path(longestPath, unitSize=1)
+        pathDict = subgraph.get_vectors_and_positions_along_path(longestPath, unitSize=2)
         print(pathDict)
         
         assert len(pathDict) == 2
