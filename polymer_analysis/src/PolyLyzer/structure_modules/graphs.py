@@ -43,7 +43,12 @@ class GraphManager(nx.Graph):
         covalentRadii = dictionaries.dictCovalent()
         elements = atomData['atom'].values
         coords = atomData[['x','y','z']].values
-
+        
+        # Delete elements X, Q and Z from the list of elements
+        coords = coords[[i for i, e in enumerate(elements) if e not in ['X', 'Q', 'Z']]]
+        elements = [e[0] for e in elements if e not in ['X', 'Q', 'Z']]
+        #Relements = [e[0] for e in elements]  # only first letter of element
+        
         # Map each unique element to a small integer index
         # unique_elems returns a sorted array of its distinct values.
         # return_inverse=True returns an array of the same length as the original 'elements'.
@@ -71,8 +76,19 @@ class GraphManager(nx.Graph):
             tree = cKDTree(coords, boxsize=boxSize)
             # shift coordinates to be within the periodic box
             coords = shift_coordinates(coords, boxSize)
+            # print to file 
+            with open('data.xyz', 'w') as f:
+                f.write(f"{len(coords)}\n")
+                f.write("Periodic boundary conditions\n")
+                for i, coord in enumerate(coords):
+                    f.write(f"{elements[i]} {coord[0]} {coord[1]} {coord[2]}\n")
         else:
             tree = cKDTree(coords)
+            with open('data.xyz', 'w') as f:
+                f.write(f"{len(coords)}\n")
+                f.write("Periodic boundary conditions\n")
+                for i, coord in enumerate(coords):
+                    f.write(f"{elements[i]} {coord[0]} {coord[1]} {coord[2]}\n")
 
         # Add all nodes 
         nodes = [
@@ -554,10 +570,10 @@ class GraphManager(nx.Graph):
             
             # Add OH to node if C atom
             for startNode in start_nodes:
-                if startNode in self.nodes and self.nodes[startNode]['element'] == 'C':
+                if startNode in self.nodes and self.nodes[startNode]['element'][0] == 'C':
                     # Add OH to the start node
                     self.add_OH_to_carboxylic_acid(startNode)
-                elif startNode in self.nodes and self.nodes[startNode]['element'] == 'N':
+                elif startNode in self.nodes and self.nodes[startNode]['element'][0] == 'N':
                     # Add H to the start node
                     self.add_H_to_amide(startNode)
         # return the modified graph
@@ -577,7 +593,7 @@ class GraphManager(nx.Graph):
         # Find the neighbors of the C atom
         # -> C and O
         for neighbor in self.neighbors(node):
-            element = self.nodes[neighbor]['element']
+            element = self.nodes[neighbor]['element'][0]
             pos = np.array([self.nodes[neighbor]['x'], self.nodes[neighbor]['y'], self.nodes[neighbor]['z']])
             if element == 'C':
                 neighbor_C = pos
@@ -617,7 +633,7 @@ class GraphManager(nx.Graph):
         # Find the neighbors of the N atom
         # -> C, H
         for neighbor in self.neighbors(node):
-            element = self.nodes[neighbor]['element']
+            element = self.nodes[neighbor]['element'][0]
             pos = np.array([self.nodes[neighbor]['x'], self.nodes[neighbor]['y'], self.nodes[neighbor]['z']])
             if element == 'C':
                 # remember the C atom

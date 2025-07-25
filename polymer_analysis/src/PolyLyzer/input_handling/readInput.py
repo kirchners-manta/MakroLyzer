@@ -17,7 +17,13 @@ def readCommandLine() -> dict:
     # Add arguments
     parser.add_argument('-xyz', '--xyzFile', 
                         help='Path to the XYZ/trajectory file', 
-                        required=True) 
+                        default=None
+    ) 
+    
+    parser.add_argument('-lmp', '--lmpFile', 
+                        help='Path to the LAMMPS trajectory file (default: None)',
+                        default=None
+    )
     
     parser.add_argument('-bs', '--BoxSize', 
                         help='Box size for periodic boundary conditions. (default: None)',

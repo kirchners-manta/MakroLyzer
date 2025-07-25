@@ -1,4 +1,5 @@
 from PolyLyzer.input_handling import readXYZ
+from PolyLyzer.input_handling import readLMP
 from PolyLyzer.input_handling import estimateFrames
 from PolyLyzer.structure_modules import graphs
 from PolyLyzer.structure_modules import readPatterns
@@ -17,9 +18,6 @@ def main(args):
     """
     Perfoms the main analysis of the polymer structure.
     """
-    
-    # Get the trajectory file path
-    trajectoryFilePath = args['xyzFile']
     
     # create empty lists to store results
     results = {
@@ -47,7 +45,14 @@ def main(args):
         'orderParameter_file': args['order_file']
     }
     
-    n_frames = estimateFrames.estimateFrames(trajectoryFilePath)
+    if args['xyzFile']:
+        trajectoryFilePath = args['xyzFile']
+        n_frames = estimateFrames.EstimateFrames.estimateFramesXYZ(trajectoryFilePath)
+        read = readXYZ.readXYZ
+    elif args['lmpFile']:
+        trajectoryFilePath = args['lmpFile']
+        n_frames = estimateFrames.EstimateFrames.estimateFrameLMP(trajectoryFilePath)
+        read = readLMP.readLMP
     
     # Get the box size
     boxSize = args.get('BoxSize', None)
@@ -58,7 +63,7 @@ def main(args):
             boxSize = BoxSize[0]
             
     
-    for i, xyz_frame in enumerate(tqdm(readXYZ.readXYZ(trajectoryFilePath),total=n_frames, desc="Creating something magical", unit="frame", ncols=100)):
+    for i, xyz_frame in enumerate(tqdm(read(trajectoryFilePath),total=n_frames, desc="Creating something magical", unit="frame", ncols=100)):
 
         # Get Graph object of the polymer box
         boxGraph = graphs.GraphManager(xyz_frame, boxSize=boxSize)
