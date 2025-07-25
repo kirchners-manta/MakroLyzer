@@ -46,8 +46,8 @@ class GraphManager(nx.Graph):
         
         # Delete elements X, Q and Z from the list of elements
         coords = coords[[i for i, e in enumerate(elements) if e not in ['X', 'Q', 'Z']]]
-        elements = [e[0] for e in elements if e not in ['X', 'Q', 'Z']]
-        #Relements = [e[0] for e in elements]  # only first letter of element
+        elements = [e for e in elements if e not in ['X', 'Q', 'Z']]
+        Relements = [e[0] for e in elements]  # only first letter of element
         
         # Map each unique element to a small integer index
         # unique_elems returns a sorted array of its distinct values.
@@ -57,7 +57,7 @@ class GraphManager(nx.Graph):
         # EXAMPLE: elements=np.array(['H', 'C', 'O', 'H', 'C', 'N', 'O', 'O'])
         #          unique_elems=np.array(['C' 'H' 'N' 'O'])
         #          inverse=np.array([1, 0, 3, 1, 0, 2, 3, 3])
-        unique_elems, inverse = np.unique(elements, return_inverse=True)
+        unique_elems, inverse = np.unique(Relements, return_inverse=True)
         M = len(unique_elems)
 
         # Build an M×M matrix of squared max distances
@@ -610,7 +610,7 @@ class GraphManager(nx.Graph):
         
         # Add the new oxygen atom
         new_index = max(self.nodes) + 1
-        self.add_node(new_index, index=new_index, element='O', x=coords_OH[0], y=coords_OH[1], z=coords_OH[2])
+        self.add_node(new_index, index=new_index, element='OH_T', x=coords_OH[0], y=coords_OH[1], z=coords_OH[2])
         self.add_edge(node, new_index)
         
         # calculate the coordinates of the new H atom
@@ -620,7 +620,7 @@ class GraphManager(nx.Graph):
         
         # Add the new hydrogen atom
         new_index = max(self.nodes) + 1
-        self.add_node(new_index, index=new_index, element='H', x=coords_[0], y=coords_[1], z=coords_[2])
+        self.add_node(new_index, index=new_index, element='HO_T', x=coords_[0], y=coords_[1], z=coords_[2])
         self.add_edge(new_index, new_index - 1)
         
     def add_H_to_amide(self, node):
@@ -647,7 +647,7 @@ class GraphManager(nx.Graph):
         # Get the two H atoms coordinated to the N atom
         C_Hnodes = []
         for neighbor in self.neighbors(Cnode):
-            element = self.nodes[neighbor]['element']
+            element = self.nodes[neighbor]['element'][0]
             pos = np.array([self.nodes[neighbor]['x'], self.nodes[neighbor]['y'], self.nodes[neighbor]['z']])
             if element == 'H':
                 # remember the H atom
@@ -674,7 +674,7 @@ class GraphManager(nx.Graph):
         self.nodes[neighbor_H]['z'] = coords_new_H1[2]
         # Add the new hydrogen atom
         new_index = max(self.nodes) + 1
-        self.add_node(new_index, index=new_index, element='H', x=coords_new_H2[0], y=coords_new_H2[1], z=coords_new_H2[2])
+        self.add_node(new_index, index=new_index, element='HN_T2', x=coords_new_H2[0], y=coords_new_H2[1], z=coords_new_H2[2])
         self.add_edge(node, new_index)
         
         #if np.linalg.norm(coords_new_H1 - neighbor_H) > 0.8:
