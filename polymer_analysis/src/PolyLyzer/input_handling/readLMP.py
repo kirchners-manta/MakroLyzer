@@ -10,14 +10,12 @@ def readLMP(lmp_path: str):
                 for _ in range(3):  # skip the first 3 header lines
                     next(file)
             except StopIteration:
-                print("End of file reached or no more frames available.")
                 break   
             num_atoms_line = file.readline()
             if not num_atoms_line:
                 break  
             try:
                 num_atoms = int(num_atoms_line.strip())
-                print(f"Reading frame with {num_atoms} atoms.")
             except ValueError:
                 raise ValueError(f"Expected number of atoms, got: {num_atoms_line}")
 

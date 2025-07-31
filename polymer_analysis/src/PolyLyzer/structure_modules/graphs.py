@@ -40,14 +40,17 @@ class GraphManager(nx.Graph):
 
     
     def create_graph(self, atomData, boxSize=None):
+        exception = False
+        
         covalentRadii = dictionaries.dictCovalent()
         elements = atomData['atom'].values
         coords = atomData[['x','y','z']].values
         
         # Delete elements X, Q and Z from the list of elements
-        coords = coords[[i for i, e in enumerate(elements) if e not in ['X', 'Q', 'Z']]]
-        elements = [e for e in elements if e not in ['X', 'Q', 'Z']]
-        Relements = [e[0] for e in elements]  # only first letter of element
+        if exception:
+            coords = coords[[i for i, e in enumerate(elements) if e not in ['X', 'Q', 'Z']]]
+            elements = [e for e in elements if e not in ['X', 'Q', 'Z']]
+            Relements = [e[0] for e in elements]  # only first letter of element          
         
         # Map each unique element to a small integer index
         # unique_elems returns a sorted array of its distinct values.
@@ -57,7 +60,10 @@ class GraphManager(nx.Graph):
         # EXAMPLE: elements=np.array(['H', 'C', 'O', 'H', 'C', 'N', 'O', 'O'])
         #          unique_elems=np.array(['C' 'H' 'N' 'O'])
         #          inverse=np.array([1, 0, 3, 1, 0, 2, 3, 3])
-        unique_elems, inverse = np.unique(Relements, return_inverse=True)
+        if exception:
+            unique_elems, inverse = np.unique(Relements, return_inverse=True)
+        else:
+            unique_elems, inverse = np.unique(elements, return_inverse=True)
         M = len(unique_elems)
 
         # Build an M×M matrix of squared max distances
@@ -76,19 +82,8 @@ class GraphManager(nx.Graph):
             tree = cKDTree(coords, boxsize=boxSize)
             # shift coordinates to be within the periodic box
             coords = shift_coordinates(coords, boxSize)
-            # print to file 
-            with open('data.xyz', 'w') as f:
-                f.write(f"{len(coords)}\n")
-                f.write("Periodic boundary conditions\n")
-                for i, coord in enumerate(coords):
-                    f.write(f"{elements[i]} {coord[0]} {coord[1]} {coord[2]}\n")
         else:
             tree = cKDTree(coords)
-            with open('data.xyz', 'w') as f:
-                f.write(f"{len(coords)}\n")
-                f.write("Periodic boundary conditions\n")
-                for i, coord in enumerate(coords):
-                    f.write(f"{elements[i]} {coord[0]} {coord[1]} {coord[2]}\n")
 
         # Add all nodes 
         nodes = [
@@ -759,15 +754,27 @@ class GraphManager(nx.Graph):
         """
         Write the graph data to an XYZ file.
         """
+        exception = False
         with open(file, 'w') as f:
             f.write(f"{len(self.nodes)}\n")
             f.write("Graph data\n")
-            for node in self.nodes:
-                element = self.nodes[node]['element']
-                x = self.nodes[node]['x']
-                y = self.nodes[node]['y']
-                z = self.nodes[node]['z']
-                f.write(f"{element} {x} {y} {z}\n")
+    
+            for i, subgraph in enumerate(self.get_subgraphs()):
+                subfile = f"{file.rsplit('.', 1)[0]}_{i}.xyz"
+                with open(subfile, 'w') as subf:
+                    subf.write(f"{len(subgraph.nodes)}\n")
+                    subf.write("Subgraph data\n")
+    
+                    for node in subgraph.nodes:
+                        element = subgraph.nodes[node]['element']
+                        x = subgraph.nodes[node]['x']
+                        y = subgraph.nodes[node]['y']
+                        z = subgraph.nodes[node]['z']
+                        line = f"{element:<6} {x:10.4f} {y:10.4f} {z:10.4f}\n"
+                        f.write(line)
+                        if exception:
+                            subf.write(line)
+
 
 
     def write_fragment_data_to_csv(self, file):
