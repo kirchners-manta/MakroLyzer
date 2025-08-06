@@ -4,6 +4,7 @@ from PolyLyzer.input_handling import estimateFrames
 from PolyLyzer.structure_modules import graphs
 from PolyLyzer.structure_modules import readPatterns
 from PolyLyzer.structure_modules.endToEndDistance import end_to_end_dist
+from PolyLyzer.structure_modules.countSubgraphs import count_subgraphs
 from PolyLyzer.structure_modules.dihedrals import get_all_dihedrals, get_CisTrans
 from PolyLyzer.structure_modules.radiusOfGyration import get_radius_of_gyration
 from PolyLyzer.structure_modules.anisotropy import get_anisotropy_factor
@@ -22,6 +23,7 @@ def main(args):
     # create empty lists to store results
     results = {
         'formulas': [],
+        'noSub': [],
         'distances': [],
         'dihedrals': [],
         'cisTrans': [],
@@ -34,6 +36,7 @@ def main(args):
         
         # Output file names
         'formulas_file': args['formula_file'],
+        'noSub_file': args['noSub_file'],
         'distances_file': args['e2e_file'],
         'dihedrals_file': args['dihedral_file'],
         'cisTrans_file': args['CisTrans_file'],
@@ -64,7 +67,9 @@ def main(args):
             
     
     for i, xyz_frame in enumerate(tqdm(read(trajectoryFilePath),total=n_frames, desc="Creating something magical", unit="frame", ncols=100)):
-
+        if i % 10 != 0:
+            continue
+        
         # Get Graph object of the polymer box
         boxGraph = graphs.GraphManager(xyz_frame, boxSize=boxSize)
         
@@ -90,6 +95,11 @@ def main(args):
         if args['formula']:
             formulas = boxGraph.get_chemicalFormulas()
             results['formulas'].append(formulas)
+            
+        # Number of subgraphs
+        if args['noSubgraphs']:
+            noSub = count_subgraphs(boxGraph)
+            results['noSub'].append(noSub)
            
         # End-to-end distance     
         if args['endToEndDistance']:

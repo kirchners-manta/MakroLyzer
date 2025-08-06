@@ -53,6 +53,17 @@ def readCommandLine() -> dict:
                         help='Get chemical formulas of the polymer (default: false)', 
                         action='store_true'
     )
+    
+    parser.add_argument('-noSub', '--noSubgraphs',
+                        help='Calculate the number of subgraphs in the polymer (default: false)',
+                        action='store_true'
+    )
+    
+    parser.add_argument('--noSub-file',
+                        help='Output file name for number of subgraphs (default: noSubGraphs.csv)',
+                        default='noSubGraphs.csv'
+    )
+    
     parser.add_argument('--formula-file',
                         help='Output file name for chemical formulas (default: chemicalFormulas.csv)',
                         default='chemicalFormulas.csv'

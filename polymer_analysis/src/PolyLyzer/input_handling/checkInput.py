@@ -46,8 +46,8 @@ def checkInput(args):
             raise FileNotFoundError(f"LAMMPS file '{lmpFilePath}' not found.")
 
         # Check if the file format is valid
-        if not lmpFilePath.endswith('.lmp'):
-            raise InvalidFileFormatError(f"Invalid file format for '{lmpFilePath}'. Expected .lmp file.")
+        if not lmpFilePath.endswith('.lmp') and not lmpFilePath.endswith('.lammpstrj'):
+            raise InvalidFileFormatError(f"Invalid file format for '{lmpFilePath}'. Expected .lmp or .lammpstrj file.")
 
         # Check if the file is empty
         if os.path.getsize(lmpFilePath) == 0:
