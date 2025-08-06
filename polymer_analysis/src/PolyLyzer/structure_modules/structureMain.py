@@ -48,6 +48,7 @@ def main(args):
         'orderParameter_file': args['order_file']
     }
     
+    # Get the trajectory file path 
     if args['xyzFile']:
         trajectoryFilePath = args['xyzFile']
         n_frames = estimateFrames.EstimateFrames.estimateFramesXYZ(trajectoryFilePath)
@@ -56,6 +57,9 @@ def main(args):
         trajectoryFilePath = args['lmpFile']
         n_frames = estimateFrames.EstimateFrames.estimateFrameLMP(trajectoryFilePath)
         read = readLMP.readLMP
+        
+    # Get the modulo for reading frames
+    nthStep = args.get('nthStep', 1)
     
     # Get the box size
     boxSize = args.get('BoxSize', None)
@@ -67,7 +71,7 @@ def main(args):
             
     
     for i, xyz_frame in enumerate(tqdm(read(trajectoryFilePath),total=n_frames, desc="Creating something magical", unit="frame", ncols=100)):
-        if i % 10 != 0:
+        if i % nthStep != 0:
             continue
         
         # Get Graph object of the polymer box

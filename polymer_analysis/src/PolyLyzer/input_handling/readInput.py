@@ -25,6 +25,12 @@ def readCommandLine() -> dict:
                         default=None
     )
     
+    parser.add_argument('-nth', '--nthStep',
+                        help='Read every nth step from the trajectory (default: 1)',
+                        type=int,
+                        default=1
+    )
+    
     parser.add_argument('-bs', '--BoxSize', 
                         help='Box size for periodic boundary conditions. (default: None)',
                         type=float
