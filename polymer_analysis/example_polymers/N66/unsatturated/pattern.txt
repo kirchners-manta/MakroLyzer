@@ -1,2 +1,0 @@
-[['C_C', 'C_CC', 'C_CC', 'C_CC', 'C_CC', 'C_CN', 'N_CC'],['C_CN', 'C_CC', 'C_CC', 'C_CC', 'C_CC', 'C_CN', 'N_CC', 'C_CN', 'C_CC', 'C_CC', 'C_CC', 'C_CC', 'C_CN', 'N_CC'], ['C_CN', 'C_CC', 'C_CC', 'C_CC', 'C_CC', 'C_CN', 'N_C']]
-C
