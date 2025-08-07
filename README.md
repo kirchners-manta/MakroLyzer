@@ -1,4 +1,4 @@
-# Polymer Analyzer
+# Macromolecule Analyzer
 
 ## Installation
 Change to the directory "polymer_analysis" and run the following command to install the package:
@@ -11,13 +11,13 @@ pip install .
 The prgram can be called from the command line by typing:
 
 ```bash
-PolyLyzer 
+MakroLyzer 
 ```
 
 For more information on how to use the program, type:
 
 ```bash
-PolyLyzer --h
+MakroLyzer --h
 ```
 
 
