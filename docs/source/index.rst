@@ -5,12 +5,11 @@
 
 MakroLyzer - Documentation
 =============================
-MakroLyzer is a tool for analyzing macromolecular structures.
-
+**MakroLyzer** is a tool for analyzing macromolecular structures.
 
 .. toctree::
    :maxdepth: 3
-   :caption: What is MakroLyzer?
+   :caption: First Steps
 
-   01_MakroLyzer
+   01_Installation
 

@@ -3,7 +3,7 @@
 # -- Project information
 
 project = 'MakroLyzer'
-copyright = '2025, Kirchner group'
+copyright = '2025, Kirchner Group'
 author = 'Kirchner group'
 
 release = '2025'

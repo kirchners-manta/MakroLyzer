@@ -1,3 +1,25 @@
 [build-system]
+
 requires = ["flit_core >=3.2,<4"]
+
 build-backend = "flit_core.buildapi"
+
+name = "MakroLyzer"
+requires-python = ">=3.8"
+
+authors = [
+    { name = "Katrin Drysch", email = "drysch@thch.uni-bonn.de" }
+]
+
+dependencies = [
+    "numpy",
+    "scipy",
+    "matplotlib",
+    "pandas",
+    "networkx"
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest"
+]
