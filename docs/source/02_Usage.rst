@@ -74,7 +74,7 @@ The following parameters can be calculated with MakroLyzer:
      - Calculate dihedral angles
      - false
    * - ``--dihedral-range``
-     - Dihedral angle range (``abs`` = 0-180, ``nonabs`` = -180–180)
+     - Dihedral angle range (``abs`` = 0-180, ``nonabs`` = -180-180)
      - ``abs``
    * - ``--dihedral-file``
      - Output file for dihedrals
@@ -93,7 +93,7 @@ The following parameters can be calculated with MakroLyzer:
      - ``radiusOfGyration.csv``
    * - ``-hb``, ``--hydrogenBonds``
      - List of tuples for H-bond detection (e.g., ``O:2.4:3.4:30 N:2.8:3.9:25``)
-     - user-defined
+     - false
    * - ``--hbonds-file``
      - Output file for hydrogen bonds
      - ``hydrogenBonds.csv``

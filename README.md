@@ -1,6 +1,6 @@
 # Macromolecule Analyzer
 
-See the documentation at https://makrolyzer.readthedocs.io/en/latest/index.html for more information.
+See the documentation at [online documentation](https://makrolyzer.readthedocs.io/en/latest/index.html) for more information.
 
 ## Installation
 Change to the directory "polymer_analysis" and run the following command to install the package:
