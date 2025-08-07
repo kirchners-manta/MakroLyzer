@@ -40,7 +40,7 @@ class GraphManager(nx.Graph):
 
     
     def create_graph(self, atomData, boxSize=None):
-        exception = True
+        exception = False
         
         covalentRadii = dictionaries.dictCovalent()
         elements = atomData['atom'].values
@@ -754,7 +754,7 @@ class GraphManager(nx.Graph):
         """
         Write the graph data to an XYZ file.
         """
-        exception = True
+        exception = False
         with open(file, 'w') as f:
             f.write(f"{len(self.nodes)}\n")
             f.write("Graph data\n")
