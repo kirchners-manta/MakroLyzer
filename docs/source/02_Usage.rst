@@ -49,6 +49,7 @@ Radius of gyration
 - ``--Rg-file``: Output file name for the radius of gyration. Default is *radiusOfGyration.csv*.
 
 The radius of gyration is defined as:
+
 .. math::
 
    R_g^2 = \sqrt{\frac{1}{N} \sum_{j=1}^{N} (\vec{r_j} - \vec{r_{cm}})^2}
