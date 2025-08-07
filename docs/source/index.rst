@@ -1,8 +1,6 @@
-.. raw:: html
-
-    <iframe src="figures/01_MakroLyzer.pdf" width="800px" height="1000px">
-    </iframe>
-
+.. figure:: figures/01_MakroLyzer.png
+   :width: 800
+   :align: center
 
 
 MakroLyzer - Documentation
