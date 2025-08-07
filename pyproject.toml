@@ -1,10 +1,12 @@
+# Das ist nur Deko
+
 [build-system]
-
 requires = ["flit_core >=3.2,<4"]
-
 build-backend = "flit_core.buildapi"
 
+[project]
 name = "MakroLyzer"
+version = "0.1.0"
 requires-python = ">=3.8"
 
 authors = [
@@ -13,13 +15,21 @@ authors = [
 
 dependencies = [
     "numpy",
+    "pandas",
     "scipy",
     "matplotlib",
-    "pandas",
-    "networkx"
+    "networkx",
+    "tqdm",
+    "IPython"
 ]
+
+[project.scripts]
+MakroLyzer = "MakroLyzer.MakroLyzer:main"
 
 [project.optional-dependencies]
 test = [
     "pytest"
 ]
+
+[tool.flit.metadata]
+description-file = false

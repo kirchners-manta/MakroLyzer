@@ -6,11 +6,13 @@ build-backend = "setuptools.build_meta"
 name = "MakroLyzer"
 version = "0.0.1"
 dependencies = [
-  "numpy",
-  "scipy",
-  "pandas",
-  "matplotlib",
-  "networkx"
+    "numpy",
+    "pandas",
+    "scipy",
+    "matplotlib",
+    "networkx",
+    "tqdm",
+    "IPython"
 ]
 
 requires-python = ">=3.8"

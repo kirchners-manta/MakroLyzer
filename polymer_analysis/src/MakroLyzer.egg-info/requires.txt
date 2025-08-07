@@ -1,8 +1,10 @@
 numpy
-scipy
 pandas
+scipy
 matplotlib
 networkx
+tqdm
+IPython
 
 [dev]
 pre-commit
