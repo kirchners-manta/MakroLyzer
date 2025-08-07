@@ -20,8 +20,8 @@ the structure in the ``PolyEthylene.xyz`` file with a box size of 80.0 Angstroms
 Parameters that need to be provided:
 ==================================================
 
-XYZ or LMP file 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+XYZ or LMP file
+^^^^^^^^^^^^^^^
 .. line-block::
   ``-xyz``
   ``-lmp``
@@ -30,7 +30,7 @@ XYZ or LMP file
 
 
 Box Size
-~~~~~~~~~
+^^^^^^^^^^^^
 .. line-block::
   ``-bs``
       Box size of the macromolecule in Angstroms. This is required if periodic boundary conditions are used.
@@ -38,7 +38,7 @@ Box Size
 
 
 Timesteps to calculate
-~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^
 .. line-block::
   ``-nth``
       Specifies the for which how many timesteps from the trajectory the given parameters should be calculated.
@@ -46,7 +46,7 @@ Timesteps to calculate
       
 
 Pattern file
-~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^
 .. line-block::
   ``-p``
   ``--pattern-file``
@@ -58,7 +58,7 @@ Parameters that can be calculated:
 =================================
 
 Radius of gyration
-~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^
 .. line-block::
   ``-r``
   ``--Rg-file``
@@ -75,7 +75,7 @@ where :math:`\vec{r_j}` is the position vector of atom :math:`j`, :math:`\vec{r_
 
 
 Asphericity parameter
-~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^
 .. line-block::
   ``-as``
   ``--asphericity-file``
@@ -84,7 +84,7 @@ Asphericity parameter
 
 
 Anisotropy parameter
-~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^
 .. line-block::
   ``-an``
   ``--anisotropy-file``
@@ -93,7 +93,7 @@ Anisotropy parameter
 
 
 Order parameter
-~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^
 .. line-block::
   ``-op``
   ``--order-file``
@@ -102,7 +102,7 @@ Order parameter
 
 
 End to End Distance
-~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^
 .. line-block::
   ``-e2e``
   ``--e2e-file``
