@@ -13,7 +13,8 @@ class EstimateFrames:
         lines_per_frame = n_atoms + 2
         return round(total_lines/lines_per_frame)
     
-    def estimateFrameLMP(lmp_path: str):
+    @staticmethod
+    def estimateFramesLMP(lmp_path: str):
         with open(lmp_path, 'r') as f:
             for _ in range(3):
                 next(f)

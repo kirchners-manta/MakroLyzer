@@ -55,7 +55,7 @@ def main(args):
         read = readXYZ.readXYZ
     elif args['lmpFile']:
         trajectoryFilePath = args['lmpFile']
-        n_frames = estimateFrames.EstimateFrames.estimateFrameLMP(trajectoryFilePath)
+        n_frames = estimateFrames.EstimateFrames.estimateFramesLMP(trajectoryFilePath)
         read = readLMP.readLMP
         
     # Get the modulo for reading frames
