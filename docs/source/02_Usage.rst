@@ -22,15 +22,15 @@ Parameters that can be calculated
 The following parameters can be calculated with MakroLyzer:
 
 .. list-table:: Command Line Parameters
-   :widths: 30 50 50
+   :widths: 35 50 35
    :header-rows: 1
 
    * - Flag
      - Description
      - Default / Output File
    * - ``-xyz``, ``--xyzFile``
-     - Path to the XYZ/trajectory file
-     - required
+     - Path to the XYZ trajectory file
+     - None
    * - ``-lmp``, ``--lmpFile``
      - Path to the LAMMPS trajectory file
      - None
