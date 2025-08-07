@@ -22,22 +22,33 @@ The following parameters need to be provided:
 
 XYZ or LMP file (required)
 ------------------
-- ``-xyz``: Path to the XYZ file containing the macromolecule structure.
-- ``-lmp``: Path to the LAMMPS trajectoryfile containing the macromolecule structure.
+.. line-block::
+  ``-xyz``
+  ``-lmp``
+      Path to the XYZ or LAMMPS trajectory file containing the macromolecule structure.
+      *Required. Either -xyz or -lmp must be provided.*
 
 Box Size 
 ------------------
-- ``-bs``: Box size of the macromolecule in Angstroms. This is required if periodic boundary conditions are used.
+.. line-block::
+  ``-bs``
+      Box size of the macromolecule in Angstroms. This is required if periodic boundary conditions are used.
+      *Optional.*
 
 Timesteps to calculate
 ------------------
-- ``-nth``: In case the user provides a trajectory file, this parameter can be used to specify the timesteps to calculate
-            the parameters for. The default value is 1, which means that every timestep will be calculated.
-
+.. line-block::
+  ``-nth``
+      Specify the timesteps to calculate the parameters for. The default value is 1, which means that every timestep will be calculated.
+      *Optional. Default: 1*
+      
 Pattern file 
 ------------------
-- ``-p``: Path to the pattern file containing the patterns to search for in the macromolecule structure.
-- ``--repeatingUnits-file--``: Output file name for the repeating units found in the macromolecule structure. Default is *repeatingUnits.csv*.
+.. line-block::
+  ``-p``
+  ``--pattern-file``
+      Path to the pattern file containing the patterns to search for in the macromolecule structure and
+      *Optional. Default: None*
 
 
 Parameters that can be calculated
@@ -46,8 +57,8 @@ Parameters that can be calculated
 Radius of gyration
 ------------------
 .. line-block::
-  **-r**
-  **--Rg-file**
+  ``-r``
+  ``--Rg-file``
       Calculate the radius of gyration of the provided structure. Provide a file name for the output if desired. 
       *Optional. Default: radiusOfGyration.csv*
 
@@ -62,23 +73,23 @@ where :math:`\vec{r_j}` is the position vector of atom :math:`j`, :math:`\vec{r_
 Asphericity parameter
 ------------------
 .. line-block::
-  **-as**
-  **--asphericity-file**
+  ``-as``
+  ``--asphericity-file``
       Calculate the asphericity parameter of the macromolecule structure. Provide a file name for the output if desired. 
       *Optional. Default: asphericity.csv*
 
 Anisotropy parameter
 ------------------
 .. line-block::
-  **-an**
-  **--anisotropy-file**
+  ``-an``
+  ``--anisotropy-file``
       Calculate the anisotropy parameter of the macromolecule structure. Provide a file name for the output if desired. 
       *Optional. Default: anisotropyFactor.csv*
 
 Order parameter
 ------------------
 .. line-block::
-  **-o**
-  **--order-file**
+  ``-o``
+  ``--order-file``
       Calculate the order parameter of the macromolecule structure. Provide a file name for the output if desired. 
       *Optional. Default: orderParameter.csv*
