@@ -45,28 +45,40 @@ Parameters that can be calculated
 
 Radius of gyration
 ------------------
-- ``-r``: Calculate the radius of gyration of the macromolecule structure.
-- ``--Rg-file``: Output file name for the radius of gyration. Default is *radiusOfGyration.csv*.
+.. line-block::
+  **-r**
+  **--Rg-file**
+      Calculate the radius of gyration of the provided structure. Provide a file name for the output if desired. 
+      *Optional. Default: radiusOfGyration.csv*
 
 The radius of gyration is defined as:
 
 .. math::
 
-   R_g^2 = \sqrt{\frac{1}{N} \sum_{j=1}^{N} (\vec{r_j} - \vec{r_{cm}})^2}
+   R_g^2 = \frac{1}{N} \sum_{j=1}^{N} (\vec{r_j} - \vec{r_{cm}})^2
 
 where :math:`\vec{r_j}` is the position vector of atom :math:`j`, :math:`\vec{r_{cm}}` is the center of mass position vector, and :math:`N` is the number of atoms.
 
 Asphericity parameter
 ------------------
-- ``-as``: Calculate the asphericity parameter of the macromolecule structure.
-- ``--asphericity-file``: Output file name for the asphericity parameter. Default is *asphericity.csv*.
+.. line-block::
+  **-as**
+  **--asphericity-file**
+      Calculate the asphericity parameter of the macromolecule structure. Provide a file name for the output if desired. 
+      *Optional. Default: asphericity.csv*
 
 Anisotropy parameter
 ------------------
-- ``-an``: Calculate the anisotropy parameter of the macromolecule structure.
-- ``--anisotropy-file``: Output file name for the anisotropy parameter. Default is *anisotropyFactor.csv*.
+.. line-block::
+  **-an**
+  **--anisotropy-file**
+      Calculate the anisotropy parameter of the macromolecule structure. Provide a file name for the output if desired. 
+      *Optional. Default: anisotropyFactor.csv*
 
 Order parameter
 ------------------
-- ``-o``: Calculate the order parameter of the macromolecule structure.
-- ``--order-file``: Output file name for the order parameter. Default is *orderParameter.csv*.
+.. line-block::
+  **-o**
+  **--order-file**
+      Calculate the order parameter of the macromolecule structure. Provide a file name for the output if desired. 
+      *Optional. Default: orderParameter.csv*
