@@ -1,4 +1,4 @@
-.. figure:: figures/01_MakroLyzer.png
+.. figure:: figures/MakroLyzer.png
    :width: 800
    :align: center
 
