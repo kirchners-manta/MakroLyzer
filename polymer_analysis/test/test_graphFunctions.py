@@ -1,14 +1,14 @@
 import pytest
 
-from src.PolyLyzer.input_handling import readXYZ
-from src.PolyLyzer.input_handling import readXYZ
-from src.PolyLyzer.structure_modules import graphs
-from src.PolyLyzer.structure_modules.endToEndDistance import end_to_end_dist
-from src.PolyLyzer.structure_modules.dihedrals import get_all_dihedrals, get_CisTrans
-from src.PolyLyzer.structure_modules.radiusOfGyration import get_radius_of_gyration
-from src.PolyLyzer.structure_modules.anisotropy import get_anisotropy_factor
-from src.PolyLyzer.structure_modules.asphericityParameter import get_asphericity_parameter
-from src.PolyLyzer.structure_modules.hbonds import get_Hbonds
+from src.MakroLyzer.input_handling import readXYZ
+from src.MakroLyzer.input_handling import readXYZ
+from src.MakroLyzer.structure_modules import graphs
+from src.MakroLyzer.structure_modules.endToEndDistance import end_to_end_dist
+from src.MakroLyzer.structure_modules.dihedrals import get_all_dihedrals, get_CisTrans
+from src.MakroLyzer.structure_modules.radiusOfGyration import get_radius_of_gyration
+from src.MakroLyzer.structure_modules.anisotropy import get_anisotropy_factor
+from src.MakroLyzer.structure_modules.asphericityParameter import get_asphericity_parameter
+from src.MakroLyzer.structure_modules.hbonds import get_Hbonds
 
 @pytest.fixture
 def sample_data1():

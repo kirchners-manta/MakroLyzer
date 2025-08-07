@@ -1,6 +1,6 @@
 import numpy as np
 
-from PolyLyzer.structure_modules.radiusOfGyration import get_radius_of_gyration_tensor
+from MakroLyzer.structure_modules.radiusOfGyration import get_radius_of_gyration_tensor
 
 def asphericity_parameter(eigenvalues):
     """

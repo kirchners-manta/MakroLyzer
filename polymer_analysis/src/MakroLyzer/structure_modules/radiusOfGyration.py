@@ -1,7 +1,7 @@
 import numpy as np
 import time
 
-from PolyLyzer.structure_modules import graphs
+from MakroLyzer.structure_modules import graphs
 
 def get_radius_of_gyration(graph):
     """

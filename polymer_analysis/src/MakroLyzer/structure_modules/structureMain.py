@@ -1,17 +1,17 @@
-from PolyLyzer.input_handling import readXYZ
-from PolyLyzer.input_handling import readLMP
-from PolyLyzer.input_handling import estimateFrames
-from PolyLyzer.structure_modules import graphs
-from PolyLyzer.structure_modules import readPatterns
-from PolyLyzer.structure_modules.endToEndDistance import end_to_end_dist
-from PolyLyzer.structure_modules.countSubgraphs import count_subgraphs
-from PolyLyzer.structure_modules.dihedrals import get_all_dihedrals, get_CisTrans
-from PolyLyzer.structure_modules.radiusOfGyration import get_radius_of_gyration
-from PolyLyzer.structure_modules.anisotropy import get_anisotropy_factor
-from PolyLyzer.structure_modules.asphericityParameter import get_asphericity_parameter
-from PolyLyzer.structure_modules.hbonds import get_Hbonds
-from PolyLyzer.structure_modules.subgraphCoords import get_subgraph_coords
-from PolyLyzer.structure_modules.orderParameter import get_order_parameter
+from MakroLyzer.input_handling import readXYZ
+from MakroLyzer.input_handling import readLMP
+from MakroLyzer.input_handling import estimateFrames
+from MakroLyzer.structure_modules import graphs
+from MakroLyzer.structure_modules import readPatterns
+from MakroLyzer.structure_modules.endToEndDistance import end_to_end_dist
+from MakroLyzer.structure_modules.countSubgraphs import count_subgraphs
+from MakroLyzer.structure_modules.dihedrals import get_all_dihedrals, get_CisTrans
+from MakroLyzer.structure_modules.radiusOfGyration import get_radius_of_gyration
+from MakroLyzer.structure_modules.anisotropy import get_anisotropy_factor
+from MakroLyzer.structure_modules.asphericityParameter import get_asphericity_parameter
+from MakroLyzer.structure_modules.hbonds import get_Hbonds
+from MakroLyzer.structure_modules.subgraphCoords import get_subgraph_coords
+from MakroLyzer.structure_modules.orderParameter import get_order_parameter
 
 from tqdm import tqdm
 

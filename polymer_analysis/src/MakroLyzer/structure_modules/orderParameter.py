@@ -2,8 +2,8 @@ import numpy as np
 from collections import defaultdict
 from scipy.spatial import cKDTree
 
-from PolyLyzer.math import Box
-from PolyLyzer.structure_modules import graphs
+from MakroLyzer.math import Box
+from MakroLyzer.structure_modules import graphs
 import time
 
 def get_unit_vectors(graph, unitSize):

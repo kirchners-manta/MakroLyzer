@@ -7,7 +7,7 @@ from mpl_toolkits.mplot3d import Axes3D
 import csv
 from collections import defaultdict
 
-from PolyLyzer import dictionaries
+from MakroLyzer import dictionaries
 
 class GraphManager(nx.Graph):
     def __init__(self, data=None, boxSize=None, **kwargs):
@@ -40,7 +40,7 @@ class GraphManager(nx.Graph):
 
     
     def create_graph(self, atomData, boxSize=None):
-        exception = False
+        exception = True
         
         covalentRadii = dictionaries.dictCovalent()
         elements = atomData['atom'].values
@@ -754,7 +754,7 @@ class GraphManager(nx.Graph):
         """
         Write the graph data to an XYZ file.
         """
-        exception = False
+        exception = True
         with open(file, 'w') as f:
             f.write(f"{len(self.nodes)}\n")
             f.write("Graph data\n")

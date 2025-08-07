@@ -1,6 +1,6 @@
 import numpy as np
 
-from PolyLyzer.structure_modules import graphs
+from MakroLyzer.structure_modules import graphs
 
 def get_subgraph_coords(graph):
     """

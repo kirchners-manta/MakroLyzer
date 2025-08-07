@@ -3,7 +3,7 @@ requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "PolyLyzer"
+name = "MakroLyzer"
 version = "0.0.1"
 dependencies = [
   "numpy",
@@ -23,7 +23,7 @@ maintainers = [
   {name = "Katrin Drysch", email = "drysch@thch.uni-bonn.de"}
 ]
 
-description = "PolyLyzer is a tool for obtaining structural insights into polymer networks."
+description = "MakroLyzer is a tool for obtaining structural insights into polymer networks."
 
 readme = "README.md"
 
@@ -51,7 +51,7 @@ dev = [
 [project.urls]
 
 [project.scripts]
-PolyLyzer = "PolyLyzer.PolyLyzer:main"
+MakroLyzer = "MakroLyzer.MakroLyzer:main"
 
 [project.gui-scripts]
 

@@ -1,10 +1,10 @@
 import sys
 from IPython.display import display
 
-from PolyLyzer.input_handling import inputHandlingMain
-from PolyLyzer.structure_modules import graphs
-from PolyLyzer.structure_modules import structureMain
-from PolyLyzer.output_handling import outputHandlingMain
+from MakroLyzer.input_handling import inputHandlingMain
+from MakroLyzer.structure_modules import graphs
+from MakroLyzer.structure_modules import structureMain
+from MakroLyzer.output_handling import outputHandlingMain
 
 
 def main():

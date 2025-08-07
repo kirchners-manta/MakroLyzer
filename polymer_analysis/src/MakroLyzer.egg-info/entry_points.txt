@@ -1,0 +1,2 @@
+[console_scripts]
+MakroLyzer = MakroLyzer.MakroLyzer:main

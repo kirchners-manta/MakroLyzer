@@ -1,7 +1,7 @@
 import sys
 
-from PolyLyzer.input_handling import readInput
-from PolyLyzer.input_handling import checkInput
+from MakroLyzer.input_handling import readInput
+from MakroLyzer.input_handling import checkInput
 
 def main(args):
     """

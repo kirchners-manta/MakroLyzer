@@ -1,7 +1,7 @@
 import numpy as np
 import csv
 
-from PolyLyzer.structure_modules import graphs
+from MakroLyzer.structure_modules import graphs
 
 def get_Hbonds(graph, cutoffs):
     """

@@ -1,6 +1,6 @@
 import numpy as np
 
-from PolyLyzer.structure_modules import graphs
+from MakroLyzer.structure_modules import graphs
 
 
 def end_to_end_dist(graph):
