@@ -26,17 +26,32 @@ def checkInput(args):
     
     #---XYZ---#
     # Check if the XYZ file exists
-    xyzFilePath = args['xyzFile']
-    if not os.path.isfile(xyzFilePath):
-        raise FileNotFoundError(f"XYZ file '{xyzFilePath}' not found.")
-    
-    # Check if the file format is valid
-    if not xyzFilePath.endswith('.xyz'):
-        raise InvalidFileFormatError(f"Invalid file format for '{xyzFilePath}'. Expected .xyz file.")
-    
-    # Check if the file is empty
-    if os.path.getsize(xyzFilePath) == 0:
-        raise EmptyFileError(f"File '{xyzFilePath}' is empty.")
+    if args['xyzFile'] is not None:
+        xyzFilePath = args['xyzFile']
+        if not os.path.isfile(xyzFilePath):
+            raise FileNotFoundError(f"XYZ file '{xyzFilePath}' not found.")
+
+        # Check if the file format is valid
+        if not xyzFilePath.endswith('.xyz'):
+            raise InvalidFileFormatError(f"Invalid file format for '{xyzFilePath}'. Expected .xyz file.")
+
+        # Check if the file is empty
+        if os.path.getsize(xyzFilePath) == 0:
+            raise EmptyFileError(f"File '{xyzFilePath}' is empty.")
+        
+    #---LAMMPS---#
+    if args['lmpFile'] is not None:
+        lmpFilePath = args['lmpFile']
+        if not os.path.isfile(lmpFilePath):
+            raise FileNotFoundError(f"LAMMPS file '{lmpFilePath}' not found.")
+
+        # Check if the file format is valid
+        if not lmpFilePath.endswith('.lmp') and not lmpFilePath.endswith('.lammpstrj'):
+            raise InvalidFileFormatError(f"Invalid file format for '{lmpFilePath}'. Expected .lmp or .lammpstrj file.")
+
+        # Check if the file is empty
+        if os.path.getsize(lmpFilePath) == 0:
+            raise EmptyFileError(f"File '{lmpFilePath}' is empty.")
         
     
     #---Repeating Units---#

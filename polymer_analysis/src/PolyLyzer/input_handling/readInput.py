@@ -17,7 +17,19 @@ def readCommandLine() -> dict:
     # Add arguments
     parser.add_argument('-xyz', '--xyzFile', 
                         help='Path to the XYZ/trajectory file', 
-                        required=True) 
+                        default=None
+    ) 
+    
+    parser.add_argument('-lmp', '--lmpFile', 
+                        help='Path to the LAMMPS trajectory file (default: None)',
+                        default=None
+    )
+    
+    parser.add_argument('-nth', '--nthStep',
+                        help='Read every nth step from the trajectory (default: 1)',
+                        type=int,
+                        default=1
+    )
     
     parser.add_argument('-bs', '--BoxSize', 
                         help='Box size for periodic boundary conditions. (default: None)',
@@ -47,6 +59,17 @@ def readCommandLine() -> dict:
                         help='Get chemical formulas of the polymer (default: false)', 
                         action='store_true'
     )
+    
+    parser.add_argument('-noSub', '--noSubgraphs',
+                        help='Calculate the number of subgraphs in the polymer (default: false)',
+                        action='store_true'
+    )
+    
+    parser.add_argument('--noSub-file',
+                        help='Output file name for number of subgraphs (default: noSubGraphs.csv)',
+                        default='noSubGraphs.csv'
+    )
+    
     parser.add_argument('--formula-file',
                         help='Output file name for chemical formulas (default: chemicalFormulas.csv)',
                         default='chemicalFormulas.csv'

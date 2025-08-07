@@ -40,10 +40,18 @@ class GraphManager(nx.Graph):
 
     
     def create_graph(self, atomData, boxSize=None):
+        exception = False
+        
         covalentRadii = dictionaries.dictCovalent()
         elements = atomData['atom'].values
         coords = atomData[['x','y','z']].values
-
+        
+        # Delete elements X, Q and Z from the list of elements
+        if exception:
+            coords = coords[[i for i, e in enumerate(elements) if e not in ['X', 'Q', 'Z']]]
+            elements = [e for e in elements if e not in ['X', 'Q', 'Z']]
+            Relements = [e[0] for e in elements]  # only first letter of element          
+        
         # Map each unique element to a small integer index
         # unique_elems returns a sorted array of its distinct values.
         # return_inverse=True returns an array of the same length as the original 'elements'.
@@ -52,7 +60,10 @@ class GraphManager(nx.Graph):
         # EXAMPLE: elements=np.array(['H', 'C', 'O', 'H', 'C', 'N', 'O', 'O'])
         #          unique_elems=np.array(['C' 'H' 'N' 'O'])
         #          inverse=np.array([1, 0, 3, 1, 0, 2, 3, 3])
-        unique_elems, inverse = np.unique(elements, return_inverse=True)
+        if exception:
+            unique_elems, inverse = np.unique(Relements, return_inverse=True)
+        else:
+            unique_elems, inverse = np.unique(elements, return_inverse=True)
         M = len(unique_elems)
 
         # Build an M×M matrix of squared max distances
@@ -554,10 +565,10 @@ class GraphManager(nx.Graph):
             
             # Add OH to node if C atom
             for startNode in start_nodes:
-                if startNode in self.nodes and self.nodes[startNode]['element'] == 'C':
+                if startNode in self.nodes and self.nodes[startNode]['element'][0] == 'C':
                     # Add OH to the start node
                     self.add_OH_to_carboxylic_acid(startNode)
-                elif startNode in self.nodes and self.nodes[startNode]['element'] == 'N':
+                elif startNode in self.nodes and self.nodes[startNode]['element'][0] == 'N':
                     # Add H to the start node
                     self.add_H_to_amide(startNode)
         # return the modified graph
@@ -577,7 +588,7 @@ class GraphManager(nx.Graph):
         # Find the neighbors of the C atom
         # -> C and O
         for neighbor in self.neighbors(node):
-            element = self.nodes[neighbor]['element']
+            element = self.nodes[neighbor]['element'][0]
             pos = np.array([self.nodes[neighbor]['x'], self.nodes[neighbor]['y'], self.nodes[neighbor]['z']])
             if element == 'C':
                 neighbor_C = pos
@@ -594,7 +605,7 @@ class GraphManager(nx.Graph):
         
         # Add the new oxygen atom
         new_index = max(self.nodes) + 1
-        self.add_node(new_index, index=new_index, element='O', x=coords_OH[0], y=coords_OH[1], z=coords_OH[2])
+        self.add_node(new_index, index=new_index, element='OH_T', x=coords_OH[0], y=coords_OH[1], z=coords_OH[2])
         self.add_edge(node, new_index)
         
         # calculate the coordinates of the new H atom
@@ -604,7 +615,7 @@ class GraphManager(nx.Graph):
         
         # Add the new hydrogen atom
         new_index = max(self.nodes) + 1
-        self.add_node(new_index, index=new_index, element='H', x=coords_[0], y=coords_[1], z=coords_[2])
+        self.add_node(new_index, index=new_index, element='HO_T', x=coords_[0], y=coords_[1], z=coords_[2])
         self.add_edge(new_index, new_index - 1)
         
     def add_H_to_amide(self, node):
@@ -617,7 +628,7 @@ class GraphManager(nx.Graph):
         # Find the neighbors of the N atom
         # -> C, H
         for neighbor in self.neighbors(node):
-            element = self.nodes[neighbor]['element']
+            element = self.nodes[neighbor]['element'][0]
             pos = np.array([self.nodes[neighbor]['x'], self.nodes[neighbor]['y'], self.nodes[neighbor]['z']])
             if element == 'C':
                 # remember the C atom
@@ -631,7 +642,7 @@ class GraphManager(nx.Graph):
         # Get the two H atoms coordinated to the N atom
         C_Hnodes = []
         for neighbor in self.neighbors(Cnode):
-            element = self.nodes[neighbor]['element']
+            element = self.nodes[neighbor]['element'][0]
             pos = np.array([self.nodes[neighbor]['x'], self.nodes[neighbor]['y'], self.nodes[neighbor]['z']])
             if element == 'H':
                 # remember the H atom
@@ -658,7 +669,7 @@ class GraphManager(nx.Graph):
         self.nodes[neighbor_H]['z'] = coords_new_H1[2]
         # Add the new hydrogen atom
         new_index = max(self.nodes) + 1
-        self.add_node(new_index, index=new_index, element='H', x=coords_new_H2[0], y=coords_new_H2[1], z=coords_new_H2[2])
+        self.add_node(new_index, index=new_index, element='HN_T2', x=coords_new_H2[0], y=coords_new_H2[1], z=coords_new_H2[2])
         self.add_edge(node, new_index)
         
         #if np.linalg.norm(coords_new_H1 - neighbor_H) > 0.8:
@@ -743,15 +754,27 @@ class GraphManager(nx.Graph):
         """
         Write the graph data to an XYZ file.
         """
+        exception = False
         with open(file, 'w') as f:
             f.write(f"{len(self.nodes)}\n")
             f.write("Graph data\n")
-            for node in self.nodes:
-                element = self.nodes[node]['element']
-                x = self.nodes[node]['x']
-                y = self.nodes[node]['y']
-                z = self.nodes[node]['z']
-                f.write(f"{element} {x} {y} {z}\n")
+    
+            for i, subgraph in enumerate(self.get_subgraphs()):
+                subfile = f"{file.rsplit('.', 1)[0]}_{i}.xyz"
+                with open(subfile, 'w') as subf:
+                    subf.write(f"{len(subgraph.nodes)}\n")
+                    subf.write("Subgraph data\n")
+    
+                    for node in subgraph.nodes:
+                        element = subgraph.nodes[node]['element']
+                        x = subgraph.nodes[node]['x']
+                        y = subgraph.nodes[node]['y']
+                        z = subgraph.nodes[node]['z']
+                        line = f"{element:<6} {x:10.4f} {y:10.4f} {z:10.4f}\n"
+                        f.write(line)
+                        if exception:
+                            subf.write(line)
+
 
 
     def write_fragment_data_to_csv(self, file):

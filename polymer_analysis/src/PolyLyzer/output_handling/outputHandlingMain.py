@@ -18,6 +18,15 @@ def main(results):
             for frame, subgraph_formulas in enumerate(results['formulas']):
                 for subgraph, count in subgraph_formulas:
                     file.write(f"{frame},{subgraph},{count}\n")
+                    
+    # Number of Subgraphs #
+    # Per frame we have the number of subgraphs in the polymer.
+    if 'noSub' in results and results['noSub']:
+        noSub_file = results['noSub_file']
+        with open(noSub_file, 'w') as file:
+            file.write("Frame, Number of Subgraphs\n")
+            for frame, no_sub in enumerate(results['noSub']):
+                file.write(f"{frame},{no_sub}\n")
 
     
     # End-to-End Distances #

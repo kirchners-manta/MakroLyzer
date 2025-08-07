@@ -1,8 +1,10 @@
 from PolyLyzer.input_handling import readXYZ
+from PolyLyzer.input_handling import readLMP
 from PolyLyzer.input_handling import estimateFrames
 from PolyLyzer.structure_modules import graphs
 from PolyLyzer.structure_modules import readPatterns
 from PolyLyzer.structure_modules.endToEndDistance import end_to_end_dist
+from PolyLyzer.structure_modules.countSubgraphs import count_subgraphs
 from PolyLyzer.structure_modules.dihedrals import get_all_dihedrals, get_CisTrans
 from PolyLyzer.structure_modules.radiusOfGyration import get_radius_of_gyration
 from PolyLyzer.structure_modules.anisotropy import get_anisotropy_factor
@@ -18,12 +20,10 @@ def main(args):
     Perfoms the main analysis of the polymer structure.
     """
     
-    # Get the trajectory file path
-    trajectoryFilePath = args['xyzFile']
-    
     # create empty lists to store results
     results = {
         'formulas': [],
+        'noSub': [],
         'distances': [],
         'dihedrals': [],
         'cisTrans': [],
@@ -36,6 +36,7 @@ def main(args):
         
         # Output file names
         'formulas_file': args['formula_file'],
+        'noSub_file': args['noSub_file'],
         'distances_file': args['e2e_file'],
         'dihedrals_file': args['dihedral_file'],
         'cisTrans_file': args['CisTrans_file'],
@@ -47,7 +48,18 @@ def main(args):
         'orderParameter_file': args['order_file']
     }
     
-    n_frames = estimateFrames.estimateFrames(trajectoryFilePath)
+    # Get the trajectory file path 
+    if args['xyzFile']:
+        trajectoryFilePath = args['xyzFile']
+        n_frames = estimateFrames.EstimateFrames.estimateFramesXYZ(trajectoryFilePath)
+        read = readXYZ.readXYZ
+    elif args['lmpFile']:
+        trajectoryFilePath = args['lmpFile']
+        n_frames = estimateFrames.EstimateFrames.estimateFramesLMP(trajectoryFilePath)
+        read = readLMP.readLMP
+        
+    # Get the modulo for reading frames
+    nthStep = args.get('nthStep', 1)
     
     # Get the box size
     boxSize = args.get('BoxSize', None)
@@ -58,8 +70,10 @@ def main(args):
             boxSize = BoxSize[0]
             
     
-    for i, xyz_frame in enumerate(tqdm(readXYZ.readXYZ(trajectoryFilePath),total=n_frames, desc="Creating something magical", unit="frame", ncols=100)):
-
+    for i, xyz_frame in enumerate(tqdm(read(trajectoryFilePath),total=n_frames, desc="Creating something magical", unit="frame", ncols=100)):
+        if i % nthStep != 0:
+            continue
+        
         # Get Graph object of the polymer box
         boxGraph = graphs.GraphManager(xyz_frame, boxSize=boxSize)
         
@@ -85,6 +99,11 @@ def main(args):
         if args['formula']:
             formulas = boxGraph.get_chemicalFormulas()
             results['formulas'].append(formulas)
+            
+        # Number of subgraphs
+        if args['noSubgraphs']:
+            noSub = count_subgraphs(boxGraph)
+            results['noSub'].append(noSub)
            
         # End-to-end distance     
         if args['endToEndDistance']:
