@@ -27,6 +27,7 @@ Setting up a virtual environment with ``venv``:
    source makrolyzer-env/bin/activate
 
 After activating the virtual environment, install the dependencies using pip:
+
 .. code-block:: bash
 
    pip install .
@@ -36,4 +37,5 @@ Usage
 =================
 To call the MakroLyzer help, run the following command in the terminal:
 .. code-block:: bash
+
    MakroLyzer -h
