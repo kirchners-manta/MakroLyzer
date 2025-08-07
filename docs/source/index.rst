@@ -13,3 +13,8 @@ MakroLyzer - Documentation
 
    01_Installation
 
+.. toctree::
+   :maxdepth: 3
+   :caption: Usage
+
+   02_Usage

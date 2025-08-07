@@ -33,9 +33,10 @@ After activating the virtual environment, install the dependencies using pip:
    pip install .
 
 
-Usage
+Call help page
 =================
 To call the MakroLyzer help, run the following command in the terminal:
+
 .. code-block:: bash
 
    MakroLyzer -h
