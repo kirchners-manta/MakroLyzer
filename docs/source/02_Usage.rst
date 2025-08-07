@@ -17,7 +17,7 @@ the structure in the ``PolyEthylene.xyz`` file with a box size of 80.0 Angstroms
 .. note::
     So far only cubic box sizes are supported.
 
-The following parameters need to be provided:
+Parameters that need to be provided:
 ==================================================
 
 XYZ or LMP file (required)
@@ -33,13 +33,13 @@ Box Size
 .. line-block::
   ``-bs``
       Box size of the macromolecule in Angstroms. This is required if periodic boundary conditions are used.
-      *Optional.*
+      *Optional. Default: infinity*
 
 Timesteps to calculate
 ------------------
 .. line-block::
   ``-nth``
-      Specify the timesteps to calculate the parameters for. The default value is 1, which means that every timestep will be calculated.
+      Specifies the for which how many timesteps from the trajectory the given parameters should be calculated.
       *Optional. Default: 1*
       
 Pattern file 
@@ -47,11 +47,11 @@ Pattern file
 .. line-block::
   ``-p``
   ``--pattern-file``
-      Path to the pattern file containing the patterns to search for in the macromolecule structure and
+      Path to the pattern file containing the patterns to search for in the macromolecule structure.
       *Optional. Default: None*
 
 
-Parameters that can be calculated
+Parameters that can be calculated:
 =================================
 
 Radius of gyration
@@ -89,7 +89,17 @@ Anisotropy parameter
 Order parameter
 ------------------
 .. line-block::
-  ``-o``
+  ``-op``
   ``--order-file``
       Calculate the order parameter of the macromolecule structure. Provide a file name for the output if desired. 
       *Optional. Default: orderParameter.csv*
+
+End to End Distance
+------------------
+.. line-block::
+  ``-e2e``
+  ``e2e-file``
+      Calculate the end to end distance of the macromolecule structure. Provide a file name for the output if desired. 
+      *Optional. Default: endToEndDistances.csv*
+
+
