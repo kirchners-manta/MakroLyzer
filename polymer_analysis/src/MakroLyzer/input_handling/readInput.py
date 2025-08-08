@@ -182,7 +182,18 @@ def readCommandLine() -> dict:
                         help='Output file name for order parameter (default: orderParameter.csv)',
                         default='orderParameter.csv'
     )
+    
+    parser.add_argument(
+                        '-RScount', '--RingStrandCount',
+                        help='Calculate ring and strand count of a graph (default: false)',
+                        action='store_true'
+    )
 
+    parser.add_argument(
+                        '--RingStrandCount-file',
+                        help='Output file name for ring and strand count (default: RingStrandCount.csv)',
+                        default='RingStrandCount.csv'
+    )
     
     args = vars(parser.parse_args())
     

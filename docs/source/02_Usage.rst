@@ -23,7 +23,7 @@ XYZ or LMP file
 .. line-block::
   ``-xyz``
   ``-lmp``
-      Path to the XYZ or LAMMPS trajectory file containing the macromolecule structure.
+      Path to the XYZ or LAMMPS trajectory file containing the macromolecular structure.
       *Required. Either -xyz or -lmp must be provided.*
 
 
@@ -48,7 +48,7 @@ Pattern file
 .. line-block::
   ``-p``
   ``--pattern-file``
-      Path to the pattern file containing the patterns to search for in the macromolecule structure.
+      Path to the pattern file containing the patterns to search for in the macromolecular structure.
       *Optional. Default: None*
 
 
@@ -89,7 +89,7 @@ Asphericity parameter
 .. line-block::
   ``-as``
   ``--asphericity-file``
-      Calculate the asphericity parameter of the macromolecule structure. Provide a file name for the output if desired. 
+      Calculate the asphericity parameter of the macromolecular structure. Provide a file name for the output if desired. 
       *Optional. Default: asphericity.csv*
 
 The asphericity parameter is defined as:
@@ -104,7 +104,7 @@ Anisotropy factor
 .. line-block::
   ``-af``
   ``--anisotropy-file``
-      Calculate the anisotropy parameter of the macromolecule structure. Provide a file name for the output if desired. 
+      Calculate the anisotropy parameter of the macromolecular structure. Provide a file name for the output if desired. 
       *Optional. Default: anisotropyFactor.csv*
 
 The anisotropy factor is defined as:
@@ -120,9 +120,9 @@ Order parameter
 .. line-block::
   ``-op b:n:v``
   ``--order-file``
-      Calculate the order parameter of the macromolecule structure. This is calculateed for each cube defined by **b** and **n**.
+      Calculate the order parameter of the macromolecular structure. This is calculated for each cube defined by **b** and **n**.
       **b** is the box size in Angstroms,
-      **n** is the number of cubed in which the box is divided in x, y, and z direction (thus overall n^3 boxes),
+      **n** is the number of cubes into which the box is divided in x, y, and z direction (thus overall n^3 boxes),
       **v** is the number of atoms in a structure backbone, that is used to form one molecular vector.
       Provide a file name for the output if desired. 
       *Optional. Default: orderParameter.csv*
@@ -136,14 +136,34 @@ The order parameter is defined as:
 where :math:`\theta_m` is the angle between the molecular axis and the reference axis (director), 
 and :math:`\langle \cdots \rangle` denotes the average over all molecules.
 
+Dihedral angles 
+^^^^^^^^^^^^^^^^^^^^
+.. line-block::
+  ``-d``
+  ``dihedral-range {abs,nonabs}``
+  ``--dihedral-file``
+      Calculate the dihedral angles of the macromolecular structure along the backbones of the substructures.
+      **dihedral-range** specifies whether to calculate the absolute dihedral angles or the non-absolute dihedral angles.
+      Provide a file name for the output if desired. 
+      *Optional. Default: dihedrals.csv*
 
 
-End to End Distance
+Cis trans count
+^^^^^^^^^^^^^^^^^^^^
+.. line-block::
+  ``-ct``
+  ``--CisTrans-file``
+      Calculate the cis and trans counts of the macromolecular structure along the backbones of the substructures.
+      Provide a file name for the output if desired. 
+      *Optional. Default: cisTransCounts.csv*
+
+
+End-to-End Distance
 ^^^^^^^^^^^^^^^^^^^^^^^
 .. line-block::
   ``-e2e``
   ``--e2e-file``
-      Calculate the end to end distance of the macromolecule structure. Provide a file name for the output if desired. 
+      Calculate the end-to-end distance of the macromolecular structure. Provide a file name for the output if desired. 
       *Optional. Default: endToEndDistances.csv*
 
 The end to end distance is defined as:
@@ -160,7 +180,7 @@ Number of hydrogen bonds
 .. line-block::
   ``-hb A:AH:AD:B``
   ``--hbonds-file``
-      Calculate the number of hydrogen bonds in the macromolecule structure. 
+      Calculate the number of hydrogen bonds in the macromolecular structure. 
       **A** is the atom type of the acceptor, **AH** is the maximum hydrogen atom acceptor atom distance, **AD** is the maximum hydrogen atom donor atom distance, and **B** is the maximum acceptor-hydrogen-donor angle in degrees.
       Provide a file name for the output if desired. 
       *Optional. Default: hydrogenBonds.csv*
@@ -169,9 +189,9 @@ Number of hydrogen bonds
 Number of connected substructures
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. line-block::
-  ``noSub``
+  ``-noSub``
   ``--noSub-file``
-      Calculates the number of connected substructures in the macromolecule structure. Provide a file name for the output if desired.
+      Calculates the number of connected substructures in the macromolecular structure. Provide a file name for the output if desired.
       *Optional. Default: noSubGraphs.csv*
 
 
@@ -180,5 +200,14 @@ Formulas of connected substructures
 .. line-block::
   ``-f``
   ``--formula-file``
-      Calculates the formulas of the connected substructures in the macromolecule structure. Provide a file name for the output if desired.
+      Calculates the formulas of the connected substructures in the macromolecular structure. Provide a file name for the output if desired.
       *Optional. Default: chemicalFormulas.csv*
+
+
+Ring and strand count
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. line-block::
+  ``-RScount``
+  ``--RingStrandCount-file``
+      Calculates the number of rings and strands in the macromolecular structure. Provide a file name for the output if desired.
+      *Optional. Default: ringAndStandCount.csv*

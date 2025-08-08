@@ -143,4 +143,11 @@ def main(results):
             for frame, order_param in enumerate(results['orderParameter']):
                 file.write(f"{frame},{order_param:.3f}\n")
 
-        
+    # Ring and Strand Count #
+    # If ring and strand count is requested, write it to a file.
+    if results.get('RingStrandCount'):
+        ring_strand_file = results['RingStrandCount_file']
+        with open(ring_strand_file, 'w') as file:
+            file.write("Frame, Ring Count, Strand Count\n")
+            for frame, (ring_count, strand_count) in enumerate(results['RingStrandCount']):
+                file.write(f"{frame},{ring_count},{strand_count}\n")

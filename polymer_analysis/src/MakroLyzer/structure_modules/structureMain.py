@@ -4,7 +4,7 @@ from MakroLyzer.input_handling import estimateFrames
 from MakroLyzer.structure_modules import graphs
 from MakroLyzer.structure_modules import readPatterns
 from MakroLyzer.structure_modules.endToEndDistance import end_to_end_dist
-from MakroLyzer.structure_modules.countSubgraphs import count_subgraphs
+from MakroLyzer.structure_modules.countSubgraphs import count_subgraphs, count_rings
 from MakroLyzer.structure_modules.dihedrals import get_all_dihedrals, get_CisTrans
 from MakroLyzer.structure_modules.radiusOfGyration import get_radius_of_gyration
 from MakroLyzer.structure_modules.anisotropy import get_anisotropy_factor
@@ -33,7 +33,8 @@ def main(args):
         'anisotropy_factor': [],
         'asphericity_parameter': [],
         'orderParameter': [],
-        
+        'RingStrandCount': [],
+
         # Output file names
         'formulas_file': args['formula_file'],
         'noSub_file': args['noSub_file'],
@@ -45,7 +46,8 @@ def main(args):
         'subgraph_coords_file': args['subgraph_coord_file'],
         'anisotropy_file': args['anisotropy_file'],
         'asphericity_file': args['asphericity_file'],
-        'orderParameter_file': args['order_file']
+        'orderParameter_file': args['order_file'],
+        'RingStrandCount_file': args['RingStrandCount_file']
     }
     
     # Get the trajectory file path 
@@ -148,5 +150,10 @@ def main(args):
             boxSize, n, unitSize = args['orderParameter']
             results['orderParameter'].append(get_order_parameter(
                 boxGraph, boxSize, n, unitSize))
+            
+        # Ring and strand count
+        if args['RingStrandCount']:
+            ring_strand_count = count_rings(boxGraph)
+            results['RingStrandCount'].append(ring_strand_count)
 
     return results

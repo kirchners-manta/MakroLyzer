@@ -9,6 +9,7 @@ from src.MakroLyzer.structure_modules.radiusOfGyration import get_radius_of_gyra
 from src.MakroLyzer.structure_modules.anisotropy import get_anisotropy_factor
 from src.MakroLyzer.structure_modules.asphericityParameter import get_asphericity_parameter
 from src.MakroLyzer.structure_modules.hbonds import get_Hbonds
+from src.MakroLyzer.structure_modules.countSubgraphs import count_subgraphs, count_rings
 
 @pytest.fixture
 def sample_data1():
@@ -121,6 +122,10 @@ def sample_data25():
 @pytest.fixture
 def sample_data26():
     return 'test_structures/26.xyz'
+
+@pytest.fixture
+def sample_data30():
+    return 'test_structures/30.xyz'
     
 def test_end_to_end(sample_data1):
     xyz = next(readXYZ.readXYZ(sample_data1))
@@ -885,3 +890,15 @@ def test_get_vectors_and_positions_along_path(sample_data23):
         assert position[0][1] == pytest.approx(-0.12005, abs=1e-5)
         assert position[0][2] == pytest.approx(-0.021475, abs=1e-5)
         
+        
+# number of subgraphs and number of rings
+def test_number_of_subgraphs_and_rings(sample_data30):
+    xyz = next(readXYZ.readXYZ(sample_data30))
+    testGraph = graphs.GraphManager(xyz)
+    
+    numberOfSubgraphs = count_subgraphs(testGraph)
+    assert numberOfSubgraphs == 12
+    
+    numberOfRingsStrands = count_rings(testGraph)
+    assert numberOfRingsStrands[0] == 7
+    assert numberOfRingsStrands[1] == 5
