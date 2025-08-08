@@ -1,5 +1,3 @@
-What the user needs to provide
-=================================================
 The user needs to provide a structure or a trajectory file of a macromolecule in the
 ``.lmp`` or ``.xyz`` format.
 In case periodic boundary conditions are used, the user also needs to provide the box size.
@@ -17,8 +15,8 @@ the structure in the ``PolyEthylene.xyz`` file with a box size of 80.0 Angstroms
 .. note::
     So far only cubic box sizes are supported.
 
-Parameters that need to be provided:
-==================================================
+Parameters that need to be provided
+=======================================
 
 XYZ or LMP file
 ^^^^^^^^^^^^^^^
@@ -54,8 +52,8 @@ Pattern file
       *Optional. Default: None*
 
 
-Parameters that can be calculated:
-=================================
+Parameters that can be calculated
+=====================================
 
 Radius of gyration
 ^^^^^^^^^^^^^^^^^^^^
@@ -69,10 +67,22 @@ The radius of gyration is defined as:
 
 .. math::
 
-   R_g^2 = \frac{1}{N} \sum_{j=1}^{N} (\vec{r_j} - \vec{r_{cm}})^2
+   R_\mathrm{g}^2 = \frac{1}{N} \sum_{j=1}^{N} \left(\vec{r}_j - \vec{r}_{\mathrm{cm}}\right)^2
 
 where :math:`\vec{r_j}` is the position vector of atom :math:`j`, :math:`\vec{r_{cm}}` is the center of mass position vector, and :math:`N` is the number of atoms.
+The radius of gyration is calculated for each connected substructure in the macromolecule and for the whole macromolecule.
 
+The gyration tensor is defined as:
+
+.. math::
+
+   S_{m,n} = \frac{1}{N} \sum_{i=j}^N
+             \left(r_{j}^{(m)} - r_{\mathrm{cm}}^{(m)}\right)
+             \left(r_{j}^{(n)} - r_{\mathrm{cm}}^{(n)}\right)
+
+where :math:`r_{j}^{(m)}` is the :math:`m`-th component of the position vector of atom :math:`j`, and :math:`r_{\mathrm{cm}}^{(m)}` is the :math:`m`-th component of the center of mass position vector.
+:math:`\lambda_1 \ge \lambda_2 \ge \lambda_3` are the eigenvalues of the tensor.
+They are used to calculate the asphericity parameter and the anisotropy factor.
 
 Asphericity parameter
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -82,23 +92,50 @@ Asphericity parameter
       Calculate the asphericity parameter of the macromolecule structure. Provide a file name for the output if desired. 
       *Optional. Default: asphericity.csv*
 
+The asphericity parameter is defined as:
 
-Anisotropy parameter
+.. math::
+
+   b = \lambda_1 - \frac{1}{2}\left(\lambda_2 + \lambda_3\right)
+
+
+Anisotropy factor
 ^^^^^^^^^^^^^^^^^^^^
 .. line-block::
-  ``-an``
+  ``-af``
   ``--anisotropy-file``
       Calculate the anisotropy parameter of the macromolecule structure. Provide a file name for the output if desired. 
       *Optional. Default: anisotropyFactor.csv*
+
+The anisotropy factor is defined as:
+
+.. math::
+
+   \kappa^2 = 1 - 3 \frac{\lambda_1 \lambda_2 + \lambda_2 \lambda_3 + \lambda_3 \lambda_1}
+                   {(\lambda_1 + \lambda_2 + \lambda_3)^2}
 
 
 Order parameter
 ^^^^^^^^^^^^^^^^^
 .. line-block::
-  ``-op``
+  ``-op b:n:v``
   ``--order-file``
-      Calculate the order parameter of the macromolecule structure. Provide a file name for the output if desired. 
+      Calculate the order parameter of the macromolecule structure. This is calculateed for each cube defined by **b** and **n**.
+      **b** is the box size in Angstroms,
+      **n** is the number of cubed in which the box is divided in x, y, and z direction (thus overall n^3 boxes),
+      **v** is the number of atoms in a structure backbone, that is used to form one molecular vector.
+      Provide a file name for the output if desired. 
       *Optional. Default: orderParameter.csv*
+
+The order parameter is defined as:
+
+.. math::
+
+   S = \frac{1}{2} \langle 3 \cos^2{\theta_m} - 1 \rangle
+
+where :math:`\theta_m` is the angle between the molecular axis and the reference axis (director), 
+and :math:`\langle \cdots \rangle` denotes the average over all molecules.
+
 
 
 End to End Distance
@@ -109,4 +146,39 @@ End to End Distance
       Calculate the end to end distance of the macromolecule structure. Provide a file name for the output if desired. 
       *Optional. Default: endToEndDistances.csv*
 
+The end to end distance is defined as:
 
+.. math::
+
+   \vec{R}_n = \sum_{i=1}^n \vec{r}_i
+
+where :math:`\vec{r}_i` is the bond vector of two atoms in the backbone of the macromolecule, and :math:`n` is the number of bond vectors in the backbone.
+
+
+Number of hydrogen bonds
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. line-block::
+  ``-hb A:AH:AD:B``
+  ``--hbonds-file``
+      Calculate the number of hydrogen bonds in the macromolecule structure. 
+      **A** is the atom type of the acceptor, **AH** is the maximum hydrogen atom acceptor atom distance, **AD** is the maximum hydrogen atom donor atom distance, and **B** is the maximum acceptor-hydrogen-donor angle in degrees.
+      Provide a file name for the output if desired. 
+      *Optional. Default: hydrogenBonds.csv*
+
+
+Number of connected substructures
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. line-block::
+  ``noSub``
+  ``--noSub-file``
+      Calculates the number of connected substructures in the macromolecule structure. Provide a file name for the output if desired.
+      *Optional. Default: noSubGraphs.csv*
+
+
+Formulas of connected substructures
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. line-block::
+  ``-f``
+  ``--formula-file``
+      Calculates the formulas of the connected substructures in the macromolecule structure. Provide a file name for the output if desired.
+      *Optional. Default: chemicalFormulas.csv*
