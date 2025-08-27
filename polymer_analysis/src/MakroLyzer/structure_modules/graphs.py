@@ -272,7 +272,13 @@ class GraphManager(nx.Graph):
                 longest = path
                 
         # Fallback for cycle graphs
+        # catch TypeError
         longest_cycle = []
+        if startAtom is not None and isinstance(startAtom, str):
+            startAtom = None
+            # warn the user
+            print("Warning: startAtom for the cycle basis detection was reset to None.")
+
         cycles = nx.cycle_basis(self, startAtom)
         if cycles:
             longest_cycle = max(cycles, key=len)
