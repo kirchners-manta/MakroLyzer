@@ -434,7 +434,7 @@ def test_dihedrals1(sample_data5):
     testGraph = graphs.GraphManager(xyz)
     
     # absolute dihedrals
-    dihedrals = get_all_dihedrals(testGraph)
+    dihedrals, dihedral_list = get_all_dihedrals(testGraph)
     for angle, count in dihedrals:
         if angle == 65:
             assert count == 1
@@ -451,7 +451,7 @@ def test_dihedrals1(sample_data5):
     assert cisTrans[1][1] == 3
             
     # relative dihedrals
-    dihedrals = get_all_dihedrals(testGraph, sign=True)
+    dihedrals, dihedral_list = get_all_dihedrals(testGraph, sign=True)
     for angle, count in dihedrals:
         if angle == -65:
             assert count == 1
@@ -467,7 +467,7 @@ def test_dihedrals2(sample_data5cis):
     testGraph = graphs.GraphManager(xyz)
     
     # absolute dihedrals
-    dihedrals = get_all_dihedrals(testGraph)
+    dihedrals, dihedral_list = get_all_dihedrals(testGraph)
     for angle, count in dihedrals:
         if angle == 64:
             assert count == 1
@@ -480,7 +480,7 @@ def test_dihedrals2(sample_data5cis):
     assert cisTrans[1][1] == 0
             
     # relative dihedrals
-    dihedrals = get_all_dihedrals(testGraph, sign=True)
+    dihedrals, dihedral_list = get_all_dihedrals(testGraph, sign=True)
     for angle, count in dihedrals:
         if angle == -64:
             assert count == 1
@@ -492,20 +492,19 @@ def test_dihedrals3(sample_data5cis2):
     testGraph = graphs.GraphManager(xyz)
     
     # absolute dihedrals
-    dihedrals = get_all_dihedrals(testGraph)
+    dihedrals, dihedral_list = get_all_dihedrals(testGraph)
     for angle, count in dihedrals:
         if angle == 4:
             assert count == 1
         else:
             assert count == 0
-            
-    # cis trans counts
+            # cis trans counts
     cisTrans = get_CisTrans(testGraph)
     assert cisTrans[0][1] == 1
     assert cisTrans[1][1] == 0
             
     # relative dihedrals
-    dihedrals = get_all_dihedrals(testGraph, sign=True)
+    dihedrals, dihedral_list = get_all_dihedrals(testGraph, sign=True)
     for angle, count in dihedrals:
         if angle == 4:
             assert count == 1
@@ -517,7 +516,7 @@ def test_dihedrals4(sample_data5trans):
     testGraph = graphs.GraphManager(xyz)
     
     # absolute dihedrals
-    dihedrals = get_all_dihedrals(testGraph)
+    dihedrals, dihedral_list = get_all_dihedrals(testGraph)
     for angle, count in dihedrals:
         if angle == 180:
             assert count == 1
@@ -530,7 +529,7 @@ def test_dihedrals4(sample_data5trans):
     assert cisTrans[1][1] == 1
             
     # relative dihedrals
-    dihedrals = get_all_dihedrals(testGraph, sign=True)
+    dihedrals, dihedral_list = get_all_dihedrals(testGraph, sign=True)
     for angle, count in dihedrals:
         if angle == 180:
             assert count == 1
@@ -542,7 +541,7 @@ def test_dihedrals5(sample_data6):
     testGraph = graphs.GraphManager(xyz)
     
     # absolute dihedrals
-    dihedrals = get_all_dihedrals(testGraph)
+    dihedrals, dihedral_list = get_all_dihedrals(testGraph)
     for angle, count in dihedrals:
         if angle == 2:
             assert count == 1
@@ -571,7 +570,7 @@ def test_dihedrals5(sample_data6):
     assert cisTrans[1][1] == 9
     
     # relative dihedrals
-    dihedrals = get_all_dihedrals(testGraph, sign=True)
+    dihedrals, dihedral_list = get_all_dihedrals(testGraph, sign=True)
     for angle, count in dihedrals:
         if angle == -180:
             assert count == 2
@@ -601,9 +600,9 @@ def test_dihedrals6(sample_data14):
     testGraph = graphs.GraphManager(xyz)
     
     # absolute dihedrals
-    dihedrals = get_all_dihedrals(testGraph)    
+    dihedrals, dihedral_list = get_all_dihedrals(testGraph)    
     
-    dihedrals = get_all_dihedrals(testGraph, sign=True)
+    dihedrals, dihedral_list = get_all_dihedrals(testGraph, sign=True)
     for angle, count in dihedrals:
         if angle == 0:
             assert count == 1

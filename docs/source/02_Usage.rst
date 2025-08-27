@@ -143,8 +143,9 @@ Dihedral angles
   ``dihedral-range {abs,nonabs}``
   ``--dihedral-file``
       Calculate the dihedral angles of the macromolecular structure along the backbones of the substructures.
+      One file containing the counts of the dihedral angles in bins of 1 degree is created for each substructure and a file containing a list for each substructure containing the dihedral angles along the backbone are created.
       **dihedral-range** specifies whether to calculate the absolute dihedral angles or the non-absolute dihedral angles.
-      Provide a file name for the output if desired. 
+      Provide a file name for the output if desired. The list file will be named ``<output_file>_list.csv`` and the counts file will be named ``<output_file>.csv``.
       *Optional. Default: dihedrals.csv*
 
 

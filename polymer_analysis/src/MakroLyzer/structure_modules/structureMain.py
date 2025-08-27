@@ -26,6 +26,7 @@ def main(args):
         'noSub': [],
         'distances': [],
         'dihedrals': [],
+        'dihedral_list': [],
         'cisTrans': [],
         'Rg': [],
         'hbonds': [],
@@ -115,14 +116,16 @@ def main(args):
         # Dihedral angles      
         if args['dihedral']:
             if args['dihedral_range'] == 'abs':
-                results['dihedrals'].append(get_all_dihedrals(boxGraph, sign=None))
+                results['dihedrals'].append(get_all_dihedrals(boxGraph, sign=None)[0])
+                results['dihedral_list'].append(get_all_dihedrals(boxGraph, sign=None)[1])
             elif args['dihedral_range'] == 'nonabs':
-                results['dihedrals'].append(get_all_dihedrals(boxGraph, sign=True))
-                
+                results['dihedrals'].append(get_all_dihedrals(boxGraph, sign=True)[0])
+                results['dihedral_list'].append(get_all_dihedrals(boxGraph, sign=True)[1])
+
         # Cis Trans counts
         if args['cisTrans']:
             results['cisTrans'].append(get_CisTrans(boxGraph))
-           
+
         # Radius of gyration 
         if args['radiusOfGyration']:
             results['Rg'].append(get_radius_of_gyration(boxGraph))

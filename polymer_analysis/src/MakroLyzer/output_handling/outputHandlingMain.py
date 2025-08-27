@@ -62,8 +62,20 @@ def main(results):
 
         # Save to CSV
         df_merged.to_csv(dihedrals_file, index=False)
-            
-                
+        
+    if 'dihedral_list' in results and results['dihedral_list']:
+        dihedral_list_file = results['dihedrals_file'].replace('.csv', '_list.csv')
+        with open(dihedral_list_file, 'w') as file:
+            file.write("Frame,Subgraph,Dihedral Angles / °\n")
+            # results['dihedral_list'] is: [ [subgraph0_angles, subgraph1_angles, ...],  # frame 0
+            #                                [subgraph0_angles, subgraph1_angles, ...],  # frame 1
+            #                                ... ]
+            for frame, subgraphs in enumerate(results['dihedral_list']):
+                for sub_idx, angles in enumerate(subgraphs):
+                    angle_str = ','.join(str(a) for a in angles)  
+                    file.write(f"{frame},{sub_idx},{angle_str}\n")
+
+
     # Cis-Trans Counts #
     # Per frame we have the overall cis-trans counts like this: [('Cis', cis), ('Trans', trans)]
     if 'cisTrans' in results and results['cisTrans']:
@@ -77,7 +89,6 @@ def main(results):
                 trans_count = ct_dict.get('Trans', 0)
                 file.write(f"{frame},{cis_count},{trans_count}\n")
                 
-    
     # Radius of Gyration #
     # Per frame we have the radius of gyration for each subgraph and the overall radius of gyration.
     if 'Rg' in results and results['Rg']:

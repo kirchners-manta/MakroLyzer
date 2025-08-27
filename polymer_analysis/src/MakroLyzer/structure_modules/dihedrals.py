@@ -24,6 +24,7 @@ def get_dihedrals(graph, sign=None):
     dihedrals = []
     # For each subgraph, find the longest path
     for subgraph in subgraphs:
+        sub_list =  []
         longestPath = subgraph.find_longest_path()
         # For each node in the longest path, find the dihedral angles
         for i in range(len(longestPath) - 3):
@@ -34,8 +35,9 @@ def get_dihedrals(graph, sign=None):
             d = subgraph.dihedral(node1, node2, node3, node4, sign=sign)
             # round dihedral to integers
             d = round(d)
-            dihedrals.append(d)
-            
+            sub_list.append(d)
+        dihedrals.append(sub_list)
+
     return dihedrals
             
 
@@ -56,10 +58,10 @@ def get_all_dihedrals(graph, sign=None):
         list: A list of tuples containing the dihedral angles and their counts.
     """
     
-    dihedrals = get_dihedrals(graph, sign=sign)
-    
+    dihedral_list = get_dihedrals(graph, sign=sign)
+
     # round dihedrals to integers
-    dihedrals = [round(d) for d in dihedrals]
+    dihedrals = [round(d) for sublist in dihedral_list for d in sublist]
 
     # Group dihedrals 
     Dihedrals = dict(sorted({x: dihedrals.count(x) for x in set(dihedrals)}.items(), key=lambda item: item[0]))
@@ -75,9 +77,9 @@ def get_all_dihedrals(graph, sign=None):
     # Convert the counts to a list of tuples
     dihedrals = [(k, v) for k, v in Dihedrals.items()]
     # Sort the dihedrals by size
-    dihedrals = sorted(dihedrals, key=lambda x: x[0])
+    dihedrals = sorted(dihedrals, key=lambda x: x[0])    
             
-    return dihedrals
+    return dihedrals, dihedral_list
 
 def get_CisTrans(graph):
     """
@@ -89,13 +91,13 @@ def get_CisTrans(graph):
     Returns:
         list: A list containing the counts of cis and trans.
     """
-    
-    dihedrals = get_dihedrals(graph, sign=None)
-    
+
+    dihedral_list = get_dihedrals(graph, sign=None)
+
     # 0 to 90 degrees are cis, 90 to 180 degrees are trans
-    cis = sum(1 for d in dihedrals if 0 <= d <=90)
-    trans = sum(1 for d in dihedrals if 90 < d <=180)
-    
+    cis = sum(1 for sublist in dihedral_list for d in sublist if 0 <= d <=90)
+    trans = sum(1 for sublist in dihedral_list for d in sublist if 90 < d <=180)
+
     cisTrans = [('Cis', cis), ('Trans', trans)]
     
     return cisTrans
