@@ -5,7 +5,7 @@ from MakroLyzer.structure_modules import graphs
 from MakroLyzer.structure_modules import readPatterns
 from MakroLyzer.structure_modules.endToEndDistance import end_to_end_dist
 from MakroLyzer.structure_modules.countSubgraphs import count_subgraphs, count_rings
-from MakroLyzer.structure_modules.dihedrals import get_all_dihedrals, get_CisTrans
+from MakroLyzer.structure_modules.dihedrals import get_all_dihedrals, get_CisTrans, get_Ramachandran
 from MakroLyzer.structure_modules.radiusOfGyration import get_radius_of_gyration
 from MakroLyzer.structure_modules.anisotropy import get_anisotropy_factor
 from MakroLyzer.structure_modules.asphericityParameter import get_asphericity_parameter
@@ -28,6 +28,7 @@ def main(args):
         'dihedrals': [],
         'dihedral_list': [],
         'cisTrans': [],
+        'AARamachandran': [],
         'Rg': [],
         'hbonds': [],
         'subgraph_coords': [],
@@ -42,6 +43,7 @@ def main(args):
         'distances_file': args['e2e_file'],
         'dihedrals_file': args['dihedral_file'],
         'cisTrans_file': args['CisTrans_file'],
+        'AARamachandran_file': args['AARamachandran_file'],
         'Rg_file': args['Rg_file'],
         'hbonds_file': args['hbonds_file'],
         'subgraph_coords_file': args['subgraph_coord_file'],
@@ -125,6 +127,10 @@ def main(args):
         # Cis Trans counts
         if args['cisTrans']:
             results['cisTrans'].append(get_CisTrans(boxGraph))
+
+        # Amino Acid Ramachandran plot data
+        if args['AminoAcidRamachandran']:
+            results['AARamachandran'].append(get_Ramachandran(boxGraph))
 
         # Radius of gyration 
         if args['radiusOfGyration']:

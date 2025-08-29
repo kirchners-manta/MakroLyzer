@@ -101,3 +101,52 @@ def get_CisTrans(graph):
     cisTrans = [('Cis', cis), ('Trans', trans)]
     
     return cisTrans
+
+def get_Ramachandran(graph):
+    """
+    Get the Ramachandran plot data of the graph.
+    The Polymer needs to be an Amino Acid or an alternative Amino Acid. 
+
+    Args:
+        graph (GraphManager): The graph to calculate the Ramachandran plot data for.
+
+    Returns:
+        list: A list containing the phi and psi angles for the Ramachandran plot.
+    """
+
+    # Get the backbone of the AA which is always like this: 
+    # N-C-C-N-...
+    # N-Calpha-CarbonylC-N-...
+    backbone = graph.AminoAcidBackbone()
+
+    # Prepare a ramachandran matrix of ints and initialize to 0
+    ramachandran = [[0 for _ in range(360)] for _ in range(360)]
+
+    # Slide over the backbone and calculate phi/psi angles
+    # Phi is defined as the dihedral angle C(i)-N(i+1)-Ca(i+1)-C(i+1)
+    # Psi is defined as the dihedral angle N(i)-Ca(i)-C(i+1)-N(i+1)
+    
+    # We start with the first dihedral at the third atom in the backbone which is the
+    # first CarbonylC = Cprime
+    i = 2
+    while i < len(backbone) - 4:
+        Cprime1 = backbone[i]
+        N1 = backbone[i+1]
+        Calpha = backbone[i+2]
+        Cprime2 = backbone[i+3]
+        N2 = backbone[i+4]
+
+        # phi C(i)-N(i+1)-Ca(i+1)-C(i+1)
+        phi = graph.dihedral(Cprime1, N1, Calpha, Cprime2, sign=True)
+        phi = round(phi) + 180
+        # psi N(i)-Ca(i)-C(i+1)-N(i+1)
+        psi = graph.dihedral(N1, Calpha, Cprime2, N2, sign=True)
+        psi = round(psi) + 180
+
+        # Increment the ramachandran matrix
+        ramachandran[phi][psi] += 1
+        
+        # move to the next Calpha
+        i += 3 
+        
+    return ramachandran

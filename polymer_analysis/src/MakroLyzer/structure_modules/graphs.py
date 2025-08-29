@@ -806,6 +806,145 @@ class GraphManager(nx.Graph):
                 ])
 
 
+    def AminoAcidBackbone(self):
+        """
+        Find the backbone atoms of an amino acid.
+        This is always N-Calpha-C`-N-...
+
+        Args:
+            Graph (GraphManager) : The subgraph to find the longest path for.
+
+        Returns:
+            list: A list of backbone atoms.
+        """
+        
+        def isCarbonylC(node):
+            # Check if the C is bound to an O or in case of alternative amino acids to another N.
+            if self.nodes[node]['element'] != 'C':
+                return False
+            # Bound to O
+            for neighbor in self.neighbors(node):
+                if self.nodes[neighbor]['element'] == 'O':
+                    return True
+            # Bound to two N
+            n_count = sum(1 for n in self.neighbors(node) if self.nodes[n]['element'] == 'N')
+            return n_count == 2
+
+        def isCalpha(prevN, Calpha):
+            # Check if Calpha is bound to the previous nitrogen
+            if self.nodes[Calpha]['element'] != 'C':
+                return False
+            for neighbor in self.neighbors(Calpha):
+                if self.nodes[neighbor]['element'] == 'N' and neighbor == prevN:
+                    # Check if Calpha is bound to a CarbonylC
+                    for neighbor in self.neighbors(Calpha):
+                        if self.nodes[neighbor]['element'] == 'C' and isCarbonylC(neighbor):
+                            return True
+            return False
+        
+        def nextCalpha(N):
+            # Find the next Calpha neighbor of the given nitrogen
+            possibleCalphas = [n for n in self.neighbors(N) if self.nodes[n]['element'] == 'C']
+            for c in possibleCalphas:
+                if isCalpha(N, c):
+                    return c
+            return None
+
+        def nextCarbonylC(Calpha, prevN):
+            # Check if there is a carbonyl C after the given Calpha
+            for neighbor in self.neighbors(Calpha):
+                if neighbor == prevN:
+                    continue
+                if self.nodes[neighbor]['element'] == 'C' and isCarbonylC(neighbor):
+                    return neighbor
+            return None
+        
+        def nextN(Calpha, CarbonylC):
+            # Check if there is a nitrogen after the given CarbonylC
+            for neighbor in self.neighbors(CarbonylC):
+                if neighbor == Calpha:
+                    continue
+                if self.nodes[neighbor]['element'] == 'N' and self.degree(neighbor) == 3:
+                    return neighbor
+            return None
+
+        def isTerminalN(node):
+            # Check if nitrogen is the terminal one by checking whether we can find a neighbor C',
+            # which is bound to a Calpha, which is bound to an N.
+            
+            # This N needs to have degree 3
+            if self.degree(node) != 3:
+                return False
+
+            # Check for C' as neighbour of N
+            for prevC in self.neighbors(node):
+                if not isCarbonylC(prevC):
+                    continue
+                
+                # Check for Calpha as neighbor of C'
+                # This would be the only C neighbor of C'
+                for prevCalpha in self.neighbors(prevC):
+                    if prevCalpha == node or self.nodes[prevCalpha]['element'] != 'C':
+                        continue
+
+                    # Check for N as neighbor of Calpha
+                    for prevN in self.neighbors(prevCalpha):
+                        if self.nodes[prevN]['element'] == 'N' and prevN != node:
+                            # If we found a nitrogen neighbor, this is not a terminal nitrogen
+                            return False
+            return True
+        
+        def growBackbone(startN):
+            backbone = [startN]
+            visited = {startN}
+            currentN = startN
+            
+            # We always look for N-Calpha-C'
+            while True:
+                
+                # Find the Calpha neighbor
+                Calpha = nextCalpha(currentN)
+                if Calpha is None or Calpha in visited:
+                    # We are at the end of the backbone
+                    return backbone
+                backbone.append(Calpha)
+                visited.add(Calpha)
+                
+                # Find the next C'
+                CarbonylC = nextCarbonylC(Calpha, currentN)
+                if CarbonylC is None or CarbonylC in visited:
+                    # We are at the end of the backbone
+                    return backbone
+                backbone.append(CarbonylC)
+                visited.add(CarbonylC)
+                
+                # Find the next N
+                nextN_atom = nextN(Calpha, CarbonylC)
+                if nextN_atom is None or nextN_atom in visited:
+                    # We are at the end of the backbone
+                    return backbone
+                backbone.append(nextN_atom)
+                visited.add(nextN_atom)
+                currentN = nextN_atom
+
+        # Collect all nitrogen atoms
+        Ns = [node for node in self.nodes if self.nodes[node]['element'] == 'N']
+        if not Ns:
+            return []
+        
+        # Find the nitrogen atom from which to start the backbone search
+        # This is a nitrogen behind which we cannot find C', Calpha, N
+        startN = [node for node in Ns if isTerminalN(node)]
+
+        # If we found more than one terminal N, we warn the user and take the first one
+        if len(startN) > 1:
+            print("Warning: Found multiple terminal nitrogen atoms. Using the first one.")
+        
+        # Build the backbone from terminal N
+        backbone = growBackbone(startN[0])
+
+        return backbone
+
 
 def min_image_distance(pos1, pos2, boxSize) -> tuple:
     """

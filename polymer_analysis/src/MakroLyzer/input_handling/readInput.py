@@ -113,6 +113,16 @@ def readCommandLine() -> dict:
                         default='CisTrans.csv'
     )
     parser.add_argument(
+                        '-AAramachandran', '--AminoAcidRamachandran',
+                        help='Calculate Ramachandran plot data (default: false)',
+                        action='store_true'
+    )
+    parser.add_argument(
+                        '--AARamachandran-file',
+                        help='Output file name (default: AARamachandran.csv)',
+                        default='AARamachandran.csv'
+    )
+    parser.add_argument(
                         '-r', '--radiusOfGyration',
                         help='Calculate radius of gyration (default: false)',
                         action='store_true'

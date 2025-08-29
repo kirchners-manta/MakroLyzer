@@ -88,7 +88,21 @@ def main(results):
                 cis_count = ct_dict.get('Cis', 0)
                 trans_count = ct_dict.get('Trans', 0)
                 file.write(f"{frame},{cis_count},{trans_count}\n")
-                
+
+    # Amino Acid Ramachandran Plot #
+    # Per frame we have the Ramachandran plot data.
+    if 'AARamachandran' in results and results['AARamachandran']:
+        AARamachandran_file = results['AARamachandran_file']
+        # create one file for each frame
+        # for each frame with have a 360x360 matrix
+        for frame in range(len(results['AARamachandran'])):
+            frame_file = AARamachandran_file.replace('.csv', f'_frame_{frame}.csv')
+            with open(frame_file, 'w') as file:
+                phi_psi = results['AARamachandran'][frame]
+                # write the 360x360 matrix
+                for row in phi_psi:
+                    file.write(','.join(f"{val}" for val in row) + '\n')
+
     # Radius of Gyration #
     # Per frame we have the radius of gyration for each subgraph and the overall radius of gyration.
     if 'Rg' in results and results['Rg']:

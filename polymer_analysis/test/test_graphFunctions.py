@@ -901,3 +901,32 @@ def test_number_of_subgraphs_and_rings(sample_data30):
     numberOfRingsStrands = count_rings(testGraph)
     assert numberOfRingsStrands[0] == 7
     assert numberOfRingsStrands[1] == 5
+    
+# test AminoAcid Backbone search
+def test_AAbackbone(sample_data10):
+    xyz = next(readXYZ.readXYZ(sample_data10))
+    testGraph = graphs.GraphManager(xyz)
+
+    backbone = testGraph.AminoAcidBackbone()
+    assert backbone is not None
+    assert len(backbone) == 37
+
+    for i, atom in enumerate(backbone):
+        if i % 3 == 0:
+            assert testGraph.nodes[backbone[i]]['element'] == 'N'
+        else:
+            assert testGraph.nodes[backbone[i]]['element'] == 'C'
+
+def test_AAbackbone_2(sample_data11):
+    xyz = next(readXYZ.readXYZ(sample_data11))
+    testGraph = graphs.GraphManager(xyz)
+
+    backbone = testGraph.AminoAcidBackbone()
+    assert backbone is not None
+    assert len(backbone) == 37
+
+    for i, atom in enumerate(backbone):
+        if i % 3 == 0:
+            assert testGraph.nodes[backbone[i]]['element'] == 'N'
+        else:
+            assert testGraph.nodes[backbone[i]]['element'] == 'C'
