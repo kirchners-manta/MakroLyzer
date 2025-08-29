@@ -939,6 +939,9 @@ class GraphManager(nx.Graph):
         # If we found more than one terminal N, we warn the user and take the first one
         if len(startN) > 1:
             print("Warning: Found multiple terminal nitrogen atoms. Using the first one.")
+        elif len(startN) == 0:
+            print("Warning: No terminal nitrogen atom found. In subgraph.")
+            return []
         
         # Build the backbone from terminal N
         backbone = growBackbone(startN[0])
