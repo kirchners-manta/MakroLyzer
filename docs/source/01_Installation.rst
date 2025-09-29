@@ -1,10 +1,9 @@
 Installation
 =================
 
-Prerequisites
+Requirements
 -------------
 - `Git <https://git-scm.com/docs/user-manual>`_ 
-- `Python <https://www.python.org/>`_ 3.10-3.12
 
 To install MakroLyzer, clone the repository to your local machine:
 
@@ -19,6 +18,7 @@ To install MakroLyzer, clone the repository to your local machine:
 Then change into the directory into the cloned repository.
 For using the code, the dependencies listed in the ``pyproject.toml`` file need to be installed, which is done automatically when
 following the steps below.
+`Python <https://www.python.org/>`_ 3.10 or higher are supported by MakroLyzer.
 
 To set up the MakroLyzer, using a virtual environment is recommended.
 One can either use ``conda`` or ``venv`` to create a virtual environment.
