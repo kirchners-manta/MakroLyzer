@@ -3,8 +3,8 @@ Installation
 
 Prerequisites
 -------------
-- Git
-- Python 3.10-3.12
+- `Git <https://git-scm.com/docs/user-manual>`_ 
+- `Python <https://www.python.org/>`_ 3.10-3.12
 
 To install MakroLyzer, clone the repository to your local machine:
 
