@@ -11,7 +11,7 @@ from MakroLyzer.structure_modules.anisotropy import get_anisotropy_factor
 from MakroLyzer.structure_modules.asphericityParameter import get_asphericity_parameter
 from MakroLyzer.structure_modules.hbonds import get_Hbonds
 from MakroLyzer.structure_modules.subgraphCoords import get_subgraph_coords
-from MakroLyzer.structure_modules.orderParameter import get_order_parameter
+from MakroLyzer.structure_modules.orderParameter import get_order_parameter, get_S_from_Q
 
 from tqdm import tqdm
 
@@ -157,7 +157,7 @@ def main(args):
         # Order parameter
         if args['orderParameter']:
             boxSize, n, unitSize = args['orderParameter']
-            results['orderParameter'].append(get_order_parameter(
+            results['orderParameter'].append(get_S_from_Q(
                 boxGraph, boxSize, n, unitSize))
             
         # Ring and strand count

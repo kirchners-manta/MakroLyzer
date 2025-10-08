@@ -115,19 +115,19 @@ The anisotropy factor is defined as:
                    {(\lambda_1 + \lambda_2 + \lambda_3)^2}
 
 
-Order parameter
+Order parameter :math:`S^*`
 ^^^^^^^^^^^^^^^^^
 .. line-block::
   ``-op b:n:v``
   ``--order-file``
       Calculate the order parameter of the macromolecular structure. This is calculated for each cube defined by **b** and **n**.
       **b** is the box size in Angstroms,
-      **n** is the number of cubes into which the box is divided in x, y, and z direction (thus overall n^3 boxes),
+      **n** is the number of cubes into which the box is divided in x, y, and z direction (thus overall :math:`n^3` boxes),
       **v** is the number of atoms in a structure backbone, that is used to form one molecular vector.
       Provide a file name for the output if desired. 
       *Optional. Default: orderParameter.csv*
 
-The order parameter is defined as:
+The order parameter for uniaxial systems is defined as:
 
 .. math::
 
@@ -135,6 +135,19 @@ The order parameter is defined as:
 
 where :math:`\theta_m` is the angle between the molecular axis and the reference axis (director), 
 and :math:`\langle \cdots \rangle` denotes the average over all molecules.
+
+The Q-tensor for uniaxial systems is defined as:
+
+.. math::
+
+   Q = S \left( \frac{3}{2} \hat{n} \otimes \hat{n} - \frac{1}{2} I \right)
+
+where :math:`\hat{n}` is the director and :math:`I` is the identity matrix.
+The largest eigenvalue of the Q-tensor is the order parameter :math:`S^*`, which is calculated by MakroLyzer.
+The values of :math:`S` and :math:`S^*` are equal for positive values of :math:`S` and differ for negative values of :math:`S`.
+Negative values of :math:`S` are only possible for disc like arrangements of molecular vectors, perpendicular to the director, 
+which is not the case for (most) macromolecules.
+
 
 Dihedral angles 
 ^^^^^^^^^^^^^^^^^^^^

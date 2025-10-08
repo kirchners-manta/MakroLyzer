@@ -10,6 +10,7 @@ from src.MakroLyzer.structure_modules.anisotropy import get_anisotropy_factor
 from src.MakroLyzer.structure_modules.asphericityParameter import get_asphericity_parameter
 from src.MakroLyzer.structure_modules.hbonds import get_Hbonds
 from src.MakroLyzer.structure_modules.countSubgraphs import count_subgraphs, count_rings
+from src.MakroLyzer.structure_modules.orderParameter import get_S_from_Q
 
 @pytest.fixture
 def sample_data1():
@@ -126,6 +127,14 @@ def sample_data26():
 @pytest.fixture
 def sample_data30():
     return 'test_structures/30.xyz'
+
+@pytest.fixture
+def sample_data31():
+    return 'test_structures/31.xyz'
+
+@pytest.fixture
+def sample_data32():
+    return 'test_structures/32.xyz'
     
 def test_end_to_end(sample_data1):
     xyz = next(readXYZ.readXYZ(sample_data1))
@@ -930,3 +939,20 @@ def test_AAbackbone_2(sample_data11):
             assert testGraph.nodes[backbone[i]]['element'] == 'N'
         else:
             assert testGraph.nodes[backbone[i]]['element'] == 'C'
+            
+# test order parameter            
+def test_orderParameter(sample_data31):
+    xyz = next(readXYZ.readXYZ(sample_data31))
+    testGraph = graphs.GraphManager(xyz, 3000)
+    
+    orderParameter = get_S_from_Q(testGraph, 3000, 1, 2)
+    print("ananas",orderParameter)
+    assert orderParameter == pytest.approx(1, abs=5e-2)
+    
+def test_orderParameter(sample_data32):
+    xyz = next(readXYZ.readXYZ(sample_data32))
+    testGraph = graphs.GraphManager(xyz, 3000)
+    
+    orderParameter = get_S_from_Q(testGraph, 3000, 1, 2)
+    print("ananas",orderParameter)
+    assert orderParameter == pytest.approx(0, abs=5e-2)

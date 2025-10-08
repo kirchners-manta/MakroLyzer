@@ -172,3 +172,95 @@ def get_order_parameter(graph, boxSize, n, unitSize):
     else:
         return np.nan
     
+def Q_tensor(vectors):
+    """
+    Calculate the Q'-tensor for a given unit orientation vector and a set of vectors.
+    
+    Q' = 1/N Σ (3/2 * (u_i ⊗ u_i) - 1/2 * I)
+    
+    where u_i is the unit vector of each vector in the set, I is the identity matrix,
+    and N is the number of vectors.
+    
+    Args:
+        unitOrientationVector : np.ndarray
+                                The unit vector representing the orientation of the specific cell.
+        vectors : np.ndarray
+                  An array of vectors within the cell.
+    Returns:
+        np.ndarray : The Q-tensor.
+    """
+    
+    if len(vectors) == 0:
+        return np.full((3, 3), np.nan)
+    
+    N = len(vectors)
+    Q = np.zeros((3, 3))
+    
+    for vec in vectors:
+        u_i = vec / np.linalg.norm(vec)
+        Q += (3/2) * np.outer(u_i, u_i) - (1/2) * np.eye(3)
+    
+    Q /= N
+    
+    return Q
+
+def S_from_Q(Q):
+    """
+    Calculate the largest eigenvalue of the Q-tensor, which corresponds to the order parameter S*.
+    
+    Args:
+        Q : np.ndarray
+            The Q-tensor.
+    Returns:
+        float : The largest eigenvalue of the Q-tensor.
+    """
+    
+    if np.isnan(Q).all():
+        return np.nan
+    
+    eigenvalues, eigenvectors = np.linalg.eig(Q)
+    S = np.max(eigenvalues)
+    
+    return S
+
+def get_S_from_Q(graph, boxSize, n, unitSize):
+    """
+    Calculate the order parameter S from the Q-tensor for the given graph within a divided box.
+    
+    Args:
+        graph (GraphManager): The graph to calculate the order parameter for.
+        boxSize (tuple): The size of the box in each dimension (x, y, z).
+        n (tuple): The number of divisions along each dimension (nx, ny, nz).
+        unitSize (int): The number of nodes that define the length of a unit.
+    Returns:
+        float: The order parameter S averaged over all sub-boxes.
+    """
+    
+    # Divide the box into cells
+    cells = Box.Box.devideBox(boxSize, n)
+    
+    # Get unit vectors for the graph
+    vecAndPos = get_unit_vectors(graph, unitSize)
+    
+    # build a cKDTree from the midpoints for fast spatial queries 
+    midpoints = np.asarray(list(vecAndPos.keys()), dtype=float)
+    tree = cKDTree(midpoints)
+    
+    order_params = []
+    for cell in cells:
+        # Get the vectors in the cell
+        vectors = get_unit_vectors_in_cell(cell, vecAndPos, midpoints, tree)
+        # if there are more than 3 vectors in the cell, calculate the order parameter
+        if len(vectors) < 3:
+            continue    
+        # Calculate the order parameter for this cell
+        Q = Q_tensor(vectors)
+        # display Q
+        S = S_from_Q(Q)
+        order_params.append(S)
+
+    # average the order parameters over all cells
+    if order_params:
+        return np.mean(order_params)
+    else:
+        return np.nan
