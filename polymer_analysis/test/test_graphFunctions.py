@@ -58,23 +58,23 @@ def sample_data7():
 
 @pytest.fixture
 def sample_data8():
-    return 'test_structures/08.xyz'
+    return 'test_structures/Hbonds/01.xyz'
 
 @pytest.fixture
 def sample_data9():
-    return 'test_structures/09.xyz'
+    return 'test_structures/Hbonds/02.xyz'
 
 @pytest.fixture
 def sample_data10():
-    return 'test_structures/10.xyz'
+    return 'test_structures/Hbonds/03.xyz'
 
 @pytest.fixture
 def sample_data11():
-    return 'test_structures/11.xyz'
+    return 'test_structures/Hbonds/04.xyz'
 
 @pytest.fixture
 def sample_data12():        
-    return 'test_structures/12.xyz'
+    return 'test_structures/Hbonds/05.xyz'
 
 @pytest.fixture
 def sample_data13():
@@ -90,7 +90,7 @@ def sample_data15():
 
 @pytest.fixture
 def sample_data16():
-    return 'test_structures/16.xyz'
+    return 'test_structures/Hbonds/06.xyz'
 
 @pytest.fixture
 def sample_data18():

@@ -18,6 +18,7 @@ src/MakroLyzer/input_handling/readLMP.py
 src/MakroLyzer/input_handling/readXYZ.py
 src/MakroLyzer/math/Box.py
 src/MakroLyzer/output_handling/outputHandlingMain.py
+src/MakroLyzer/structure_modules/Hbonds.py
 src/MakroLyzer/structure_modules/__init__.py
 src/MakroLyzer/structure_modules/anisotropy.py
 src/MakroLyzer/structure_modules/asphericityParameter.py
@@ -29,6 +30,9 @@ src/MakroLyzer/structure_modules/hbonds.py
 src/MakroLyzer/structure_modules/orderParameter.py
 src/MakroLyzer/structure_modules/radiusOfGyration.py
 src/MakroLyzer/structure_modules/readPatterns.py
+src/MakroLyzer/structure_modules/structureAnalysisMain.py
+src/MakroLyzer/structure_modules/structureBase.py
 src/MakroLyzer/structure_modules/structureMain.py
 src/MakroLyzer/structure_modules/subgraphCoords.py
+test/test_StructureAnalyzers.py
 test/test_graphFunctions.py

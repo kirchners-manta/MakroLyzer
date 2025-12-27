@@ -1,9 +1,8 @@
 import sys
-from IPython.display import display
 
 from MakroLyzer.input_handling import inputHandlingMain
 from MakroLyzer.structure_modules import graphs
-from MakroLyzer.structure_modules import structureMain
+from MakroLyzer.structure_modules import structureAnalysisMain, structureMain
 from MakroLyzer.output_handling import outputHandlingMain
 
 
@@ -15,7 +14,7 @@ def main():
     args = inputHandlingMain.main(sys.argv)
     
     # Call the main analysis of the polymer structure
-    results = structureMain.main(args)
+    results = structureAnalysisMain.main(args)
     # Call the output handling module to save results
     outputHandlingMain.main(results)
 
