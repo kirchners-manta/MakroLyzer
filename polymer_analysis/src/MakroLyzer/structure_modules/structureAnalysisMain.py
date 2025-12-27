@@ -8,11 +8,11 @@ from MakroLyzer.structure_modules.structureBase import OutputHandler
 from MakroLyzer.structure_modules.Hbonds import HBondsAnalyzer
 from MakroLyzer.structure_modules.Anisotropy import AnisotropyAnalyzer
 from MakroLyzer.structure_modules.Asphericity import AsphericityAnalyzer
+from MakroLyzer.structure_modules.RadiusOfGyration import RadiusOfGyrationAnalyzer
 
 from MakroLyzer.structure_modules.endToEndDistance import end_to_end_dist
 from MakroLyzer.structure_modules.countSubgraphs import count_subgraphs, count_rings
 from MakroLyzer.structure_modules.dihedrals import get_all_dihedrals, get_CisTrans, get_Ramachandran
-from MakroLyzer.structure_modules.radiusOfGyration import get_radius_of_gyration
 from MakroLyzer.structure_modules.asphericityParameter import get_asphericity_parameter
 from MakroLyzer.structure_modules.subgraphCoords import get_subgraph_coords
 from MakroLyzer.structure_modules.orderParameter import get_order_parameter, get_S_from_Q
@@ -44,6 +44,10 @@ def main(args):
         analyzers['asphericity'] = AsphericityAnalyzer(output_handler)
         analyzers['asphericity'].initialize_output()
         
+    if args['radiusOfGyration']:
+        output_handler = OutputHandler(args['Rg_file'], mode='collect')
+        analyzers['radiusOfGyration'] = RadiusOfGyrationAnalyzer(output_handler)
+        analyzers['radiusOfGyration'].initialize_output()
     
     # create empty lists to store results
     results = {
@@ -54,7 +58,6 @@ def main(args):
         'dihedral_list': [],
         'cisTrans': [],
         'AARamachandran': [],
-        'Rg': [],
         'subgraph_coords': [],
         'orderParameter': [],
         'RingStrandCount': [],
@@ -66,7 +69,6 @@ def main(args):
         'dihedrals_file': args['dihedral_file'],
         'cisTrans_file': args['CisTrans_file'],
         'AARamachandran_file': args['AARamachandran_file'],
-        'Rg_file': args['Rg_file'],
         'subgraph_coords_file': args['subgraph_coord_file'],
         'orderParameter_file': args['order_file'],
         'RingStrandCount_file': args['RingStrandCount_file']
@@ -112,7 +114,11 @@ def main(args):
             
         # Asphericity parameter
         if 'asphericity' in analyzers:
-            analyzers['asphericity'].run(boxGraph, i)       
+            analyzers['asphericity'].run(boxGraph, i) 
+            
+        # Radius of Gyration
+        if 'radiusOfGyration' in analyzers:
+            analyzers['radiusOfGyration'].run(boxGraph, i)
             
         # ---------------------------------------------------------------------
         
@@ -165,10 +171,6 @@ def main(args):
         # Amino Acid Ramachandran plot data
         if args['AminoAcidRamachandran']:
             results['AARamachandran'].append(get_Ramachandran(boxGraph))
-
-        # Radius of gyration 
-        if args['radiusOfGyration']:
-            results['Rg'].append(get_radius_of_gyration(boxGraph))
             
         # Subgraph coordinates
         if args['subgraph_coords']:

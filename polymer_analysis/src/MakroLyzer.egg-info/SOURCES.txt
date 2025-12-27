@@ -23,6 +23,7 @@ src/MakroLyzer/structure_modules/Anisotropy.py
 src/MakroLyzer/structure_modules/Asphericity.py
 src/MakroLyzer/structure_modules/Hbonds.py
 src/MakroLyzer/structure_modules/Helper.py
+src/MakroLyzer/structure_modules/RadiusOfGyration.py
 src/MakroLyzer/structure_modules/__init__.py
 src/MakroLyzer/structure_modules/anisotropy.py
 src/MakroLyzer/structure_modules/asphericityParameter.py

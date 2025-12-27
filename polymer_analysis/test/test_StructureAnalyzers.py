@@ -12,6 +12,7 @@ from src.MakroLyzer.structure_modules.structureBase import OutputHandler, Struct
 from src.MakroLyzer.structure_modules.Hbonds import HBondsAnalyzer
 from src.MakroLyzer.structure_modules.Anisotropy import AnisotropyAnalyzer
 from src.MakroLyzer.structure_modules.Asphericity import AsphericityAnalyzer
+from src.MakroLyzer.structure_modules.RadiusOfGyration import RadiusOfGyrationAnalyzer
 
 # OutputHandler Tests # ------------------------------------------------------------------
 class TestOutputHandler:
@@ -621,3 +622,75 @@ class TestAsphericityAnalyzer:
         assert temp_file.exists()
         content = temp_file.read_text()
         assert content == "Frame, Asphericity Parameter (b)\n12,100.000\n113,2.500\n"
+        
+# RadiusOfGyrationAnalyzer tests # ----------------------------------------------------------
+
+class TestRadiusOfGyrationAnalyzer:
+    """Test the RadiusOfGyrationAnalyzer class."""
+
+    # SetUp fixtures -----------------------------------------
+    @pytest.fixture
+    def temp_file(self):
+        """Fixture that creates a temporary file path."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            yield Path(tmpdir) / "hbond_output.csv"
+            
+    @pytest.fixture
+    def sample_file1(self):
+        return "test_structures/Rg/01.xyz"
+    
+    # ----------------------------------------------------------
+    
+    def test_RadiusOfGyrationAnalyzer_init(self, temp_file):
+        output_handler = OutputHandler(temp_file, mode='streaming')
+        analyzer = RadiusOfGyrationAnalyzer(output_handler)
+        
+        assert analyzer.output_handler == output_handler
+        
+    # ----------------------------------------------------------
+    
+    def test_RadiusOfGyrationAnalyzer_compute(self, temp_file):
+        """Test compute function of RadiusOfGyrationAnalyzer"""
+        output_handler = OutputHandler(temp_file)
+        analyzer = RadiusOfGyrationAnalyzer(output_handler)
+        
+        mock_graph = Mock()
+        mock_graph.get_all_coordinates.return_value = (
+            None,
+            np.array([(1.1, 22.0, 3.2), (1.4, 2.3, 19.0), (1.0, 2.0, 3.0)]),
+        )
+        mock_graph.get_com.return_value = (2.0, 4.2, 5.0)
+        
+        Rg = analyzer.compute(mock_graph)
+        assert Rg == pytest.approx(13.300376, rel=1e-5) 
+        
+    def test2_RadiusOfGyrationAnalyzer_compute(self, sample_file1):
+        """Test compute function of RadiusOfGyrationAnalyzer"""
+        xyz = next(readXYZ.readXYZ(sample_file1))
+        testGraph = graphs.GraphManager(xyz)
+        
+        analyzer = RadiusOfGyrationAnalyzer()
+        Rg = analyzer.compute(testGraph)
+        assert Rg == pytest.approx(3.619, abs=1e-3)
+    
+    # ----------------------------------------------------------
+    
+    def test_RadiusOfGyrationAnalyzer_render_finalize_output(self, temp_file):
+        """Test render_output and render_output methods of RadiusOfGyrationAnalyzer"""
+        output_handler = OutputHandler(temp_file)
+        analyzer = RadiusOfGyrationAnalyzer(output_handler)
+        
+        mock_graph = Mock()
+        mock_graph.get_all_coordinates.return_value = (
+            None,
+            np.array([(1.1, 22.0, 3.2), (1.4, 2.3, 19.0), (1.0, 2.0, 3.0)]),
+        )
+        mock_graph.get_com.return_value = (2.0, 4.2, 5.0)
+        
+        Rg = analyzer.compute(mock_graph)
+        analyzer.render_output(Rg, frame_idx=11)
+        analyzer.finalize_output()
+        
+        assert temp_file.exists()
+        content = temp_file.read_text()
+        assert content == "Frame, Rg / Å\n11,13.300\n"

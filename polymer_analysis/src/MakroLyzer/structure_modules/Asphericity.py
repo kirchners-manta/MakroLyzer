@@ -53,7 +53,7 @@ class AsphericityAnalyzer(StructureAnalyzer):
     
     def render_output(self, data, frame_idx):
         """
-        Write/Save Hbond data for this frame.
+        Write/Save data for this frame.
         
         Args:
             data (list): The computed b data.
