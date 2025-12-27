@@ -644,15 +644,6 @@ def test_radius_of_gyration(sample_data7):
         assert R == pytest.approx(0.0, abs=1e-4)
         
     
-    
-# Asphericity parameter tests
-def test_asphericity_parameter(sample_data15):
-    xyz = next(readXYZ.readXYZ(sample_data15))
-    testGraph = graphs.GraphManager(xyz)
-    
-    asphericityParameter = get_asphericity_parameter(testGraph)
-    assert asphericityParameter == pytest.approx(0.0, abs=1e-3)
-    
 # PBC
 def test_pbc(sample_data21):
     xyz = next(readXYZ.readXYZ(sample_data21))

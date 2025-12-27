@@ -7,6 +7,7 @@ from MakroLyzer.structure_modules.structureBase import OutputHandler
 
 from MakroLyzer.structure_modules.Hbonds import HBondsAnalyzer
 from MakroLyzer.structure_modules.Anisotropy import AnisotropyAnalyzer
+from MakroLyzer.structure_modules.Asphericity import AsphericityAnalyzer
 
 from MakroLyzer.structure_modules.endToEndDistance import end_to_end_dist
 from MakroLyzer.structure_modules.countSubgraphs import count_subgraphs, count_rings
@@ -38,6 +39,11 @@ def main(args):
         analyzers['anisotropy'] = AnisotropyAnalyzer(output_handler)
         analyzers['anisotropy'].initialize_output()
         
+    if args['asphericityParameter']:
+        output_handler = OutputHandler(args['asphericity_file'], mode='streaming')
+        analyzers['asphericity'] = AsphericityAnalyzer(output_handler)
+        analyzers['asphericity'].initialize_output()
+        
     
     # create empty lists to store results
     results = {
@@ -50,8 +56,6 @@ def main(args):
         'AARamachandran': [],
         'Rg': [],
         'subgraph_coords': [],
-        'anisotropy_factor': [],
-        'asphericity_parameter': [],
         'orderParameter': [],
         'RingStrandCount': [],
 
@@ -64,8 +68,6 @@ def main(args):
         'AARamachandran_file': args['AARamachandran_file'],
         'Rg_file': args['Rg_file'],
         'subgraph_coords_file': args['subgraph_coord_file'],
-        'anisotropy_file': args['anisotropy_file'],
-        'asphericity_file': args['asphericity_file'],
         'orderParameter_file': args['order_file'],
         'RingStrandCount_file': args['RingStrandCount_file']
     }
@@ -106,7 +108,11 @@ def main(args):
             
         # Anisotropy factor
         if 'anisotropy' in analyzers:
-            analyzers['anisotropy'].run(boxGraph, i)            
+            analyzers['anisotropy'].run(boxGraph, i)  
+            
+        # Asphericity parameter
+        if 'asphericity' in analyzers:
+            analyzers['asphericity'].run(boxGraph, i)       
             
         # ---------------------------------------------------------------------
         
@@ -167,10 +173,6 @@ def main(args):
         # Subgraph coordinates
         if args['subgraph_coords']:
             results['subgraph_coords'].append(get_subgraph_coords(boxGraph))            
-            
-        # Asphericity parameter
-        if args['asphericityParameter']:
-            results['asphericity_parameter'].append(get_asphericity_parameter(boxGraph))
             
         # Order parameter
         if args['orderParameter']:

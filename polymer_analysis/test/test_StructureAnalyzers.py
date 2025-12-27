@@ -11,8 +11,7 @@ from src.MakroLyzer.structure_modules import graphs
 from src.MakroLyzer.structure_modules.structureBase import OutputHandler, StructureAnalyzer
 from src.MakroLyzer.structure_modules.Hbonds import HBondsAnalyzer
 from src.MakroLyzer.structure_modules.Anisotropy import AnisotropyAnalyzer
-
-
+from src.MakroLyzer.structure_modules.Asphericity import AsphericityAnalyzer
 
 # OutputHandler Tests # ------------------------------------------------------------------
 class TestOutputHandler:
@@ -396,10 +395,10 @@ class TestHBondsAnalyzer:
         content = temp_file.read_text()
         assert content == "Frame, Element Type, H-Acceptor dist / Å, Donor-Acceptor dist / Å, Angle cutoff / °, Number of Hydrogen Bonds\n18,O,2.500,3.800,30.000,3\n21,O,2.500,3.800,30.000,3\n"
         
-# AsphericityAnalyzer tests # ------------------------------------------------------------
+# AnisotropyAnalyzer tests # ------------------------------------------------------------
 
-class TestAsphericityAnalyzer:
-    """Test the AsphericityAnalyzer class."""
+class TestAnisotropyAnalyzer:
+    """Test the AnisotropyAnalyzer class."""
     
     # SetUp fixtures -----------------------------------------
     @pytest.fixture
@@ -524,4 +523,101 @@ class TestAsphericityAnalyzer:
         content = temp_file.read_text()
         assert content == "Frame, Anisotropy Factor (κ²)\n12,0.059\n113,0.000\n"
         
+# AsphericityAnalyzer tests # ------------------------------------------------------------
+
+class TestAsphericityAnalyzer:
+    """Test the AsphericityAnalyzer class."""
+    
+    # SetUp fixtures -----------------------------------------
+    @pytest.fixture
+    def temp_file(self):
+        """Fixture that creates a temporary file path."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            yield Path(tmpdir) / "hbond_output.csv"
+            
+    @pytest.fixture
+    def sample_file1(self):
+        return "test_structures/Asphericity/01.xyz"
+    
+    # --------------------------------------------------------
+    
+    def test_AsphericityAnalyzer_init(self, temp_file):
+        """Test initialization of HBondsAnalyzer."""
+        output_handler = OutputHandler(temp_file, mode='streaming')
+        analyzer = AsphericityAnalyzer(output_handler)
         
+        assert analyzer.output_handler == output_handler
+        
+    # --------------------------------------------------------
+    
+    def test_AsphericityAnalyzer_compute(self, temp_file):
+        """Test compute function of AsphericityAnalyzer"""
+        output_handler = OutputHandler(temp_file)
+        analyzer = AsphericityAnalyzer(output_handler)
+        
+        mock_graph = Mock()
+        
+        with patch(
+        "src.MakroLyzer.structure_modules.Asphericity.get_Gtensor_eigVal_eigVec",
+        return_value=(np.array([0, 102, 0]), None),
+        ) as mock_helper:
+            b = analyzer.compute(mock_graph)
+        mock_helper.assert_called_once_with(mock_graph)
+        assert b == pytest.approx(102.0000, rel=1e-5)
+        
+        with patch(
+        "src.MakroLyzer.structure_modules.Asphericity.get_Gtensor_eigVal_eigVec",
+        return_value=(np.array([2, 4, 1]), None),
+        ) as mock_helper:
+            b = analyzer.compute(mock_graph)
+        mock_helper.assert_called_once_with(mock_graph)
+        assert b == pytest.approx(2.50000, rel=1e-5)
+        
+        with patch(
+        "src.MakroLyzer.structure_modules.Asphericity.get_Gtensor_eigVal_eigVec",
+        return_value=(np.array([3.2, 3.2, 3.2]), None),
+        ) as mock_helper:
+            b = analyzer.compute(mock_graph)
+        mock_helper.assert_called_once_with(mock_graph)
+        assert b == pytest.approx(0.00000, rel=1e-5)
+        
+    def test2_AsphericityAnalyzer_compute(self, sample_file1):
+        """Test compute function of AsphericityAnalyzer"""
+        xyz = next(readXYZ.readXYZ(sample_file1))
+        testGraph = graphs.GraphManager(xyz)
+        
+        analyzer = AsphericityAnalyzer()
+        b = analyzer.compute(testGraph)
+        assert b == pytest.approx(0.0, abs=1e-3)
+        
+    # --------------------------------------------------------
+    
+    def test_AsphericityAnalyzer_render_finalize_output(self, temp_file):
+        """Test render_output and render_output methods of AsphericityAnalyzer"""
+        output_handler = OutputHandler(temp_file)
+        analyzer = AsphericityAnalyzer(output_handler)
+        
+        mock_graph = Mock()
+        
+        with patch(
+        "src.MakroLyzer.structure_modules.Asphericity.get_Gtensor_eigVal_eigVec",
+        return_value=(np.array([0, 0, 100]), None),
+        ) as mock_helper:
+            b = analyzer.compute(mock_graph)
+        mock_helper.assert_called_once_with(mock_graph)
+        
+        analyzer.render_output(b, frame_idx=12)
+        
+        with patch(
+        "src.MakroLyzer.structure_modules.Asphericity.get_Gtensor_eigVal_eigVec",
+        return_value=(np.array([4, 2, 1]), None),
+        ) as mock_helper:
+            b = analyzer.compute(mock_graph)
+        mock_helper.assert_called_once_with(mock_graph)
+        
+        analyzer.render_output(b, frame_idx=113)
+        analyzer.finalize_output()
+        
+        assert temp_file.exists()
+        content = temp_file.read_text()
+        assert content == "Frame, Asphericity Parameter (b)\n12,100.000\n113,2.500\n"
