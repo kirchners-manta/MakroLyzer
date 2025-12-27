@@ -4,14 +4,14 @@ from MakroLyzer.input_handling import estimateFrames
 from MakroLyzer.structure_modules import graphs
 from MakroLyzer.structure_modules import readPatterns
 from MakroLyzer.structure_modules.structureBase import OutputHandler
-from MakroLyzer.structure_modules.Hbonds import HBondsAnalyzer
 
+from MakroLyzer.structure_modules.Hbonds import HBondsAnalyzer
+from MakroLyzer.structure_modules.Anisotropy import AnisotropyAnalyzer
 
 from MakroLyzer.structure_modules.endToEndDistance import end_to_end_dist
 from MakroLyzer.structure_modules.countSubgraphs import count_subgraphs, count_rings
 from MakroLyzer.structure_modules.dihedrals import get_all_dihedrals, get_CisTrans, get_Ramachandran
 from MakroLyzer.structure_modules.radiusOfGyration import get_radius_of_gyration
-from MakroLyzer.structure_modules.anisotropy import get_anisotropy_factor
 from MakroLyzer.structure_modules.asphericityParameter import get_asphericity_parameter
 from MakroLyzer.structure_modules.subgraphCoords import get_subgraph_coords
 from MakroLyzer.structure_modules.orderParameter import get_order_parameter, get_S_from_Q
@@ -29,9 +29,14 @@ def main(args):
     
     if args['hydrogenBonds']:
         cutoffs = args['hydrogenBonds']
-        output_handler = OutputHandler(args['hbonds_file'], mode='collect')
+        output_handler = OutputHandler(args['hbonds_file'], mode='streaming')
         analyzers['hbonds'] = HBondsAnalyzer(cutoffs, output_handler)
         analyzers['hbonds'].initialize_output()
+        
+    if args['anisotropyFactor']:
+        output_handler = OutputHandler(args['anisotropy_file'], mode='collect')
+        analyzers['anisotropy'] = AnisotropyAnalyzer(output_handler)
+        analyzers['anisotropy'].initialize_output()
         
     
     # create empty lists to store results
@@ -94,9 +99,16 @@ def main(args):
         # Get Graph object of the polymer box
         boxGraph = graphs.GraphManager(xyz_frame, boxSize=boxSize)
         
+        # ---------------------------------------------------------------------
         # Hydrogen bonds  
         if 'hbonds' in analyzers:
             analyzers['hbonds'].run(boxGraph, i)
+            
+        # Anisotropy factor
+        if 'anisotropy' in analyzers:
+            analyzers['anisotropy'].run(boxGraph, i)            
+            
+        # ---------------------------------------------------------------------
         
         # Repeating units for the Polymer
         if args['patternFile']:
@@ -151,17 +163,10 @@ def main(args):
         # Radius of gyration 
         if args['radiusOfGyration']:
             results['Rg'].append(get_radius_of_gyration(boxGraph))
-          
-
             
         # Subgraph coordinates
         if args['subgraph_coords']:
-            results['subgraph_coords'].append(get_subgraph_coords(boxGraph))
-            
-        # Anisotropy factor
-        if args['anisotropyFactor']:
-            results['anisotropy_factor'].append(get_anisotropy_factor(boxGraph))
-            
+            results['subgraph_coords'].append(get_subgraph_coords(boxGraph))            
             
         # Asphericity parameter
         if args['asphericityParameter']:
@@ -178,7 +183,7 @@ def main(args):
             ring_strand_count = count_rings(boxGraph)
             results['RingStrandCount'].append(ring_strand_count)
             
-    # Finalize output for class-based analyzers
+    # Finalize output for class-based analyzers ---------------------------------
     for analyzer_name, analyzer in analyzers.items():
         analyzer.finalize_output()
 

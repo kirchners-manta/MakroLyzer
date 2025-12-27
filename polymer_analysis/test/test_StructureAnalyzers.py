@@ -1,14 +1,16 @@
 import pytest
 import tempfile
 from pathlib import Path
+import numpy as np
 
-from unittest.mock import Mock, MagicMock
+from unittest.mock import Mock, patch
 
 from src.MakroLyzer.input_handling import readXYZ
 from src.MakroLyzer.structure_modules import graphs
 
 from src.MakroLyzer.structure_modules.structureBase import OutputHandler, StructureAnalyzer
 from src.MakroLyzer.structure_modules.Hbonds import HBondsAnalyzer
+from src.MakroLyzer.structure_modules.Anisotropy import AnisotropyAnalyzer
 
 
 
@@ -218,7 +220,7 @@ class TestHBondsAnalyzer:
         
     # ---------------------------------------------------------
             
-    def test_hbonds_analyzer_init(self, temp_file):
+    def test_HBondsAnalyzer_init(self, temp_file):
         """Test initialization of HBondsAnalyzer."""
         output_handler = OutputHandler(temp_file, mode='collect')
         cutoffs = [("O", 2.5, 3.5, 30), ("N", 2.7, 3.7, 25)]
@@ -229,7 +231,7 @@ class TestHBondsAnalyzer:
         
     # ---------------------------------------------------------
         
-    def test_hbonds_analyzer_compute(self, sample_file1):
+    def test_HBondsAnalyzer_compute(self, sample_file1):
         """Test compute function of HBondsAnalyzer."""
         xyz = next(readXYZ.readXYZ(sample_file1))
         testGraph = graphs.GraphManager(xyz)
@@ -258,7 +260,7 @@ class TestHBondsAnalyzer:
         assert hbonds[0][1] == 2.5
         assert hbonds[0][4] == 1
 
-    def test2_hbonds_analyzer_compute(self, sample_file2):
+    def test2_HBondsAnalyzer_compute(self, sample_file2):
         xyz = next(readXYZ.readXYZ(sample_file2))
         testGraph = graphs.GraphManager(xyz)
         
@@ -270,7 +272,7 @@ class TestHBondsAnalyzer:
         assert hbonds[0][1] == 2.15
         assert hbonds[0][4] == 6
         
-    def test3_hbonds_analyzer_compute(self, sample_file3):
+    def test3_HBondsAnalyzer_compute(self, sample_file3):
         xyz = next(readXYZ.readXYZ(sample_file3))
         testGraph = graphs.GraphManager(xyz)
         
@@ -327,7 +329,7 @@ class TestHBondsAnalyzer:
         assert hbonds[0][3] == 30
         assert hbonds[0][4] == 5
         
-    def test4_hbonds_analyzer_compute(self, sample_file4):
+    def test4_HBondsAnalyzer_compute(self, sample_file4):
         xyz = next(readXYZ.readXYZ(sample_file4))
         testGraph = graphs.GraphManager(xyz)
         
@@ -342,7 +344,7 @@ class TestHBondsAnalyzer:
         assert hbonds[1][1] == 2.15
         assert hbonds[1][4] == 0
         
-    def test4_hbonds_analyzer_compute(self, sample_file5):
+    def test4_HBondsAnalyzer_compute(self, sample_file5):
         xyz = next(readXYZ.readXYZ(sample_file5))
         testGraph = graphs.GraphManager(xyz)
         
@@ -357,7 +359,7 @@ class TestHBondsAnalyzer:
         assert hbonds[1][1] == 2.15
         assert hbonds[1][4] == 0
         
-    def test5_hbonds_analyzer_compute(self, sample_file6):
+    def test5_HBondsAnalyzer_compute(self, sample_file6):
         xyz = next(readXYZ.readXYZ(sample_file6))
         testGraph = graphs.GraphManager(xyz)
         
@@ -371,7 +373,7 @@ class TestHBondsAnalyzer:
         
     # ---------------------------------------------------------
         
-    def test_hbonds_analyzer_render_finalize_output(self, temp_file):
+    def test_HBondsAnalyzer_render_finalize_output(self, temp_file):
         """Test render_output and render_output methods of HBondsAnalyzer"""
         # Mock the get_hbonds method of the GraphManager
         # -> we dont call the real graph methods here, since we only 
@@ -393,4 +395,133 @@ class TestHBondsAnalyzer:
         assert temp_file.exists()
         content = temp_file.read_text()
         assert content == "Frame, Element Type, H-Acceptor dist / Å, Donor-Acceptor dist / Å, Angle cutoff / °, Number of Hydrogen Bonds\n18,O,2.500,3.800,30.000,3\n21,O,2.500,3.800,30.000,3\n"
+        
+# AsphericityAnalyzer tests # ------------------------------------------------------------
+
+class TestAsphericityAnalyzer:
+    """Test the AsphericityAnalyzer class."""
+    
+    # SetUp fixtures -----------------------------------------
+    @pytest.fixture
+    def temp_file(self):
+        """Fixture that creates a temporary file path."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            yield Path(tmpdir) / "hbond_output.csv"
+            
+    @pytest.fixture
+    def sample_file1(self):
+        return "test_structures/Anisotropy/01.xyz"
+    
+    @pytest.fixture
+    def sample_file2(self):
+        return "test_structures/Anisotropy/02.xyz"
+    
+    @pytest.fixture
+    def sample_file3(self):
+        return "test_structures/Anisotropy/03.xyz"
+    
+    # --------------------------------------------------------
+    
+    def test_AnisotropyAnalyzer_init(self, temp_file):
+        """Test initialization of HBondsAnalyzer."""
+        output_handler = OutputHandler(temp_file, mode='streaming')
+        analyzer = AnisotropyAnalyzer(output_handler)
+        
+        assert analyzer.output_handler == output_handler
+        
+    # --------------------------------------------------------
+    
+    def test_AnisotropyAnalyzer_compute(self, temp_file):
+        """Test compute function of AnisotropyAnalyzer"""
+        output_handler = OutputHandler(temp_file)
+        analyzer = AnisotropyAnalyzer(output_handler)
+        
+        mock_graph = Mock()
+        
+        with patch(
+        "src.MakroLyzer.structure_modules.Anisotropy.get_Gtensor_eigVal_eigVec",
+        return_value=(np.array([3.2, 3.5, 1.4]), None),
+        ) as mock_helper:
+            kappa_sq = analyzer.compute(mock_graph)
+        mock_helper.assert_called_once_with(mock_graph)
+        assert kappa_sq == pytest.approx(0.058985, rel=1e-5)
+        
+        with patch(
+        "src.MakroLyzer.structure_modules.Anisotropy.get_Gtensor_eigVal_eigVec",
+        return_value=(np.array([2, 2, 2]), None),
+        ) as mock_helper:
+            kappa_sq = analyzer.compute(mock_graph)
+        mock_helper.assert_called_once_with(mock_graph)
+        assert kappa_sq == pytest.approx(0.00000, rel=1e-5)
+        
+        with patch(
+        "src.MakroLyzer.structure_modules.Anisotropy.get_Gtensor_eigVal_eigVec",
+        return_value=(np.array([10, 0.1, 0.1]), None),
+        ) as mock_helper:
+            kappa_sq = analyzer.compute(mock_graph)
+        mock_helper.assert_called_once_with(mock_graph)
+        assert kappa_sq == pytest.approx(0.942042, rel=1e-5)
+        
+    # Linear Chain
+    def test2_AnisotropyAnalyzer_compute(self, sample_file1):
+        """Test compute function of AnisotropyAnalyzer"""
+        xyz = next(readXYZ.readXYZ(sample_file1))
+        testGraph = graphs.GraphManager(xyz)
+        
+        analyzer = AnisotropyAnalyzer()
+        kappa_sq = analyzer.compute(testGraph)
+        assert kappa_sq == pytest.approx(1.0, abs=1e-3)
+        
+    # Planar - high symmetry
+    def test3_AnisotropyAnalyzer_compute(self, sample_file2):
+        """Test compute function of AnisotropyAnalyzer"""
+        xyz = next(readXYZ.readXYZ(sample_file2))
+        testGraph = graphs.GraphManager(xyz)
+        
+        analyzer = AnisotropyAnalyzer()
+        kappa_sq = analyzer.compute(testGraph)
+        assert kappa_sq == pytest.approx(0.25, abs=1e-3)
+        
+    # 3D structure - high symmetry
+    def test4_AnisotropyAnalyzer_compute(self, sample_file3):
+        """Test compute function of AnisotropyAnalyzer"""
+        xyz = next(readXYZ.readXYZ(sample_file3))
+        testGraph = graphs.GraphManager(xyz)
+        
+        analyzer = AnisotropyAnalyzer()
+        kappa_sq = analyzer.compute(testGraph)
+        assert kappa_sq == pytest.approx(0.00, abs=1e-3)
+        
+    # --------------------------------------------------------
+    
+    def test_AnisotropyAnalyzer_render_finalize_output(self, temp_file):
+        """Test render_output and render_output methods of AnisotropyAnalyzer"""
+        output_handler = OutputHandler(temp_file)
+        analyzer = AnisotropyAnalyzer(output_handler)
+        
+        mock_graph = Mock()
+        
+        with patch(
+        "src.MakroLyzer.structure_modules.Anisotropy.get_Gtensor_eigVal_eigVec",
+        return_value=(np.array([3.2, 3.5, 1.4]), None),
+        ) as mock_helper:
+            kappa_sq = analyzer.compute(mock_graph)
+        mock_helper.assert_called_once_with(mock_graph)
+        
+        analyzer.render_output(kappa_sq, frame_idx=12)
+        
+        with patch(
+        "src.MakroLyzer.structure_modules.Anisotropy.get_Gtensor_eigVal_eigVec",
+        return_value=(np.array([2, 2, 2]), None),
+        ) as mock_helper:
+            kappa_sq = analyzer.compute(mock_graph)
+        mock_helper.assert_called_once_with(mock_graph)
+        
+        analyzer.render_output(kappa_sq, frame_idx=113)
+        analyzer.finalize_output()
+        
+        assert temp_file.exists()
+        content = temp_file.read_text()
+        assert content == "Frame, Anisotropy Factor (κ²)\n12,0.059\n113,0.000\n"
+        
         

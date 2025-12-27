@@ -9,6 +9,7 @@ src/MakroLyzer.egg-info/dependency_links.txt
 src/MakroLyzer.egg-info/entry_points.txt
 src/MakroLyzer.egg-info/requires.txt
 src/MakroLyzer.egg-info/top_level.txt
+src/MakroLyzer/errorOutputs/ErrorOutputs.py
 src/MakroLyzer/input_handling/__init__.py
 src/MakroLyzer/input_handling/checkInput.py
 src/MakroLyzer/input_handling/estimateFrames.py
@@ -18,7 +19,9 @@ src/MakroLyzer/input_handling/readLMP.py
 src/MakroLyzer/input_handling/readXYZ.py
 src/MakroLyzer/math/Box.py
 src/MakroLyzer/output_handling/outputHandlingMain.py
+src/MakroLyzer/structure_modules/Anisotropy.py
 src/MakroLyzer/structure_modules/Hbonds.py
+src/MakroLyzer/structure_modules/Helper.py
 src/MakroLyzer/structure_modules/__init__.py
 src/MakroLyzer/structure_modules/anisotropy.py
 src/MakroLyzer/structure_modules/asphericityParameter.py

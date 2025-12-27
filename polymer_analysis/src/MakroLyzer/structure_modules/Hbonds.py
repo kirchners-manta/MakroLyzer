@@ -62,7 +62,14 @@ class HBondsAnalyzer(StructureAnalyzer):
             frame_idx (int): Current frame number.
         """
         for element_type, HAcceptor_dist, DonorAcceptor_dist, Angle_cut, count in data:
-            row = f"{frame_idx},{element_type},{HAcceptor_dist:.3f},{DonorAcceptor_dist:.3f},{Angle_cut:.3f},{count}"
+            row = (
+                f"{frame_idx},"
+                f"{element_type},"
+                f"{HAcceptor_dist:.3f},"
+                f"{DonorAcceptor_dist:.3f},"
+                f"{Angle_cut:.3f},"
+                f"{count}"
+            )
             self.output_handler.append_row(row)
             
     def finalize_output(self):
