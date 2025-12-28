@@ -14,6 +14,7 @@ from src.MakroLyzer.structure_modules.Anisotropy import AnisotropyAnalyzer
 from src.MakroLyzer.structure_modules.Asphericity import AsphericityAnalyzer
 from src.MakroLyzer.structure_modules.RadiusOfGyration import RadiusOfGyrationAnalyzer
 from src.MakroLyzer.structure_modules.MoleculeCount import MoleculeCountAnalyzer
+from src.MakroLyzer.structure_modules.EndToEndDistance import EndToEndDistanceAnalyzer
 
 # OutputHandler Tests # ------------------------------------------------------------------
 class TestOutputHandler:
@@ -813,3 +814,110 @@ class TestMoleculeCountAnalyzer:
         assert temp_file.exists()
         content = temp_file.read_text()
         assert content == "Frame, Molecule count, Chain count, Ring count\n190,2,1,1\n"
+        
+# EndToEndDistanceAnalyzer tests # ------------------------------------------------------------
+
+class TestEndToEndDistanceAnalyzer:
+    """Test the EndToEndDistanceAnalyzer class."""
+    
+    # SetUp fixtures -----------------------------------------
+    @pytest.fixture
+    def temp_file(self):
+        """Fixture that creates a temporary file path."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            yield Path(tmpdir) / "hbond_output.csv"
+            
+    @pytest.fixture
+    def sample_file1(self):
+        return "test_structures/EndToEnd/01.xyz"
+    
+    # --------------------------------------------------------
+    
+    def test_EndToEndDistanceAnalyzer_init(self, temp_file):
+        """Test initializatio of EndToEndDistanceAnalyzer."""
+        output_handler = OutputHandler(temp_file, mode='streaming')
+        analyzer = EndToEndDistanceAnalyzer(output_handler)
+        
+        assert analyzer.output_handler == output_handler
+        
+    # --------------------------------------------------------
+        
+    def test_EndToEndDistanceAnalyzer_compute(self, temp_file):
+        """Test compute function of EndToEndDistanceAnalyzer."""
+        mock_graph = Mock()
+        mock_subgraph1 = Mock()
+        mock_subgraph2 = Mock()
+       
+        mock_subgraph1.remove_1order.return_value = mock_subgraph1
+        mock_subgraph2.remove_1order.return_value = mock_subgraph2
+        mock_subgraph1.find_longest_path.return_value = [1,2,3]
+        mock_subgraph2.find_longest_path.return_value = [1,2,3]
+        mock_subgraph1.distance.return_value = 3.0
+        mock_subgraph2.distance.return_value = 4.12
+        
+        mock_graph.get_subgraphs.return_value = [mock_subgraph1, mock_subgraph2]
+        
+        output_handler = OutputHandler(temp_file, mode='streaming')
+        analyzer = EndToEndDistanceAnalyzer(output_handler)
+        result = analyzer.compute(mock_graph)
+        
+        assert result[0] == 3.0
+        assert result[1] == 4.12
+        
+    def test2_EndToEndDistanceAnalyzer_compute(self, temp_file):
+        """Test compute function of EndToEndDistanceAnalyzer."""
+        mock_graph = Mock()
+        mock_subgraph1 = Mock()
+        mock_subgraph2 = Mock()
+       
+        mock_subgraph1.remove_1order.return_value = mock_subgraph1
+        mock_subgraph2.remove_1order.return_value = mock_subgraph2
+        mock_subgraph1.find_longest_path.return_value = [1]
+        mock_subgraph2.find_longest_path.return_value = [1,2,3]
+        mock_subgraph1.distance.return_value = 3.0
+        mock_subgraph2.distance.return_value = 4.12
+        
+        mock_graph.get_subgraphs.return_value = [mock_subgraph1, mock_subgraph2]
+        
+        output_handler = OutputHandler(temp_file, mode='streaming')
+        analyzer = EndToEndDistanceAnalyzer(output_handler)
+        result = analyzer.compute(mock_graph)
+        
+        assert result[0] == 4.12
+        
+    def test3_EndToEndDistanceAnalyzer_compute(self, sample_file1):
+        """Test compute function of EndToEndDistanceAnalyzer."""
+        xyz = next(readXYZ.readXYZ(sample_file1))
+        testGraph = graphs.GraphManager(xyz)
+        
+        analyzer = EndToEndDistanceAnalyzer()
+        result = analyzer.compute(testGraph)
+        assert result[0] == pytest.approx(5.595, abs=1e-3)
+        
+    # --------------------------------------------------------
+    
+    def test_EndToEndDistanceAnalyzer_render_finalize_output(self, temp_file):
+        """Test render_output and render_output methods of EndToEndDistanceAnalyzer."""
+        mock_graph = Mock()
+        mock_subgraph1 = Mock()
+        mock_subgraph2 = Mock()
+       
+        mock_subgraph1.remove_1order.return_value = mock_subgraph1
+        mock_subgraph2.remove_1order.return_value = mock_subgraph2
+        mock_subgraph1.find_longest_path.return_value = [1,2,3]
+        mock_subgraph2.find_longest_path.return_value = [1,2,3]
+        mock_subgraph1.distance.return_value = 3.0
+        mock_subgraph2.distance.return_value = 4.6
+        
+        mock_graph.get_subgraphs.return_value = [mock_subgraph1, mock_subgraph2]
+        
+        output_handler = OutputHandler(temp_file, mode='streaming')
+        analyzer = EndToEndDistanceAnalyzer(output_handler)
+        analyzer.initialize_output()
+        result = analyzer.compute(mock_graph)
+        analyzer.render_output(result, frame_idx=12)
+        analyzer.finalize_output()
+        
+        assert temp_file.exists()
+        content = temp_file.read_text()
+        assert content == "Frame, End-to-End Distance (subgraphs) / Å\n12,3.000,4.600\n"

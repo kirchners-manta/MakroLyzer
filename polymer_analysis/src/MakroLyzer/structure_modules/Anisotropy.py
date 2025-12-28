@@ -72,21 +72,6 @@ class AnisotropyAnalyzer(StructureAnalyzer):
         header = "Frame, Anisotropy Factor (κ²)"
         super().finalize_output(header)
         
-def get_anisotropy_factor(graph):
-    """
-    Calculate the Anisotropy Factor for the given graph.
-
-    Args:
-        graph (GraphManager): Graph to analyze.
-        
-    Returns:
-        float: The computed anisotropy factor (κ²).
-    """
-    analyzer = AnisotropyAnalyzer()
-    kappa_sq = analyzer.compute(graph)
-    return kappa_sq
-        
-        
         
         
         

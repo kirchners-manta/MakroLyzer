@@ -80,16 +80,3 @@ class HBondsAnalyzer(StructureAnalyzer):
         header = "Frame, Element Type, H-Acceptor dist / Å, Donor-Acceptor dist / Å, Angle cutoff / °, Number of Hydrogen Bonds"
         super().finalize_output(header)
         
-def get_Hbonds(graph, cutoffs):
-    """
-    Calculate Hbonds for the given graph.
-
-    Args:
-        graph (GraphManager): The graph to calculate the Hbond count for.
-        cutoffs (list): List of tuples (element type, max. H-acceptor dist, max donor-acceptor dist, angle cutoff)
-        
-    Returns: 
-        list: A list of tuples containing numbers of Hbonds and their atom pairs.
-    """
-    analyzer = HBondsAnalyzer(cutoffs)
-    return analyzer.compute(graph)

@@ -10,8 +10,8 @@ from MakroLyzer.structure_modules.Anisotropy import AnisotropyAnalyzer
 from MakroLyzer.structure_modules.Asphericity import AsphericityAnalyzer
 from MakroLyzer.structure_modules.RadiusOfGyration import RadiusOfGyrationAnalyzer
 from MakroLyzer.structure_modules.MoleculeCount import MoleculeCountAnalyzer
+from MakroLyzer.structure_modules.EndToEndDistance import EndToEndDistanceAnalyzer
 
-from MakroLyzer.structure_modules.endToEndDistance import end_to_end_dist
 from MakroLyzer.structure_modules.dihedrals import get_all_dihedrals, get_CisTrans, get_Ramachandran
 from MakroLyzer.structure_modules.subgraphCoords import get_subgraph_coords
 from MakroLyzer.structure_modules.orderParameter import get_order_parameter, get_S_from_Q
@@ -34,7 +34,7 @@ def main(args):
         analyzers['hbonds'].initialize_output()
         
     if args['anisotropyFactor']:
-        output_handler = OutputHandler(args['anisotropy_file'], mode='collect')
+        output_handler = OutputHandler(args['anisotropy_file'], mode='streaming')
         analyzers['anisotropy'] = AnisotropyAnalyzer(output_handler)
         analyzers['anisotropy'].initialize_output()
         
@@ -44,7 +44,7 @@ def main(args):
         analyzers['asphericity'].initialize_output()
         
     if args['radiusOfGyration']:
-        output_handler = OutputHandler(args['Rg_file'], mode='collect')
+        output_handler = OutputHandler(args['Rg_file'], mode='streaming')
         analyzers['radiusOfGyration'] = RadiusOfGyrationAnalyzer(output_handler)
         analyzers['radiusOfGyration'].initialize_output()
         
@@ -53,10 +53,14 @@ def main(args):
         analyzers['noSubgraphs'] = MoleculeCountAnalyzer(output_handler)
         analyzers['noSubgraphs'].initialize_output()
     
+    if args['endToEndDistance']:
+        output_handler = OutputHandler(args['e2e_file'], mode='streaming')
+        analyzers['endToEndDistance'] = EndToEndDistanceAnalyzer(output_handler)
+        analyzers['endToEndDistance'].initialize_output()
+    
     # create empty lists to store results
     results = {
         'formulas': [],
-        'distances': [],
         'dihedrals': [],
         'dihedral_list': [],
         'cisTrans': [],
@@ -66,7 +70,6 @@ def main(args):
 
         # Output file names
         'formulas_file': args['formula_file'],
-        'distances_file': args['e2e_file'],
         'dihedrals_file': args['dihedral_file'],
         'cisTrans_file': args['CisTrans_file'],
         'AARamachandran_file': args['AARamachandran_file'],
@@ -124,6 +127,10 @@ def main(args):
         if 'noSubgraphs' in analyzers:
             analyzers['noSubgraphs'].run(boxGraph, i)
             
+        # EndToEnd Distances
+        if 'endToEndDistance' in analyzers:
+            analyzers['endToEndDistance'].run(boxGraph, i)
+            
         # ---------------------------------------------------------------------
         
         # Repeating units for the Polymer
@@ -148,11 +155,6 @@ def main(args):
         if args['formula']:
             formulas = boxGraph.get_chemicalFormulas()
             results['formulas'].append(formulas)
-            
-        # End-to-end distance     
-        if args['endToEndDistance']:
-            dist = end_to_end_dist(boxGraph)
-            results.setdefault('distances', []).append(dist)
           
         # Dihedral angles      
         if args['dihedral']:

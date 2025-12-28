@@ -70,16 +70,3 @@ class RadiusOfGyrationAnalyzer(StructureAnalyzer):
         header = "Frame, Rg / Å"
         super().finalize_output(header)
         
-def get_radius_of_gyration(graph):
-    """
-    Calculate the Radius of Gyration for the given graph.
-
-    Args:
-        graph (GraphManager): Graph to analyze.
-        
-    Returns:
-        float: The computed Radius of Gyration.
-    """
-    analyzer = RadiusOfGyrationAnalyzer()
-    Rg = analyzer.compute(graph)
-    return Rg
