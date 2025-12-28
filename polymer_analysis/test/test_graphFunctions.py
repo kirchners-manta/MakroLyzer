@@ -692,18 +692,6 @@ def test_get_vectors_and_positions_along_path(sample_data23):
         assert position[0][1] == pytest.approx(-0.12005, abs=1e-5)
         assert position[0][2] == pytest.approx(-0.021475, abs=1e-5)
         
-        
-# number of subgraphs and number of rings
-def test_number_of_subgraphs_and_rings(sample_data30):
-    xyz = next(readXYZ.readXYZ(sample_data30))
-    testGraph = graphs.GraphManager(xyz)
-    
-    numberOfSubgraphs = count_subgraphs(testGraph)
-    assert numberOfSubgraphs == 12
-    
-    numberOfRingsStrands = count_rings(testGraph)
-    assert numberOfRingsStrands[0] == 7
-    assert numberOfRingsStrands[1] == 5
     
 # test AminoAcid Backbone search
 def test_AAbackbone(sample_data10):

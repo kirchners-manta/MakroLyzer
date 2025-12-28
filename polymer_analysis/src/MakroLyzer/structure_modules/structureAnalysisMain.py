@@ -9,11 +9,10 @@ from MakroLyzer.structure_modules.Hbonds import HBondsAnalyzer
 from MakroLyzer.structure_modules.Anisotropy import AnisotropyAnalyzer
 from MakroLyzer.structure_modules.Asphericity import AsphericityAnalyzer
 from MakroLyzer.structure_modules.RadiusOfGyration import RadiusOfGyrationAnalyzer
+from MakroLyzer.structure_modules.MoleculeCount import MoleculeCountAnalyzer
 
 from MakroLyzer.structure_modules.endToEndDistance import end_to_end_dist
-from MakroLyzer.structure_modules.countSubgraphs import count_subgraphs, count_rings
 from MakroLyzer.structure_modules.dihedrals import get_all_dihedrals, get_CisTrans, get_Ramachandran
-from MakroLyzer.structure_modules.asphericityParameter import get_asphericity_parameter
 from MakroLyzer.structure_modules.subgraphCoords import get_subgraph_coords
 from MakroLyzer.structure_modules.orderParameter import get_order_parameter, get_S_from_Q
 
@@ -48,11 +47,15 @@ def main(args):
         output_handler = OutputHandler(args['Rg_file'], mode='collect')
         analyzers['radiusOfGyration'] = RadiusOfGyrationAnalyzer(output_handler)
         analyzers['radiusOfGyration'].initialize_output()
+        
+    if args['noSubgraphs']:
+        output_handler = OutputHandler(args['noSub_file'], mode='streaming')
+        analyzers['noSubgraphs'] = MoleculeCountAnalyzer(output_handler)
+        analyzers['noSubgraphs'].initialize_output()
     
     # create empty lists to store results
     results = {
         'formulas': [],
-        'noSub': [],
         'distances': [],
         'dihedrals': [],
         'dihedral_list': [],
@@ -60,18 +63,15 @@ def main(args):
         'AARamachandran': [],
         'subgraph_coords': [],
         'orderParameter': [],
-        'RingStrandCount': [],
 
         # Output file names
         'formulas_file': args['formula_file'],
-        'noSub_file': args['noSub_file'],
         'distances_file': args['e2e_file'],
         'dihedrals_file': args['dihedral_file'],
         'cisTrans_file': args['CisTrans_file'],
         'AARamachandran_file': args['AARamachandran_file'],
         'subgraph_coords_file': args['subgraph_coord_file'],
-        'orderParameter_file': args['order_file'],
-        'RingStrandCount_file': args['RingStrandCount_file']
+        'orderParameter_file': args['order_file']
     }
     
     # Get the trajectory file path 
@@ -120,6 +120,10 @@ def main(args):
         if 'radiusOfGyration' in analyzers:
             analyzers['radiusOfGyration'].run(boxGraph, i)
             
+        # Molecule Count
+        if 'noSubgraphs' in analyzers:
+            analyzers['noSubgraphs'].run(boxGraph, i)
+            
         # ---------------------------------------------------------------------
         
         # Repeating units for the Polymer
@@ -145,11 +149,6 @@ def main(args):
             formulas = boxGraph.get_chemicalFormulas()
             results['formulas'].append(formulas)
             
-        # Number of subgraphs
-        if args['noSubgraphs']:
-            noSub = count_subgraphs(boxGraph)
-            results['noSub'].append(noSub)
-           
         # End-to-end distance     
         if args['endToEndDistance']:
             dist = end_to_end_dist(boxGraph)
@@ -181,11 +180,6 @@ def main(args):
             boxSize, n, unitSize = args['orderParameter']
             results['orderParameter'].append(get_S_from_Q(
                 boxGraph, boxSize, n, unitSize))
-            
-        # Ring and strand count
-        if args['RingStrandCount']:
-            ring_strand_count = count_rings(boxGraph)
-            results['RingStrandCount'].append(ring_strand_count)
             
     # Finalize output for class-based analyzers ---------------------------------
     for analyzer_name, analyzer in analyzers.items():

@@ -9,3 +9,7 @@ class ErrorOutputs:
         "Warning: All gyration tensor eigenvalues are zero. "
         "You might want to check your input structure."
     )
+    MOLECULE_COUNT_MISMATCH_ERROR = (
+        "Error: Mismatch in molecule count calculation. "
+        "Please verify the graph structure."
+    )

@@ -13,6 +13,7 @@ from src.MakroLyzer.structure_modules.Hbonds import HBondsAnalyzer
 from src.MakroLyzer.structure_modules.Anisotropy import AnisotropyAnalyzer
 from src.MakroLyzer.structure_modules.Asphericity import AsphericityAnalyzer
 from src.MakroLyzer.structure_modules.RadiusOfGyration import RadiusOfGyrationAnalyzer
+from src.MakroLyzer.structure_modules.MoleculeCount import MoleculeCountAnalyzer
 
 # OutputHandler Tests # ------------------------------------------------------------------
 class TestOutputHandler:
@@ -694,3 +695,121 @@ class TestRadiusOfGyrationAnalyzer:
         assert temp_file.exists()
         content = temp_file.read_text()
         assert content == "Frame, Rg / Å\n11,13.300\n"
+        
+# test MoleculeCountAnalyzer tests # ----------------------------------------------------------
+
+class TestMoleculeCountAnalyzer:
+    """Test the MoleculeCountAnalyzer class."""
+
+    # SetUp fixtures -----------------------------------------
+    @pytest.fixture
+    def temp_file(self):
+        """Fixture that creates a temporary file path."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            yield Path(tmpdir) / "molecule_count_output.csv"
+            
+    @pytest.fixture
+    def sample_file1(self):
+        return "test_structures/MoleculeCount/01.xyz"
+    
+    # ---------------------------------------------------------
+    
+    def test_MoleculeCountAnalyzer_init(self, temp_file):
+        """Test initialization of MoleculeCountAnalyzer."""
+        output_handler = OutputHandler(temp_file, mode='streaming')
+        analyzer = MoleculeCountAnalyzer(output_handler)
+        
+        assert analyzer.output_handler == output_handler
+        
+    # --------------------------------------------------------    
+    
+    def test_MoleculeCountAnalyzer_compute(self, sample_file1):
+        """Test compute function of MoleculeCountAnalyzer."""
+        xyz = next(readXYZ.readXYZ(sample_file1))
+        testGraph = graphs.GraphManager(xyz)
+        
+        analyzer = MoleculeCountAnalyzer()
+        result = analyzer.compute(testGraph)
+        assert result[0][0] == 12 # Total molecules
+        assert result[0][1] == 5  # Cains
+        assert result[0][2] == 7  # Rings
+        
+    def test2_MoleculeCountAnalyzer_compute(self, temp_file):
+        """Test compute function of MoleculeCountAnalyzer."""
+        # Create mock subgraphs
+        mock_chain1 = Mock()
+        mock_chain1.find_longest_path.return_value = [0, 1, 2, 3]
+        mock_chain1.remove_1order.return_value = mock_chain1
+        mock_chain1.subgraph.return_value.copy.return_value = mock_chain1
+        mock_chain1.degree.side_effect = lambda n: 1 if n in [0, 3] else 2
+        mock_chain1.nodes.return_value = [0, 1, 2, 3]
+        
+        mock_ring1 = Mock()
+        mock_ring1.find_longest_path.return_value = [4, 5, 6, 7]
+        mock_ring1.remove_1order.return_value = mock_ring1
+        mock_ring1.subgraph.return_value.copy.return_value = mock_ring1
+        mock_ring1.degree.side_effect = lambda n: 2  # All nodes have degree 2 (ring)
+        mock_ring1.nodes.return_value = [4, 5, 6, 7]
+        
+        mock_chain2 = Mock()
+        mock_chain2.find_longest_path.return_value = [8, 9, 10]
+        mock_chain2.remove_1order.return_value = mock_chain2
+        mock_chain2.subgraph.return_value.copy.return_value = mock_chain2
+        mock_chain2.degree.side_effect = lambda n: 1 if n in [8, 10] else 2
+        mock_chain2.nodes.return_value = [8, 9, 10]
+        
+        # Create mock graph
+        mock_graph = Mock()
+        mock_graph.get_subgraphs.return_value = [mock_chain1, mock_ring1, mock_chain2]
+        
+        # Create analyzer and compute
+        output_handler = OutputHandler(temp_file, mode='streaming')
+        analyzer = MoleculeCountAnalyzer(output_handler)
+        result = analyzer.compute(mock_graph)
+        
+        # Assertions
+        assert result[0][0] == 3  # Total molecules
+        assert result[0][1] == 2  # Chains
+        assert result[0][2] == 1  # Rings
+        
+        # Verify that methods were called
+        mock_graph.get_subgraphs.assert_called()
+        assert mock_chain1.find_longest_path.call_count == 1
+        assert mock_ring1.find_longest_path.call_count == 1
+        assert mock_chain2.find_longest_path.call_count == 1
+        
+    # --------------------------------------------------------   
+    
+    def test_MoleculeCountAnalyzer_render_finalize_output(self, temp_file):
+        """Test render_output and render_output methods of MoleculeCountAnalyzer."""
+        # Create mock subgraphs
+        mock_chain1 = Mock()
+        mock_chain1.find_longest_path.return_value = [0, 1, 2, 3]
+        mock_chain1.remove_1order.return_value = mock_chain1
+        mock_chain1.subgraph.return_value.copy.return_value = mock_chain1
+        mock_chain1.degree.side_effect = lambda n: 1 if n in [0, 2] else 2
+        mock_chain1.nodes.return_value = [0, 1, 2, 3]
+        
+        mock_ring1 = Mock()
+        mock_ring1.find_longest_path.return_value = [4, 5, 6, 7]
+        mock_ring1.remove_1order.return_value = mock_ring1
+        mock_ring1.subgraph.return_value.copy.return_value = mock_ring1
+        mock_ring1.degree.side_effect = lambda n: 2  # All nodes have degree 2 (ring)
+        mock_ring1.nodes.return_value = [4, 5, 6, 7]
+        
+        
+        # Create mock graph
+        mock_graph = Mock()
+        mock_graph.get_subgraphs.return_value = [mock_chain1, mock_ring1]
+        
+        # Create analyzer and compute
+        output_handler = OutputHandler(temp_file, mode='streaming')
+        analyzer = MoleculeCountAnalyzer(output_handler)
+        analyzer.initialize_output()
+        result = analyzer.compute(mock_graph)
+        analyzer.render_output(result, frame_idx=190)
+        analyzer.finalize_output()
+        
+        assert temp_file.exists()
+        content = temp_file.read_text()
+        assert content == "Frame, Molecule count, Chain count, Ring count\n190,2,1,1\n"
