@@ -722,19 +722,3 @@ def test_AAbackbone_2(sample_data11):
         else:
             assert testGraph.nodes[backbone[i]]['element'] == 'C'
             
-# test order parameter            
-def test_orderParameter(sample_data31):
-    xyz = next(readXYZ.readXYZ(sample_data31))
-    testGraph = graphs.GraphManager(xyz, 3000)
-    
-    orderParameter = get_S_from_Q(testGraph, 3000, 1, 2)
-    print("ananas",orderParameter)
-    assert orderParameter == pytest.approx(1, abs=5e-2)
-    
-def test_orderParameter(sample_data32):
-    xyz = next(readXYZ.readXYZ(sample_data32))
-    testGraph = graphs.GraphManager(xyz, 3000)
-    
-    orderParameter = get_S_from_Q(testGraph, 3000, 1, 2)
-    print("ananas",orderParameter)
-    assert orderParameter == pytest.approx(0, abs=5e-2)

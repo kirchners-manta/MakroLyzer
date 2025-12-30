@@ -11,10 +11,10 @@ from MakroLyzer.structure_modules.Asphericity import AsphericityAnalyzer
 from MakroLyzer.structure_modules.RadiusOfGyration import RadiusOfGyrationAnalyzer
 from MakroLyzer.structure_modules.MoleculeCount import MoleculeCountAnalyzer
 from MakroLyzer.structure_modules.EndToEndDistance import EndToEndDistanceAnalyzer
+from MakroLyzer.structure_modules.OrderParameter import OrderParameterAnalyzer
 
 from MakroLyzer.structure_modules.dihedrals import get_all_dihedrals, get_CisTrans, get_Ramachandran
 from MakroLyzer.structure_modules.subgraphCoords import get_subgraph_coords
-from MakroLyzer.structure_modules.orderParameter import get_order_parameter, get_S_from_Q
 
 from tqdm import tqdm
 
@@ -22,9 +22,29 @@ def main(args):
     """
     Perfoms the main analysis of the polymer structure.
     """
+    # Get the trajectory file path 
+    if args['xyzFile']:
+        trajectoryFilePath = args['xyzFile']
+        n_frames = estimateFrames.EstimateFrames.estimateFramesXYZ(trajectoryFilePath)
+        read = readXYZ.readXYZ
+    elif args['lmpFile']:
+        trajectoryFilePath = args['lmpFile']
+        n_frames = estimateFrames.EstimateFrames.estimateFramesLMP(trajectoryFilePath)
+        read = readLMP.readLMP
+        
+    # Get the modulo for reading frames
+    nthStep = args.get('nthStep', 1)
     
+    # Get the box size
+    boxSize = args.get('BoxSize', None)
+    if not boxSize:
+        # check if the order parameter is provided
+        if args['orderParameter']:
+            BoxSize, n, unitSize = args['orderParameter']
+            boxSize = BoxSize[0]
+            
     
-    # Vorrübergende Lösung
+    # Vorrübergende Lösung -----------------------------------------------------------------------
     analyzers = {}
     
     if args['hydrogenBonds']:
@@ -57,6 +77,13 @@ def main(args):
         output_handler = OutputHandler(args['e2e_file'], mode='streaming')
         analyzers['endToEndDistance'] = EndToEndDistanceAnalyzer(output_handler)
         analyzers['endToEndDistance'].initialize_output()
+        
+    if args['orderParameter']:
+        output_handler = OutputHandler(args['order_file'], mode='streaming')
+        analyzers['orderParameter'] = OrderParameterAnalyzer(boxSize, n, unitSize, output_handler)
+        analyzers['orderParameter'].initialize_output()
+        
+    # ------------------------------------------------------------------------------------------------
     
     # create empty lists to store results
     results = {
@@ -66,38 +93,16 @@ def main(args):
         'cisTrans': [],
         'AARamachandran': [],
         'subgraph_coords': [],
-        'orderParameter': [],
 
         # Output file names
         'formulas_file': args['formula_file'],
         'dihedrals_file': args['dihedral_file'],
         'cisTrans_file': args['CisTrans_file'],
         'AARamachandran_file': args['AARamachandran_file'],
-        'subgraph_coords_file': args['subgraph_coord_file'],
-        'orderParameter_file': args['order_file']
+        'subgraph_coords_file': args['subgraph_coord_file']
     }
     
-    # Get the trajectory file path 
-    if args['xyzFile']:
-        trajectoryFilePath = args['xyzFile']
-        n_frames = estimateFrames.EstimateFrames.estimateFramesXYZ(trajectoryFilePath)
-        read = readXYZ.readXYZ
-    elif args['lmpFile']:
-        trajectoryFilePath = args['lmpFile']
-        n_frames = estimateFrames.EstimateFrames.estimateFramesLMP(trajectoryFilePath)
-        read = readLMP.readLMP
-        
-    # Get the modulo for reading frames
-    nthStep = args.get('nthStep', 1)
-    
-    # Get the box size
-    boxSize = args.get('BoxSize', None)
-    if not boxSize:
-        # check if the order parameter is provided
-        if args['orderParameter']:
-            BoxSize, n, unitSize = args['orderParameter']
-            boxSize = BoxSize[0]
-            
+
     # Loop ----------------------------------------------------
     for i, xyz_frame in enumerate(tqdm(read(trajectoryFilePath),total=n_frames, desc="Creating something magical", unit="frame", ncols=100)):
         if i % nthStep != 0:
@@ -130,6 +135,10 @@ def main(args):
         # EndToEnd Distances
         if 'endToEndDistance' in analyzers:
             analyzers['endToEndDistance'].run(boxGraph, i)
+            
+        # Order Parameter
+        if 'orderParameter' in analyzers:
+            analyzers['orderParameter'].run(boxGraph, i)
             
         # ---------------------------------------------------------------------
         
@@ -176,12 +185,6 @@ def main(args):
         # Subgraph coordinates
         if args['subgraph_coords']:
             results['subgraph_coords'].append(get_subgraph_coords(boxGraph))            
-            
-        # Order parameter
-        if args['orderParameter']:
-            boxSize, n, unitSize = args['orderParameter']
-            results['orderParameter'].append(get_S_from_Q(
-                boxGraph, boxSize, n, unitSize))
             
     # Finalize output for class-based analyzers ---------------------------------
     for analyzer_name, analyzer in analyzers.items():

@@ -237,7 +237,7 @@ def get_S_from_Q(graph, boxSize, n, unitSize):
     """
     
     # Divide the box into cells
-    cells = Box.Box.devideBox(boxSize, n)
+    cells = Box.Box.divideBox(boxSize, n)
     
     # Get unit vectors for the graph
     vecAndPos = get_unit_vectors(graph, unitSize)

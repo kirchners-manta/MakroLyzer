@@ -7,6 +7,7 @@ from unittest.mock import Mock, patch
 
 from src.MakroLyzer.input_handling import readXYZ
 from src.MakroLyzer.structure_modules import graphs
+from src.MakroLyzer.errorOutputs.ErrorOutputs import ErrorOutputs
 
 from src.MakroLyzer.structure_modules.structureBase import OutputHandler, StructureAnalyzer
 from src.MakroLyzer.structure_modules.Hbonds import HBondsAnalyzer
@@ -15,6 +16,7 @@ from src.MakroLyzer.structure_modules.Asphericity import AsphericityAnalyzer
 from src.MakroLyzer.structure_modules.RadiusOfGyration import RadiusOfGyrationAnalyzer
 from src.MakroLyzer.structure_modules.MoleculeCount import MoleculeCountAnalyzer
 from src.MakroLyzer.structure_modules.EndToEndDistance import EndToEndDistanceAnalyzer
+from src.MakroLyzer.structure_modules.OrderParameter import OrderParameterAnalyzer
 
 # OutputHandler Tests # ------------------------------------------------------------------
 class TestOutputHandler:
@@ -194,7 +196,7 @@ class TestHBondsAnalyzer:
     def temp_file(self):
         """Fixture that creates a temporary file path."""
         with tempfile.TemporaryDirectory() as tmpdir:
-            yield Path(tmpdir) / "hbond_output.csv"
+            yield Path(tmpdir) / "output.csv"
             
     @pytest.fixture
     def sample_file1(self):
@@ -376,7 +378,7 @@ class TestHBondsAnalyzer:
     # ---------------------------------------------------------
         
     def test_HBondsAnalyzer_render_finalize_output(self, temp_file):
-        """Test render_output and render_output methods of HBondsAnalyzer"""
+        """Test render_output and render_output methods of HBondsAnalyzer."""
         # Mock the get_hbonds method of the GraphManager
         # -> we dont call the real graph methods here, since we only 
         #    want to test render_output
@@ -408,7 +410,7 @@ class TestAnisotropyAnalyzer:
     def temp_file(self):
         """Fixture that creates a temporary file path."""
         with tempfile.TemporaryDirectory() as tmpdir:
-            yield Path(tmpdir) / "hbond_output.csv"
+            yield Path(tmpdir) / "output.csv"
             
     @pytest.fixture
     def sample_file1(self):
@@ -434,7 +436,7 @@ class TestAnisotropyAnalyzer:
     # --------------------------------------------------------
     
     def test_AnisotropyAnalyzer_compute(self, temp_file):
-        """Test compute function of AnisotropyAnalyzer"""
+        """Test compute function of AnisotropyAnalyzer."""
         output_handler = OutputHandler(temp_file)
         analyzer = AnisotropyAnalyzer(output_handler)
         
@@ -466,7 +468,7 @@ class TestAnisotropyAnalyzer:
         
     # Linear Chain
     def test2_AnisotropyAnalyzer_compute(self, sample_file1):
-        """Test compute function of AnisotropyAnalyzer"""
+        """Test compute function of AnisotropyAnalyzer."""
         xyz = next(readXYZ.readXYZ(sample_file1))
         testGraph = graphs.GraphManager(xyz)
         
@@ -476,7 +478,7 @@ class TestAnisotropyAnalyzer:
         
     # Planar - high symmetry
     def test3_AnisotropyAnalyzer_compute(self, sample_file2):
-        """Test compute function of AnisotropyAnalyzer"""
+        """Test compute function of AnisotropyAnalyzer."""
         xyz = next(readXYZ.readXYZ(sample_file2))
         testGraph = graphs.GraphManager(xyz)
         
@@ -486,7 +488,7 @@ class TestAnisotropyAnalyzer:
         
     # 3D structure - high symmetry
     def test4_AnisotropyAnalyzer_compute(self, sample_file3):
-        """Test compute function of AnisotropyAnalyzer"""
+        """Test compute function of AnisotropyAnalyzer."""
         xyz = next(readXYZ.readXYZ(sample_file3))
         testGraph = graphs.GraphManager(xyz)
         
@@ -497,7 +499,7 @@ class TestAnisotropyAnalyzer:
     # --------------------------------------------------------
     
     def test_AnisotropyAnalyzer_render_finalize_output(self, temp_file):
-        """Test render_output and render_output methods of AnisotropyAnalyzer"""
+        """Test render_output and render_output methods of AnisotropyAnalyzer."""
         output_handler = OutputHandler(temp_file)
         analyzer = AnisotropyAnalyzer(output_handler)
         
@@ -554,7 +556,7 @@ class TestAsphericityAnalyzer:
     # --------------------------------------------------------
     
     def test_AsphericityAnalyzer_compute(self, temp_file):
-        """Test compute function of AsphericityAnalyzer"""
+        """Test compute function of AsphericityAnalyzer."""
         output_handler = OutputHandler(temp_file)
         analyzer = AsphericityAnalyzer(output_handler)
         
@@ -585,7 +587,7 @@ class TestAsphericityAnalyzer:
         assert b == pytest.approx(0.00000, rel=1e-5)
         
     def test2_AsphericityAnalyzer_compute(self, sample_file1):
-        """Test compute function of AsphericityAnalyzer"""
+        """Test compute function of AsphericityAnalyzer."""
         xyz = next(readXYZ.readXYZ(sample_file1))
         testGraph = graphs.GraphManager(xyz)
         
@@ -596,7 +598,7 @@ class TestAsphericityAnalyzer:
     # --------------------------------------------------------
     
     def test_AsphericityAnalyzer_render_finalize_output(self, temp_file):
-        """Test render_output and render_output methods of AsphericityAnalyzer"""
+        """Test render_output and render_output methods of AsphericityAnalyzer."""
         output_handler = OutputHandler(temp_file)
         analyzer = AsphericityAnalyzer(output_handler)
         
@@ -635,7 +637,7 @@ class TestRadiusOfGyrationAnalyzer:
     def temp_file(self):
         """Fixture that creates a temporary file path."""
         with tempfile.TemporaryDirectory() as tmpdir:
-            yield Path(tmpdir) / "hbond_output.csv"
+            yield Path(tmpdir) / "output.csv"
             
     @pytest.fixture
     def sample_file1(self):
@@ -652,7 +654,7 @@ class TestRadiusOfGyrationAnalyzer:
     # ----------------------------------------------------------
     
     def test_RadiusOfGyrationAnalyzer_compute(self, temp_file):
-        """Test compute function of RadiusOfGyrationAnalyzer"""
+        """Test compute function of RadiusOfGyrationAnalyzer."""
         output_handler = OutputHandler(temp_file)
         analyzer = RadiusOfGyrationAnalyzer(output_handler)
         
@@ -667,7 +669,7 @@ class TestRadiusOfGyrationAnalyzer:
         assert Rg == pytest.approx(13.300376, rel=1e-5) 
         
     def test2_RadiusOfGyrationAnalyzer_compute(self, sample_file1):
-        """Test compute function of RadiusOfGyrationAnalyzer"""
+        """Test compute function of RadiusOfGyrationAnalyzer."""
         xyz = next(readXYZ.readXYZ(sample_file1))
         testGraph = graphs.GraphManager(xyz)
         
@@ -678,7 +680,7 @@ class TestRadiusOfGyrationAnalyzer:
     # ----------------------------------------------------------
     
     def test_RadiusOfGyrationAnalyzer_render_finalize_output(self, temp_file):
-        """Test render_output and render_output methods of RadiusOfGyrationAnalyzer"""
+        """Test render_output and render_output methods of RadiusOfGyrationAnalyzer."""
         output_handler = OutputHandler(temp_file)
         analyzer = RadiusOfGyrationAnalyzer(output_handler)
         
@@ -825,7 +827,7 @@ class TestEndToEndDistanceAnalyzer:
     def temp_file(self):
         """Fixture that creates a temporary file path."""
         with tempfile.TemporaryDirectory() as tmpdir:
-            yield Path(tmpdir) / "hbond_output.csv"
+            yield Path(tmpdir) / "output.csv"
             
     @pytest.fixture
     def sample_file1(self):
@@ -921,3 +923,323 @@ class TestEndToEndDistanceAnalyzer:
         assert temp_file.exists()
         content = temp_file.read_text()
         assert content == "Frame, End-to-End Distance (subgraphs) / Å\n12,3.000,4.600\n"
+        
+# OrderParameterAnylyzer tests # ------------------------------------------------------------------
+
+class TestOrderParameterAnalyzer:
+    """Test the OrderParameterAnalyzer class."""
+    
+    # SetUp fixtures -----------------------------------------
+    @pytest.fixture
+    def temp_file(self):
+        """Fixture that creates a temporary file path."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            yield Path(tmpdir) / "output.csv"
+            
+    @pytest.fixture
+    def sample_file1(self):
+        return "test_structures/OrderParameter/01.xyz"
+    
+    @pytest.fixture
+    def sample_file2(self):
+        return "test_structures/OrderParameter/02.xyz"
+    
+    # ----------------------------------------------------------
+    
+    def test_OrderParameterAnalyzer_init(self, temp_file):
+        output_handler = OutputHandler(temp_file, mode='streaming')
+        BoxSize = (12.0, 13.4, 2.0)
+        NoCellsPerDim = (1, 3, 4)
+        MolecularVectorLength = 4
+        analyzer = OrderParameterAnalyzer(BoxSize, NoCellsPerDim, MolecularVectorLength, output_handler)
+        
+        assert analyzer.BoxSize == BoxSize
+        assert analyzer.NoCellsPerDim == NoCellsPerDim
+        assert analyzer.MolecularVectorLength == MolecularVectorLength
+        assert analyzer.output_handler == output_handler
+        
+    def test2_OrderParameterAnalyzer_init(self, temp_file):
+        output_handler = OutputHandler(temp_file, mode='streaming')
+        BoxSize = [12.0, 13.4]
+        NoCellsPerDim = 1.3
+        MolecularVectorLength = [4.2, 19]
+        
+        # we expect the WRONG_INPUT_TYPE_OP_ERROR since the inputs do not have the correct types
+        expected_failure = pytest.raises(
+            ValueError,
+            match="Error: Wrong input type provided for the Order Parameter calculation. "
+                  "Please ensure the input is of the correct type.",
+        )
+        with expected_failure:
+            analyzer = OrderParameterAnalyzer(BoxSize, NoCellsPerDim, MolecularVectorLength, output_handler)
+        
+    # ----------------------------------------------------------
+    
+    def test_OrderParameterAnalyzer_get_backbone_vectors(self, temp_file):
+        """Test get_backbone_vectors method of OrderParameterAnalyzer."""
+        output_handler = OutputHandler(temp_file, mode='streaming')
+        BoxSize = (10.0, 10.0, 10.0)
+        NoCellsPerDim = (1, 1, 1)
+        MolecularVectorLength = 3
+        analyzer = OrderParameterAnalyzer(BoxSize, NoCellsPerDim, MolecularVectorLength, output_handler)
+        
+        # Mock graph and its methods
+        mock_graph = Mock()
+        mock_new_graph = Mock()
+        mock_subgraph = Mock()
+        
+        # Mock the chain of method calls
+        mock_graph.remove_1order.return_value = mock_new_graph
+        mock_new_graph.get_subgraphs.return_value = [mock_subgraph]
+        
+        # Mock longest path
+        mock_subgraph.find_longest_path.return_value = [0, 1, 2, 3, 4]
+        
+        # Mock the get_vectors_and_positions_along_path method
+        # Returns dict with midpoint (tuple) as key and vectors (list) as value
+        mock_path_dict = {
+            (1.0, 2.0, 3.0): [np.array([1.0, 0.0, 0.0])],
+            (2.0, 3.0, 4.0): [np.array([0.0, 1.0, 0.0])]
+        }
+        mock_subgraph.get_vectors_and_positions_along_path.return_value = mock_path_dict
+        
+        # Call the method
+        result = analyzer.get_backbone_vectors(mock_graph)
+        
+        # Verify the method calls
+        mock_graph.remove_1order.assert_called_once()
+        mock_new_graph.update_degree.assert_called_once()
+        mock_new_graph.get_subgraphs.assert_called_once()
+        mock_subgraph.find_longest_path.assert_called_once()
+        mock_subgraph.get_vectors_and_positions_along_path.assert_called_once_with([0, 1, 2, 3, 4], MolecularVectorLength)
+        
+        # Verify the result structure
+        assert isinstance(result, dict)
+        assert (1.0, 2.0, 3.0) in result
+        assert (2.0, 3.0, 4.0) in result
+        assert len(result[(1.0, 2.0, 3.0)]) == 1
+        assert np.array_equal(result[(1.0, 2.0, 3.0)][0], np.array([1.0, 0.0, 0.0]))
+    
+    # ----------------------------------------------------------
+    
+    def test_OrderParameterAnalyzer_get_backbone_vectors_in_cell(self, temp_file):
+        """Test get_backbone_vectors_in_cell method of OrderParameterAnalyzer."""
+        output_handler = OutputHandler(temp_file, mode='streaming')
+        BoxSize = (10.0, 10.0, 10.0)
+        NoCellsPerDim = (1, 1, 1)
+        MolecularVectorLength = 3
+        analyzer = OrderParameterAnalyzer(BoxSize, NoCellsPerDim, MolecularVectorLength, output_handler)
+        
+        # Define a cell
+        cell = [(0.0, 5.0), (0.0, 5.0), (0.0, 5.0)]
+        
+        # Create VecAndPos dictionary with midpoints and vectors
+        VecAndPos = {
+            (1.0, 2.0, 3.0): [np.array([1.0, 0.0, 0.0]), np.array([0.5, 0.5, 0.0])],
+            (2.0, 3.0, 4.0): [np.array([0.0, 1.0, 0.0])],
+            (6.0, 7.0, 8.0): [np.array([0.0, 0.0, 1.0])]  # This is outside the cell
+        }
+        
+        # Create array of midpoints for the tree
+        midpoints = np.array([
+            [1.0, 2.0, 3.0],
+            [2.0, 3.0, 4.0],
+            [6.0, 7.0, 8.0]
+        ])
+        
+        # Mock the cKDTree
+        mock_tree = Mock()
+        # The tree.query_ball_point should return indices of points that could be in the cell
+        # Indices 0 and 1 are within the radius, index 2 is outside
+        mock_tree.query_ball_point.return_value = [[0, 1, 2]]
+        
+        # Call the method
+        result = analyzer.get_backbone_vectors_in_cell(cell, VecAndPos, midpoints, mock_tree)
+        
+        # Verify the tree was queried correctly
+        mock_tree.query_ball_point.assert_called_once()
+        
+        # Verify the result: only vectors from midpoints inside the cell should be included
+        # (1.0, 2.0, 3.0) and (2.0, 3.0, 4.0) are inside cell bounds
+        # (6.0, 7.0, 8.0) is outside cell bounds
+        assert isinstance(result, list)
+        assert len(result) == 3  # 2 vectors from first midpoint + 1 from second
+        assert np.array_equal(result[0], np.array([1.0, 0.0, 0.0]))
+        assert np.array_equal(result[1], np.array([0.5, 0.5, 0.0]))
+        assert np.array_equal(result[2], np.array([0.0, 1.0, 0.0]))
+    
+    # ----------------------------------------------------------
+    
+    def test_OrderParameterAnalyzer_Q_prime_tensor(self, temp_file):
+        """Test Q_prime_tensor method of OrderParameterAnalyzer."""
+        output_handler = OutputHandler(temp_file, mode='streaming')
+        BoxSize = (10.0, 10.0, 10.0)
+        NoCellsPerDim = (1, 1, 1)
+        MolecularVectorLength = 3
+        analyzer = OrderParameterAnalyzer(BoxSize, NoCellsPerDim, MolecularVectorLength, output_handler)
+        
+        # Test with aligned vectors along x-axis
+        vectors = [
+            np.array([1.0, 0.0, 0.0]),
+            np.array([2.0, 0.0, 0.0]),
+            np.array([1.5, 0.0, 0.0])
+        ]
+        
+        result = analyzer.Q_prime_tensor(vectors)
+        
+        # Verify result is a 3x3 matrix
+        assert result.shape == (3, 3)
+        
+        # For perfectly aligned vectors along x-axis, Q_prime should be symmetric
+        assert np.allclose(result, result.T)
+        assert result[0][0] == pytest.approx(1.0, abs=1e-3)
+        assert result[1][1] == pytest.approx(-0.5, abs=1e-3)
+        assert result[2][2] == pytest.approx(-0.5, abs=1e-3)
+        
+        # Test with random vectors
+        random_vectors = [
+            np.array([1.0, 2.0, 3.0]),
+            np.array([4.0, 10.0, 6.0]),
+            np.array([7.0, 8.0, 9.0])
+        ]
+        
+        result_random = analyzer.Q_prime_tensor(random_vectors)
+        
+        # Verify result is a 3x3 matrix
+        assert result_random.shape == (3, 3)
+        
+        # Should be symmetric, trace should be close to zero
+        assert np.allclose(result_random, result_random.T)  
+        assert np.isclose(np.trace(result_random), 0.0)
+        
+        assert result_random[0][0] == pytest.approx(-0.28536548, abs=1e-3)  
+        assert result_random[1][1] == pytest.approx(0.13675296, abs=1e-3)
+        assert result_random[2][2] == pytest.approx(0.14861252, abs=1e-3)
+        assert result_random[0][1] == pytest.approx(0.34733742, abs=1e-3)
+        assert result_random[0][2] == pytest.approx(0.34846136, abs=1e-3)
+        assert result_random[1][2] == pytest.approx(0.59722115, abs=1e-3)
+        
+        # Test with empty vectors list - should return NaN matrix
+        empty_vectors = []
+        result_empty = analyzer.Q_prime_tensor(empty_vectors)
+        
+        assert result_empty.shape == (3, 3)
+        assert np.all(np.isnan(result_empty))
+        
+        # Test with orthogonal vectors (isotropic case)
+        orthogonal_vectors = [
+            np.array([1.0, 0.0, 0.0]),
+            np.array([0.0, 1.0, 0.0]),
+            np.array([0.0, 0.0, 1.0])
+        ]
+        
+        result_orthogonal = analyzer.Q_prime_tensor(orthogonal_vectors)
+        
+        # For isotropic distribution, Q_prime should be close to zero matrix
+        assert result_orthogonal.shape == (3, 3)
+        # The trace should be zero for Q_prime tensor
+        assert np.isclose(np.trace(result_orthogonal), 0.0)
+    
+    # ----------------------------------------------------------
+    
+    def test_OrderParameterAnalyzer_compute(self, sample_file1):
+        """Test compute function of OrderParameterAnalyzer."""
+        xyz = next(readXYZ.readXYZ(sample_file1))
+        testGraph = graphs.GraphManager(xyz, 3000)
+        
+        BoxSize = (3000, 3000, 3000)
+        NoCellsPerDim = (1, 1, 1)
+        MolecularVectorLength = 2
+        
+        analyzer = OrderParameterAnalyzer(BoxSize, NoCellsPerDim, MolecularVectorLength)
+        S_star = analyzer.compute(testGraph)
+        assert S_star == pytest.approx(1, abs=5e-2)
+        
+    def test2_OrderParameterAnalyzer_compute(self, sample_file2):
+        """Test compute function of OrderParameterAnalyzer."""
+        xyz = next(readXYZ.readXYZ(sample_file2))
+        testGraph = graphs.GraphManager(xyz, 3000)
+        
+        BoxSize = (3000, 3000, 3000)
+        NoCellsPerDim = (1, 1, 1)
+        MolecularVectorLength = 2
+        
+        analyzer = OrderParameterAnalyzer(BoxSize, NoCellsPerDim, MolecularVectorLength)
+        S_star = analyzer.compute(testGraph)
+        assert S_star == pytest.approx(0, abs=5e-2)
+        
+    def test3_OrderParameterAnalyzer_compute(self, temp_file):
+        """Test compute function of OrderParameterAnalyzer."""
+        # Create mock graph and its methods
+        mock_graph = Mock()
+        mock_new_graph = Mock()
+        mock_subgraph = Mock()
+        
+        # Mock the chain of method calls
+        mock_graph.remove_1order.return_value = mock_new_graph
+        mock_new_graph.get_subgraphs.return_value = [mock_subgraph]
+        
+        # Mock longest path
+        mock_subgraph.find_longest_path.return_value = [0, 1, 2, 3, 4]
+        
+        # Mock the get_vectors_and_positions_along_path method
+        # Returns dict with midpoint (tuple) as key and vectors (list) as value
+        mock_path_dict = {
+            (1.0, 2.0, 3.0): [np.array([1.0, 0.0, 0.0]), np.array([1.0, 0.0, 0.0])],
+            (2.0, 3.0, 4.0): [np.array([1.0, 0.0, 0.0]), np.array([1.0, 0.0, 0.0])]
+        }
+        mock_subgraph.get_vectors_and_positions_along_path.return_value = mock_path_dict
+        
+        BoxSize = (10.0, 10.0, 9.0)
+        NoCellsPerDim = (1, 2, 1)
+        MolecularVectorLength = 3
+        
+        analyzer = OrderParameterAnalyzer(BoxSize, NoCellsPerDim, MolecularVectorLength)
+        S_star = analyzer.compute(mock_graph)
+        
+        assert S_star == pytest.approx(1.0, abs=1e-3)
+        
+        # Mock the get_vectors_and_positions_along_path method
+        # Returns dict with midpoint (tuple) as key and vectors (list) as value
+        mock_path_dict = {
+            (1.0, 2.0, 3.0): [np.array([1.0, 0.0, 0.0]), np.array([1.0, 0.0, 0.0])],
+            (7.0, 3.0, 4.0): [np.array([1.0, 0.0, 0.0]), np.array([1.0, 0.0, 0.0])]
+        }
+        mock_subgraph.get_vectors_and_positions_along_path.return_value = mock_path_dict
+        
+        BoxSize = (10.0, 10.0, 9.0)
+        NoCellsPerDim = (2, 1, 1)
+        MolecularVectorLength = 3
+        
+        analyzer = OrderParameterAnalyzer(BoxSize, NoCellsPerDim, MolecularVectorLength)
+        S_star = analyzer.compute(mock_graph)
+        
+        assert np.isnan(S_star)
+        
+    # ----------------------------------------------------------
+    
+    def test_OrderParameterAnalyzer_render_finalize_output(self, temp_file):
+        """Test render_output and finalize_output methods of OrderParameterAnalyzer."""
+        output_handler = OutputHandler(temp_file, mode='collect')
+        BoxSize = (10.0, 10.0, 10.0)
+        NoCellsPerDim = (1, 1, 1)
+        MolecularVectorLength = 3
+        analyzer = OrderParameterAnalyzer(BoxSize, NoCellsPerDim, MolecularVectorLength, output_handler)
+        
+        # Mock graph
+        mock_graph = Mock()
+        
+        # Mock the compute method to return a specific S* value
+        with patch.object(analyzer, 'compute', return_value=0.856):
+            S_star = analyzer.compute(mock_graph)
+            analyzer.render_output(S_star, frame_idx=1)
+        
+        with patch.object(analyzer, 'compute', return_value=0.742):
+            S_star = analyzer.compute(mock_graph)
+            analyzer.render_output(S_star, frame_idx=5)
+        
+        analyzer.finalize_output()
+        
+        assert temp_file.exists()
+        content = temp_file.read_text()
+        assert content == "Frame, Order Parameter S*\n1,0.856\n5,0.742\n"

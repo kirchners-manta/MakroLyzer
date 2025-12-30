@@ -13,3 +13,7 @@ class ErrorOutputs:
         "Error: Mismatch in molecule count calculation. "
         "Please verify the graph structure."
     )
+    WRONG_INPUT_TYPE_OP_ERROR = (
+        "Error: Wrong input type provided for the Order Parameter calculation. "
+        "Please ensure the input is of the correct type."
+    )
