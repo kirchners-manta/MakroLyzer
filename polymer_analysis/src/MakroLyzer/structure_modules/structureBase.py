@@ -31,6 +31,7 @@ class OutputHandler:
         self.file_path = file_path
         self.mode = mode
         self.accumulated_rows = []
+        self.accumulated_matrices = {}
         self._initialized = False
         
     def write_csv(self, header, rows):
@@ -85,6 +86,30 @@ class OutputHandler:
         else:
             self.accumulated_rows.append(row)
             
+    def append_matrix(self, matrix, frame_idx):
+        """
+        Create an outputfile for the current frame ('streaming' mode)
+        Or add matrix to the accumulated matrices ('collect' mode)
+
+        Args:
+            matrix (list of lists): Matrix to append.
+            frame_idx (int): Current frame number.
+        """
+        if self.mode == 'streaming':
+            # If the file exists, append a number to the filename to avoid overwriting
+            base, ext = os.path.splitext(self.file_path)
+            counter = 1
+            file_path = f"{base}_frame{frame_idx}{ext}"
+            while os.path.exists(file_path):
+                file_path = f"{base}_frame{frame_idx}_{counter}{ext}"
+                counter += 1
+                
+            with open(file_path, 'w') as f:
+                for row in matrix:
+                    f.write(','.join(map(str, row)) + '\n')
+        else:
+            self.accumulated_matrices[frame_idx] = matrix
+            
     def finalize(self, header=None):
         """
         Write accumulated rows to file ('collect' mode)
@@ -107,6 +132,24 @@ class OutputHandler:
                 for row in self.accumulated_rows:
                     f.write(row + '\n')
                     
+    def finalize_matrices(self):
+        """
+        Write accumulated matrices to files ('collect' mode)
+        Each frame gets its own file named with the frame index.
+        """
+        if self.mode == 'collect' and self.accumulated_matrices:
+            for frame_idx, matrix in self.accumulated_matrices.items():
+                # If the file exists, append a number to the filename to avoid overwriting
+                base, ext = os.path.splitext(self.file_path)
+                counter = 1
+                file_path = f"{base}_frame{frame_idx}{ext}"
+                while os.path.exists(file_path):
+                    file_path = f"{base}_frame{frame_idx}_{counter}{ext}"
+                    counter += 1
+                    
+                with open(file_path, 'w') as f:
+                    for row in matrix:
+                        f.write(','.join(map(str, row)) + '\n')
                     
 class StructureAnalyzer(ABC):
     """

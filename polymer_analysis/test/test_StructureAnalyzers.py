@@ -17,6 +17,7 @@ from src.MakroLyzer.structure_modules.RadiusOfGyration import RadiusOfGyrationAn
 from src.MakroLyzer.structure_modules.MoleculeCount import MoleculeCountAnalyzer
 from src.MakroLyzer.structure_modules.EndToEndDistance import EndToEndDistanceAnalyzer
 from src.MakroLyzer.structure_modules.OrderParameter import OrderParameterAnalyzer
+from src.MakroLyzer.structure_modules.Ramachandran import RamachandranAnalyzer
 
 # OutputHandler Tests # ------------------------------------------------------------------
 class TestOutputHandler:
@@ -104,6 +105,101 @@ class TestOutputHandler:
         assert content[0] == header
         assert content[1] == row1
         assert content[2] == row2
+    
+    def test_append_matrix_streaming(self, temp_file):
+        """Test appending a matrix in streaming mode."""
+        handler = OutputHandler(temp_file, mode='streaming')
+        
+        # Create a simple 3x3 matrix
+        matrix = [
+            [1, 2, 3],
+            [4, 5, 6],
+            [7, 8, 9]
+        ]
+        
+        handler.append_matrix(matrix, frame_idx=0)
+        
+        # Check that frame-specific file was created
+        matrix_file = temp_file.parent / "output_frame0.csv"
+        assert matrix_file.exists()
+        
+        content = matrix_file.read_text()
+        expected = "1,2,3\n4,5,6\n7,8,9\n"
+        assert content == expected
+    
+    def test_append_matrix_collect(self, temp_file):
+        """Test appending a matrix in collect mode."""
+        handler = OutputHandler(temp_file, mode='collect')
+        
+        # Create two matrices for different frames
+        matrix1 = [
+            [1, 2],
+            [3, 4]
+        ]
+        matrix2 = [
+            [5, 6],
+            [7, 8]
+        ]
+        
+        handler.append_matrix(matrix1, frame_idx=0)
+        handler.append_matrix(matrix2, frame_idx=1)
+        
+        # In collect mode, matrices should be stored, not written yet
+        assert not temp_file.exists()
+        assert len(handler.accumulated_matrices) == 2
+        assert 0 in handler.accumulated_matrices
+        assert 1 in handler.accumulated_matrices
+        assert handler.accumulated_matrices[0] == matrix1
+        assert handler.accumulated_matrices[1] == matrix2
+    
+    def test_finalize_matrices(self, temp_file):
+        """Test finalizing matrices in collect mode."""
+        handler = OutputHandler(temp_file, mode='collect')
+        
+        # Add multiple matrices
+        matrix1 = [[1, 2], [3, 4]]
+        matrix2 = [[5, 6], [7, 8]]
+        matrix3 = [[9, 10], [11, 12]]
+        
+        handler.append_matrix(matrix1, frame_idx=0)
+        handler.append_matrix(matrix2, frame_idx=5)
+        handler.append_matrix(matrix3, frame_idx=10)
+        
+        # Finalize to write all matrices
+        handler.finalize_matrices()
+        
+        # Check that frame-specific files were created
+        frame0_file = temp_file.parent / "output_frame0.csv"
+        frame5_file = temp_file.parent / "output_frame5.csv"
+        frame10_file = temp_file.parent / "output_frame10.csv"
+        
+        assert frame0_file.exists()
+        assert frame5_file.exists()
+        assert frame10_file.exists()
+        
+        # Verify content
+        assert frame0_file.read_text() == "1,2\n3,4\n"
+        assert frame5_file.read_text() == "5,6\n7,8\n"
+        assert frame10_file.read_text() == "9,10\n11,12\n"
+    
+    def test_append_matrix_streaming_multiple_frames(self, temp_file):
+        """Test appending multiple matrices in streaming mode."""
+        handler = OutputHandler(temp_file, mode='streaming')
+        
+        matrix1 = [[1, 2], [3, 4]]
+        matrix2 = [[5, 6], [7, 8]]
+        
+        handler.append_matrix(matrix1, frame_idx=0)
+        handler.append_matrix(matrix2, frame_idx=1)
+        
+        # Check that both frame-specific files were created immediately
+        frame0_file = temp_file.parent / "output_frame0.csv"
+        frame1_file = temp_file.parent / "output_frame1.csv"
+        
+        assert frame0_file.exists()
+        assert frame1_file.exists()
+        assert frame0_file.read_text() == "1,2\n3,4\n"
+        assert frame1_file.read_text() == "5,6\n7,8\n"
  
 # StructureAnalyzer tests # ------------------------------------------------------------       
 class DummyAnalyzer(StructureAnalyzer):
@@ -1243,3 +1339,205 @@ class TestOrderParameterAnalyzer:
         assert temp_file.exists()
         content = temp_file.read_text()
         assert content == "Frame, Order Parameter S*\n1,0.856\n5,0.742\n"
+        
+# RamachandranAnalyzer tests # -----------------------------------------------------------------------------
+
+class TestRamachandranAnalyzer:
+    """Test the RamachandranAnalyzer class."""
+    
+    # SetUp fixtures -----------------------------------------
+    @pytest.fixture
+    def temp_file(self):
+        """Fixture that creates a temporary file path."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            yield Path(tmpdir) / "output.csv"
+            
+    @pytest.fixture
+    def sample_file1(self):
+        return "test_structures/Ramachandran/alpha.xyz"
+    
+    @pytest.fixture
+    def sample_file2(self):
+        return "test_structures/Ramachandran/beta.xyz"
+    
+    # ----------------------------------------------------------
+    
+    def test_RamachandranAnalyzer_init(self, temp_file):
+        """Test initialization of RamachandranAnalyzer."""
+        output_handler = OutputHandler(temp_file, mode='streaming')
+        analyzer = RamachandranAnalyzer(output_handler)
+        
+        assert analyzer.output_handler == output_handler
+        
+    # --------------------------------------------------------
+    
+    def test_RamachandranAnalyzer_compute(self, sample_file1):
+        """Test compute function of RamachandranAnalyzer."""
+        xyz = next(readXYZ.readXYZ(sample_file1))
+        testGraph = graphs.GraphManager(xyz)
+        
+        analyzer = RamachandranAnalyzer()
+        matrix = analyzer.compute(testGraph)
+        
+        # Verify matrix is 360x360
+        assert len(matrix) == 360
+        assert len(matrix[0]) == 360
+        
+        # Check some expected values 
+        assert matrix[89][181] == 1
+        assert matrix[112][139] == 1
+        assert matrix[113][166] == 1
+        assert matrix[116][139] == 1
+        assert matrix[116][145] == 1
+        assert matrix[117][152] == 1
+        
+    def test2_RamachandranAnalyzer_compute(self, sample_file2):
+        """Test compute function of RamachandranAnalyzer."""
+        xyz = next(readXYZ.readXYZ(sample_file2))
+        testGraph = graphs.GraphManager(xyz)
+        
+        analyzer = RamachandranAnalyzer()
+        matrix = analyzer.compute(testGraph)
+        
+        # Verify matrix is 360x360
+        assert len(matrix) == 360
+        assert len(matrix[0]) == 360
+        
+        # Check some expected values 
+        assert matrix[28][328] == 1
+        assert matrix[34][267] == 1
+        assert matrix[59][290] == 1
+        assert matrix[81][343] == 1
+        assert matrix[82][277] == 1
+        assert matrix[265][166] == 1
+    
+    def test3_RamachandranAnalyzer_compute(self, temp_file):
+        """Test compute function of RamachandranAnalyzer."""
+        # Mock graph and subgraph
+        mock_graph = Mock()
+        mock_subgraph = Mock()
+        
+        # Mock get_subgraphs to return one subgraph
+        mock_graph.get_subgraphs.return_value = [mock_subgraph]
+        
+        # Mock AminoAcidBackbone to return a backbone with enough atoms
+        # Backbone pattern: N-Calpha-CarbonylC-N-Calpha-CarbonylC-N-...
+        # Loop: i=2, checks i < len-4, increments by 3
+        # For 2 iterations: i=2 (2<8), i=5 (5<8), i=8 (8<8 stops)
+        # Need len(backbone) >= 10
+        mock_subgraph.AminoAcidBackbone.return_value = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+        
+        # Mock dihedral to return specific angles
+        # First iteration (i=2): phi for atoms (2,3,4,5), psi for atoms (3,4,5,6)
+        # Second iteration (i=5): phi for atoms (5,6,7,8), psi for atoms (6,7,8,9)
+        mock_graph.dihedral.side_effect = [-45, 135, -30, 120]  # Two phi/psi pairs
+        
+        analyzer = RamachandranAnalyzer()
+        matrix = analyzer.compute(mock_graph)
+        
+        # Verify matrix is 360x360
+        assert len(matrix) == 360
+        assert len(matrix[0]) == 360
+        
+        # Check that specific positions were incremented
+        # First iteration: phi = -45 + 180 = 135, psi = 135 + 180 = 315
+        assert matrix[135][315] == 1
+        # Second iteration: phi = -30 + 180 = 150, psi = 120 + 180 = 300
+        assert matrix[150][300] == 1
+        
+        # Verify the dihedral method was called correctly (2 iterations * 2 calls each)
+        assert mock_graph.dihedral.call_count == 4
+        
+    def test_RamachandranAnalyzer_compute_no_backbone(self):
+        """Test compute with subgraph that has insufficient backbone."""
+        mock_graph = Mock()
+        mock_subgraph = Mock()
+        
+        mock_graph.get_subgraphs.return_value = [mock_subgraph]
+        # Backbone too short - only 5 atoms (need at least 7)
+        mock_subgraph.AminoAcidBackbone.return_value = [0, 1, 2, 3, 4]
+        
+        analyzer = RamachandranAnalyzer()
+        matrix = analyzer.compute(mock_graph)
+        
+        # Matrix should be all zeros since backbone is too short
+        assert all(all(val == 0 for val in row) for row in matrix)
+        
+        # dihedral should not have been called
+        mock_graph.dihedral.assert_not_called()
+    
+    def test_RamachandranAnalyzer__compute_multiple_subgraphs(self):
+        """Test compute with multiple subgraphs."""
+        mock_graph = Mock()
+        mock_subgraph1 = Mock()
+        mock_subgraph2 = Mock()
+        
+        mock_graph.get_subgraphs.return_value = [mock_subgraph1, mock_subgraph2]
+        
+        # Both subgraphs have valid backbones
+        mock_subgraph1.AminoAcidBackbone.return_value = [0, 1, 2, 3, 4, 5, 6]
+        mock_subgraph2.AminoAcidBackbone.return_value = [10, 11, 12, 13, 14, 15, 16]
+        
+        # Mock dihedrals for both subgraphs
+        mock_graph.dihedral.side_effect = [45, 90, -60, -45]
+        
+        analyzer = RamachandranAnalyzer()
+        matrix = analyzer.compute(mock_graph)
+        
+        # Verify both phi/psi pairs were added
+        # First: phi=45+180=225, psi=90+180=270
+        assert matrix[225][270] == 1
+        # Second: phi=-60+180=120, psi=-45+180=135
+        assert matrix[120][135] == 1
+        
+        assert mock_graph.dihedral.call_count == 4
+        
+    # --------------------------------------------------------
+    
+    def test_RamachandranAnalyzer_render_output(self, temp_file):
+        """Test render_output method of RamachandranAnalyzer."""
+        output_handler = OutputHandler(temp_file, mode='collect')
+        analyzer = RamachandranAnalyzer(output_handler)
+        
+        # Create a simple 3x3 matrix
+        test_matrix = [
+            [0, 1, 2],
+            [3, 4, 5],
+            [6, 7, 8]
+        ]
+        
+        # Call render_output
+        analyzer.render_output(test_matrix, frame_idx=0)
+        
+        # Verify matrix was accumulated
+        assert 0 in output_handler.accumulated_matrices
+        assert output_handler.accumulated_matrices[0] == test_matrix
+        
+        # No file should be written yet in collect mode
+        assert not temp_file.exists()
+    
+    def test_RamachandranAnalyzer_finalize_output(self, temp_file):
+        """Test finalize_output method of RamachandranAnalyzer."""
+        output_handler = OutputHandler(temp_file, mode='collect')
+        analyzer = RamachandranAnalyzer(output_handler)
+        
+        # Add multiple matrices
+        matrix1 = [[1, 2], [3, 4]]
+        matrix2 = [[5, 6], [7, 8]]
+        
+        analyzer.render_output(matrix1, frame_idx=0)
+        analyzer.render_output(matrix2, frame_idx=1)
+        
+        # Finalize should write all matrices
+        analyzer.finalize_output()
+        
+        # Check that frame files were created
+        frame0_file = temp_file.parent / "output_frame0.csv"
+        frame1_file = temp_file.parent / "output_frame1.csv"
+        
+        assert frame0_file.exists()
+        assert frame1_file.exists()
+        
+        # Verify content
+        assert frame0_file.read_text() == "1,2\n3,4\n"
+        assert frame1_file.read_text() == "5,6\n7,8\n"

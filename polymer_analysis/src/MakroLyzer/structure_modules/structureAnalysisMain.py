@@ -12,8 +12,9 @@ from MakroLyzer.structure_modules.RadiusOfGyration import RadiusOfGyrationAnalyz
 from MakroLyzer.structure_modules.MoleculeCount import MoleculeCountAnalyzer
 from MakroLyzer.structure_modules.EndToEndDistance import EndToEndDistanceAnalyzer
 from MakroLyzer.structure_modules.OrderParameter import OrderParameterAnalyzer
+from MakroLyzer.structure_modules.Ramachandran import RamachandranAnalyzer
 
-from MakroLyzer.structure_modules.dihedrals import get_all_dihedrals, get_CisTrans, get_Ramachandran
+from MakroLyzer.structure_modules.dihedrals import get_all_dihedrals, get_CisTrans
 from MakroLyzer.structure_modules.subgraphCoords import get_subgraph_coords
 
 from tqdm import tqdm
@@ -83,6 +84,11 @@ def main(args):
         analyzers['orderParameter'] = OrderParameterAnalyzer(boxSize, n, unitSize, output_handler)
         analyzers['orderParameter'].initialize_output()
         
+    if args['AminoAcidRamachandran']:
+        output_handler = OutputHandler(args['AARamachandran_file'], mode='streaming')
+        analyzers['AminoAcidRamachandran'] = RamachandranAnalyzer(output_handler)
+        analyzers['AminoAcidRamachandran'].initialize_output()
+        
     # ------------------------------------------------------------------------------------------------
     
     # create empty lists to store results
@@ -140,6 +146,10 @@ def main(args):
         if 'orderParameter' in analyzers:
             analyzers['orderParameter'].run(boxGraph, i)
             
+        # Ramachandran
+        if 'AminoAcidRamachandran' in analyzers:
+            analyzers['AminoAcidRamachandran'].run(boxGraph, i)
+            
         # ---------------------------------------------------------------------
         
         # Repeating units for the Polymer
@@ -177,10 +187,6 @@ def main(args):
         # Cis Trans counts
         if args['cisTrans']:
             results['cisTrans'].append(get_CisTrans(boxGraph))
-
-        # Amino Acid Ramachandran plot data
-        if args['AminoAcidRamachandran']:
-            results['AARamachandran'].append(get_Ramachandran(boxGraph))
             
         # Subgraph coordinates
         if args['subgraph_coords']:
