@@ -19,6 +19,7 @@ from src.MakroLyzer.structure_modules.EndToEndDistance import EndToEndDistanceAn
 from src.MakroLyzer.structure_modules.OrderParameter import OrderParameterAnalyzer
 from src.MakroLyzer.structure_modules.Ramachandran import RamachandranAnalyzer
 from src.MakroLyzer.structure_modules.Dihedrals import DihedralsAnalyzer
+from src.MakroLyzer.structure_modules.ChemicalFormula import ChemicalFormulaAnalyzer
 
 # OutputHandler Tests # ------------------------------------------------------------------
 class TestOutputHandler:
@@ -2060,3 +2061,107 @@ class TestDihedralsAnalyzer:
         assert 'Angle' in lines[0]
         assert 'Frame 0' in lines[0]
         assert 'Frame 1' in lines[0]
+        
+# ChemicalFormulaAnalyzer tests # ---------------------------------------------------------
+
+class TestChemicalFormulaAnalyzer:
+    """Test the ChemicalFormulaAnalyzer class."""
+    
+    # SetUp fixtures -----------------------------------------
+    @pytest.fixture
+    def temp_file(self):
+        """Fixture that creates a temporary file path."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            yield Path(tmpdir) / "output.csv"
+            
+    @pytest.fixture
+    def sample_file1(self):
+        return "test_structures/ChemicalFormula/01.xyz"
+    
+    # --------------------------------------------------------
+    
+    def test_ChemicalFormulaAnalyzer_init(self, temp_file):
+        """Test initialization of ChemicalFormulaAnalyzer."""
+        output_handler = OutputHandler(temp_file, mode='streaming')
+        analyzer = ChemicalFormulaAnalyzer(output_handler)
+        
+        assert analyzer.output_handler == output_handler
+        
+    # --------------------------------------------------------
+    
+    def test_ChemicalFormulaAnalyzer_compute(self, sample_file1):
+        """Test compute function of ChemicalFormulaAnalyzer."""
+        xyz = next(readXYZ.readXYZ(sample_file1))
+        testGraph = graphs.GraphManager(xyz)
+        formula = [('C1H6Mg1N1O1P1', 2), ('C1H5Mg1N1O1P1', 1)]
+        
+        analyzer = ChemicalFormulaAnalyzer()
+        result = analyzer.compute(testGraph)
+        for i in range(len(formula)):
+            assert result[i][0] == formula[i][0]
+            assert result[i][1] == formula[i][1]
+    
+    def test2_ChemicalFormulaAnalyzer_compute(self, temp_file):
+        """Test compute function of ChemicalFormulaAnalyzer with mock graph."""
+        # Create mock subgraphs with different chemical formulas
+        mock_subgraph1 = Mock()
+        mock_subgraph1.nodes = {0: {'element': 'C'}, 1: {'element': 'H'}, 2: {'element': 'O'}}
+        
+        mock_subgraph2 = Mock()
+        mock_subgraph2.nodes = {3: {'element': 'C'}, 4: {'element': 'H'}}
+        
+        mock_subgraph3 = Mock()
+        mock_subgraph3.nodes = {5: {'element': 'C'}, 6: {'element': 'H'}}
+        
+        mock_subgraph4 = Mock()
+        mock_subgraph4.nodes = {5: {'element': 'C'}, 6: {'element': 'H'}, 7: {'element': 'H'}}
+        
+        # Create mock graph
+        mock_graph = Mock()
+        mock_graph.get_subgraphs.return_value = [mock_subgraph1, mock_subgraph2, mock_subgraph3, mock_subgraph4]
+        
+        # Create analyzer and compute
+        output_handler = OutputHandler(temp_file, mode='streaming')
+        analyzer = ChemicalFormulaAnalyzer(output_handler)
+        result = analyzer.compute(mock_graph)
+        
+        # Assertions - result should be sorted by count (descending)
+        # CH1O1 appears once, C1H1 appears twice
+        assert result[0][0] == 'C1H1'  # Most frequent formula
+        assert result[0][1] == 2
+        assert result[1][0] == 'C1H1O1'  # Less frequent formula
+        assert result[1][1] == 1
+        assert result[2][0] == 'C1H2'
+        assert result[2][1] == 1
+        
+        # Verify that get_subgraphs was called
+        mock_graph.get_subgraphs.assert_called()
+    
+    def test_ChemicalFormulaAnalyzer_render_finalize_output(self, temp_file):
+        """Test render_output and finalize_output methods of ChemicalFormulaAnalyzer."""
+        # Create mock subgraphs with repeated formulas to test sorting
+        mock_subgraph1 = Mock()
+        mock_subgraph1.nodes = {0: {'element': 'C'}, 1: {'element': 'H'}}
+        
+        mock_subgraph2 = Mock()
+        mock_subgraph2.nodes = {2: {'element': 'C'}, 3: {'element': 'H'}}
+        
+        mock_subgraph3 = Mock()
+        mock_subgraph3.nodes = {4: {'element': 'C'}, 5: {'element': 'H'}, 6: {'element': 'O'}}
+        
+        # Create mock graph
+        mock_graph = Mock()
+        mock_graph.get_subgraphs.return_value = [mock_subgraph1, mock_subgraph2, mock_subgraph3]
+        
+        # Create analyzer and compute
+        output_handler = OutputHandler(temp_file, mode='streaming')
+        analyzer = ChemicalFormulaAnalyzer(output_handler)
+        analyzer.initialize_output()
+        result = analyzer.compute(mock_graph)
+        analyzer.render_output(result, frame_idx=5)
+        analyzer.finalize_output()
+        
+        assert temp_file.exists()
+        content = temp_file.read_text()
+        assert content == "Frame, Chemical Formula, Count\n5,C1H1,2\n5,C1H1O1,1\n"
+    

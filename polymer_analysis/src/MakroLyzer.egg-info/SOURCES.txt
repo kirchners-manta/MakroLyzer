@@ -21,6 +21,7 @@ src/MakroLyzer/math/Box.py
 src/MakroLyzer/output_handling/outputHandlingMain.py
 src/MakroLyzer/structure_modules/Anisotropy.py
 src/MakroLyzer/structure_modules/Asphericity.py
+src/MakroLyzer/structure_modules/ChemicalFormula.py
 src/MakroLyzer/structure_modules/Dihedrals.py
 src/MakroLyzer/structure_modules/EndToEndDistance.py
 src/MakroLyzer/structure_modules/Hbonds.py

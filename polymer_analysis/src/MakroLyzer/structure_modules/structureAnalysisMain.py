@@ -14,6 +14,7 @@ from MakroLyzer.structure_modules.EndToEndDistance import EndToEndDistanceAnalyz
 from MakroLyzer.structure_modules.OrderParameter import OrderParameterAnalyzer
 from MakroLyzer.structure_modules.Ramachandran import RamachandranAnalyzer
 from MakroLyzer.structure_modules.Dihedrals import DihedralsAnalyzer
+from MakroLyzer.structure_modules.ChemicalFormula import ChemicalFormulaAnalyzer
 
 from MakroLyzer.structure_modules.subgraphCoords import get_subgraph_coords
 
@@ -101,6 +102,11 @@ def main(args):
         )
         analyzers['dihedrals'].initialize_output()
         
+    if args['formula']:
+        formula_handler = OutputHandler(args['formula_file'], mode='streaming')
+        analyzers['chemicalFormula'] = ChemicalFormulaAnalyzer(formula_handler)
+        analyzers['chemicalFormula'].initialize_output()
+        
     # ------------------------------------------------------------------------------------------------
     
     # create empty lists to store results
@@ -159,6 +165,10 @@ def main(args):
         if 'dihedrals' in analyzers:
             analyzers['dihedrals'].run(boxGraph, i)
             
+        # Chemical Formulas
+        if 'chemicalFormula' in analyzers:
+            analyzers['chemicalFormula'].run(boxGraph, i)
+            
         # ---------------------------------------------------------------------
         
         # Repeating units for the Polymer
@@ -178,11 +188,6 @@ def main(args):
             boxGraph.saturate()
             saturation_file = f"{args['saturation_file'].rsplit('.', 1)[0]}_frame_{i}.xyz"
             boxGraph.write_xyz(saturation_file)
-            
-        # Chemical formulas
-        if args['formula']:
-            formulas = boxGraph.get_chemicalFormulas()
-            results['formulas'].append(formulas)
             
         # Subgraph coordinates
         if args['subgraph_coords']:

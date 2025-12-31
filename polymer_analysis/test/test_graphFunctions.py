@@ -404,18 +404,6 @@ def test_surrounding(sample_data2):
             assert testGraph.nodes[node]['surroundingAtoms'] == 'P_CHH'
         elif testGraph.nodes[node]['element'] == 'Mg':
             assert testGraph.nodes[node]['surroundingAtoms'] == 'Mg_CH'
-            
-def test_chemicalFormula(sample_data3):
-    xyz = next(readXYZ.readXYZ(sample_data3))
-    testGraph = graphs.GraphManager(xyz)
-    testGraph.surrounding()
-    refformula = [('C1H6Mg1N1O1P1', 2), ('C1H5Mg1N1O1P1', 1)]
-    
-    # check chemical formula
-    formula = testGraph.get_chemicalFormulas()
-    for i in range(len(refformula)):
-        assert formula[i][0] == refformula[i][0]
-        assert formula[i][1] == refformula[i][1]
         
 
 def test_find_patterns(sample_data4):
