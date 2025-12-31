@@ -18,6 +18,7 @@ from src.MakroLyzer.structure_modules.MoleculeCount import MoleculeCountAnalyzer
 from src.MakroLyzer.structure_modules.EndToEndDistance import EndToEndDistanceAnalyzer
 from src.MakroLyzer.structure_modules.OrderParameter import OrderParameterAnalyzer
 from src.MakroLyzer.structure_modules.Ramachandran import RamachandranAnalyzer
+from src.MakroLyzer.structure_modules.Dihedrals import DihedralsAnalyzer
 
 # OutputHandler Tests # ------------------------------------------------------------------
 class TestOutputHandler:
@@ -1541,3 +1542,521 @@ class TestRamachandranAnalyzer:
         # Verify content
         assert frame0_file.read_text() == "1,2\n3,4\n"
         assert frame1_file.read_text() == "5,6\n7,8\n"
+        
+# DihedralsAnalyzer tests # ------------------------------------------------------------------------
+class TestDihedralsAnalyzer:
+    """Test the DihedralsAnalyzer class."""
+    
+    # SetUp fixtures -----------------------------------------
+    @pytest.fixture
+    def temp_file(self):
+        """Fixture that creates a temporary file path."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            yield Path(tmpdir) / "output.csv"
+            
+    @pytest.fixture
+    def sample_file1(self):
+        return "test_structures/Dihedrals/01.xyz"
+    
+    @pytest.fixture
+    def sample_file2(self):
+        return "test_structures/Dihedrals/02.xyz"
+    
+    @pytest.fixture
+    def sample_file3(self):
+        return "test_structures/Dihedrals/03.xyz"
+    
+    @pytest.fixture
+    def sample_file4(self):
+        return "test_structures/Dihedrals/cis.xyz"
+    
+    @pytest.fixture
+    def sample_file5(self):
+        return "test_structures/Dihedrals/cis2.xyz"
+    
+    @pytest.fixture
+    def sample_file6(self):
+        return "test_structures/Dihedrals/trans.xyz"
+    
+    # ---------------------------------------------------------
+    
+    def test_DihedralsAnalyzer_init(self, temp_file):
+        """Test initialization of DihedralsAnalyzer."""
+        dihedral_output_handler = OutputHandler(temp_file, mode='collect')
+        dihedral_list_output_handler = OutputHandler(temp_file, mode='streaming')
+        cisTrans_output_handler = OutputHandler(temp_file, mode='streaming')
+        sign = "nonabs"
+        analyzer = DihedralsAnalyzer(
+            dihedral_output_handler=dihedral_output_handler,
+            dihedral_list_output_handler=dihedral_list_output_handler,
+            cistrans_output_handler=cisTrans_output_handler,
+            dihedral_range=sign
+        )
+        
+        assert analyzer.dihedral_handler == dihedral_output_handler
+        assert analyzer.dihedral_list_handler == dihedral_list_output_handler
+        assert analyzer.cistrans_handler == cisTrans_output_handler
+        assert analyzer.sign == True
+        
+    # ---------------------------------------------------------
+    
+    def test_DihedralsAnalyzer_get_all_dihedrals_mock(self):
+        """Test _get_all_dihedrals method of DihedralsAnalyzer with mock data."""
+        analyzer = DihedralsAnalyzer(dihedral_range='abs')
+        
+        # Create mock graph
+        mock_graph = Mock()
+        mock_prepared_graph = Mock()
+        mock_subgraph1 = Mock()
+        mock_subgraph2 = Mock()
+        
+        # Set up the graph preparation chain
+        mock_graph.remove_1order.return_value = mock_prepared_graph
+        mock_prepared_graph.get_subgraphs.return_value = [mock_subgraph1, mock_subgraph2]
+        
+        # Set up subgraph1: longest path with 4 nodes
+        mock_subgraph1.find_longest_path.return_value = [0, 1, 2, 3]
+        mock_subgraph1.dihedral.side_effect = [65.4, 75.0]  # Two dihedrals
+        
+        # Set up subgraph2: longest path with 5 nodes
+        mock_subgraph2.find_longest_path.return_value = [0, 1, 2, 3, 4]
+        mock_subgraph2.dihedral.side_effect = [44.8, 55.0]  # Two dihedrals
+        
+        dihedrals, dihedral_list = analyzer._get_all_dihedrals(mock_graph)
+        
+        # Verify structure
+        assert isinstance(dihedrals, list)
+        assert isinstance(dihedral_list, list)
+        assert len(dihedral_list) == 2  # Two subgraphs
+        
+        # Verify angles per subgraph
+        assert dihedral_list[0] == [65] # 75 is not included since 4 nodes -> 1 dihedral
+        assert dihedral_list[1] == [45, 55]
+        
+        # Verify angle counts
+        angle_dict = {angle: count for angle, count in dihedrals}
+        assert angle_dict[45] == 1
+        assert angle_dict[55] == 1
+        assert angle_dict[65] == 1  
+    
+    def test_DihedralsAnalyzer_get_all_dihedrals(self, sample_file1):
+        """Test _get_all_dihedrals method of DihedralsAnalyzer."""
+        xyz = next(readXYZ.readXYZ(sample_file1))
+        testGraph = graphs.GraphManager(xyz)
+        
+        analyzer = DihedralsAnalyzer(dihedral_range='abs')
+        dihedrals, dihedral_list = analyzer._get_all_dihedrals(testGraph)
+        
+        # Verify structure: list of (angle, count) tuples
+        assert isinstance(dihedrals, list)
+        assert all(isinstance(item, tuple) and len(item) == 2 for item in dihedrals)
+        
+        # Verify angles are in correct range (0-180)
+        for angle, count in dihedrals:
+            assert 0 <= angle <= 180
+            assert count >= 0
+        
+        # Verify dihedral_list structure: list of lists per subgraph
+        assert isinstance(dihedral_list, list)
+        assert all(isinstance(subgraph_angles, list) for subgraph_angles in dihedral_list)
+        
+        # Verify specific angles match expected values
+        angle_dict = {angle: count for angle, count in dihedrals}
+        assert angle_dict[65] == 1
+        assert angle_dict[177] == 2
+        assert angle_dict[180] == 1
+        
+    def test_DihedralsAnalyzer_get_cistrans_from_dihedrals_mock(self):
+        """Test _get_cistrans_from_dihedrals method of DihedralsAnalyzer with mock data."""
+        analyzer = DihedralsAnalyzer(dihedral_range='abs')
+        
+        # Create mock dihedral list with known angles
+        # 0-90 = cis, 90-180 = trans
+        dihedral_list = [
+            [30, 45, 90],      # 2 cis, 1 on boundary
+            [100, 120, 150],   # 3 trans
+            [60, 85]           # 2 cis
+        ]
+        
+        cistrans = analyzer._get_cistrans_from_dihedrals(dihedral_list)
+        
+        # Verify structure
+        assert isinstance(cistrans, list)
+        assert len(cistrans) == 2
+        assert cistrans[0][0] == 'Cis'
+        assert cistrans[1][0] == 'Trans'
+        
+        # Verify counts: 4 cis (30, 45, 60, 85) and 3 trans (100, 120, 150), 90 is included in cis (0 <= d <= 90)
+        assert cistrans[0][1] == 5  # Cis count
+        assert cistrans[1][1] == 3  # Trans count
+        
+    def test_DihedralsAnalyzer_get_cistrans_from_dihedrals(self, sample_file1):
+        """Test _get_cistrans_from_dihedrals method of DihedralsAnalyzer."""
+        xyz = next(readXYZ.readXYZ(sample_file1))
+        testGraph = graphs.GraphManager(xyz)
+        
+        analyzer = DihedralsAnalyzer(dihedral_range='abs')
+        _, dihedral_list = analyzer._get_all_dihedrals(testGraph)
+        
+        cistrans = analyzer._get_cistrans_from_dihedrals(dihedral_list)
+        
+        # Verify structure: list of (label, count) tuples
+        assert isinstance(cistrans, list)
+        assert len(cistrans) == 2
+        assert cistrans[0][0] == 'Cis'
+        assert cistrans[1][0] == 'Trans'
+        
+        # Verify counts match expected values
+        # dihedral_list[0] = [180, 177, 65, 177] -> 1 cis (65), 3 trans (180, 177, 177)
+        assert cistrans[0][1] == 1  # Cis count
+        assert cistrans[1][1] == 3  # Trans count
+        
+    # ---------------------------------------------------------
+    
+    def test_DihedralsAnalyzer_compute_mock(self, temp_file):
+        """Test compute function of DihedralsAnalyzer with mock data."""
+        dihedral_handler = OutputHandler(temp_file, mode='collect')
+        analyzer = DihedralsAnalyzer(
+            dihedral_output_handler=dihedral_handler,
+            dihedral_range='abs'
+        )
+        
+        # Create mock graph
+        mock_graph = Mock()
+        mock_prepared_graph = Mock()
+        mock_subgraph = Mock()
+        
+        # Set up the graph preparation chain
+        mock_graph.remove_1order.return_value = mock_prepared_graph
+        mock_prepared_graph.get_subgraphs.return_value = [mock_subgraph]
+        
+        # Set up subgraph: longest path with 5 nodes
+        mock_subgraph.find_longest_path.return_value = [0, 1, 2, 3, 4]
+        mock_subgraph.dihedral.side_effect = [50.0, 120.0]  # One cis, one trans
+        
+        result = analyzer.compute(mock_graph)
+        
+        # Verify result structure
+        assert 'dihedrals' in result
+        assert 'dihedral_list' in result
+        assert 'cistrans' in result
+        
+        # Verify dihedrals
+        dihedrals = result['dihedrals']
+        assert isinstance(dihedrals, list)
+        angle_dict = {angle: count for angle, count in dihedrals}
+        assert angle_dict[50] == 1
+        assert angle_dict[120] == 1
+        
+        # Verify dihedral_list
+        dihedral_list = result['dihedral_list']
+        assert dihedral_list[0] == [50, 120]
+        
+        # Verify cistrans: 50 is cis (0-90), 120 is trans (90-180)
+        cistrans = result['cistrans']
+        assert cistrans[0][0] == 'Cis'
+        assert cistrans[0][1] == 1
+        assert cistrans[1][0] == 'Trans'
+        assert cistrans[1][1] == 1
+        
+    def test_DihedralsAnalyzer_compute(self, sample_file1):
+        """Test compute function of DihedralsAnalyzer with real data."""
+        xyz = next(readXYZ.readXYZ(sample_file1))
+        testGraph = graphs.GraphManager(xyz)
+        
+        dihedral_range = "abs"
+        analyzer = DihedralsAnalyzer(dihedral_range=dihedral_range)
+        result = analyzer.compute(testGraph)
+        
+        # Unpack the dictionary
+        dihedrals = result['dihedrals']
+        dihedral_list = result['dihedral_list']
+        cis_trans = result['cistrans']
+        
+        # Test dihedral counts
+        for angle, count in dihedrals:
+            if angle == 65:
+                assert count == 1
+            elif angle == 177:
+                assert count == 2
+            elif angle == 180:
+                assert count == 1
+            else:
+                assert count == 0
+                
+        # test dihedral list
+        assert len(dihedral_list[0]) == 4
+        assert dihedral_list[0][0] == 180
+        assert dihedral_list[0][1] == 177
+        assert dihedral_list[0][2] == 65
+        assert dihedral_list[0][3] == 177
+                
+        # test cis trans counts
+        assert cis_trans[0][1] == 1
+        assert cis_trans[1][1] == 3
+        
+        dihedral_range = "nonabs"
+        analyzer = DihedralsAnalyzer(dihedral_range=dihedral_range)
+        result = analyzer.compute(testGraph)
+        
+        # Unpack the dictionary
+        dihedrals = result['dihedrals']
+        dihedral_list = result['dihedral_list']
+        cis_trans = result['cistrans']
+        
+        # Test dihedral counts
+        for angle, count in dihedrals:
+            if angle == -65:
+                assert count == 1
+            elif angle == -177:
+                assert count == 2
+            elif angle == 180:
+                assert count == 1
+            else: 
+                assert count == 0
+                
+        # test dihedral list
+        assert len(dihedral_list[0]) == 4
+        assert dihedral_list[0][0] == 180
+        assert dihedral_list[0][1] == -177
+        assert dihedral_list[0][2] == -65
+        assert dihedral_list[0][3] == -177
+                
+        # test cis trans counts
+        assert cis_trans[0][1] == 1
+        assert cis_trans[1][1] == 3
+        
+    def test2_DihedralsAnalyzer_compute(self, sample_file4):
+        """Test compute function of DihedralsAnalyzer."""
+        xyz = next(readXYZ.readXYZ(sample_file4))
+        testGraph = graphs.GraphManager(xyz)
+        
+        dihedral_range = "nonabs"
+        analyzer = DihedralsAnalyzer(dihedral_range=dihedral_range)
+        result = analyzer.compute(testGraph)
+        
+        # Unpack the dictionary
+        dihedrals = result['dihedrals']
+        dihedral_list = result['dihedral_list']
+        cis_trans = result['cistrans']
+        
+        # Test dihedral counts
+        for angle, count in dihedrals:
+            if angle == -64:
+                assert count == 1
+            else:
+                assert count == 0
+                
+        # test dihedral list
+        assert len(dihedral_list[0]) == 1
+        assert dihedral_list[0][0] == -64
+                
+        # test cis trans counts
+        assert cis_trans[0][1] == 1
+        assert cis_trans[1][1] == 0
+        
+    def test3_DihedralsAnalyzer_compute(self, sample_file5):
+        """Test compute function of DihedralsAnalyzer."""
+        xyz = next(readXYZ.readXYZ(sample_file5))
+        testGraph = graphs.GraphManager(xyz)
+        
+        dihedral_range = "nonabs"
+        analyzer = DihedralsAnalyzer(dihedral_range=dihedral_range)
+        result = analyzer.compute(testGraph)
+        
+        # Unpack the dictionary
+        dihedrals = result['dihedrals']
+        dihedral_list = result['dihedral_list']
+        cis_trans = result['cistrans']
+        
+        # Test dihedral counts
+        for angle, count in dihedrals:
+            if angle == 4:
+                assert count == 1
+            else:
+                assert count == 0
+                
+        # test dihedral list
+        assert len(dihedral_list[0]) == 1
+        assert dihedral_list[0][0] == 4
+                
+        # test cis trans counts
+        assert cis_trans[0][1] == 1
+        assert cis_trans[1][1] == 0
+        
+    def test4_DihedralsAnalyzer_compute(self, sample_file6):
+        """Test compute function of DihedralsAnalyzer."""
+        xyz = next(readXYZ.readXYZ(sample_file6))
+        testGraph = graphs.GraphManager(xyz)
+        
+        dihedral_range = "nonabs"
+        analyzer = DihedralsAnalyzer(dihedral_range=dihedral_range)
+        result = analyzer.compute(testGraph)
+        
+        # Unpack the dictionary
+        dihedrals = result['dihedrals']
+        dihedral_list = result['dihedral_list']
+        cis_trans = result['cistrans']
+        
+        # Test dihedral counts
+        for angle, count in dihedrals:
+            if angle == 180:
+                assert count == 1
+            else:
+                assert count == 0
+                
+        # test dihedral list
+        assert len(dihedral_list[0]) == 1
+        assert dihedral_list[0][0] == 180
+                
+        # test cis trans counts
+        assert cis_trans[0][1] == 0
+        assert cis_trans[1][1] == 1
+        
+    def test5_DihedralsAnalyzer_compute(self, sample_file2):
+        """Test compute function of DihedralsAnalyzer."""
+        xyz = next(readXYZ.readXYZ(sample_file2))
+        testGraph = graphs.GraphManager(xyz)
+        
+        dihedral_range = "abs"
+        analyzer = DihedralsAnalyzer(dihedral_range=dihedral_range)
+        result = analyzer.compute(testGraph)
+        
+        # Unpack the dictionary
+        dihedrals = result['dihedrals']
+        dihedral_list = result['dihedral_list']
+        cis_trans = result['cistrans']
+        
+        # Test dihedral counts
+        for angle, count in dihedrals:
+            if angle == 2:
+                assert count == 1
+            elif angle == 64:
+                assert count == 1
+            elif angle == 66:
+                assert count == 1
+            elif angle == 81:
+                assert count == 1
+            elif angle == 172:
+                assert count == 1
+            elif angle == 175:
+                assert count == 1
+            elif angle == 177:
+                assert count == 2
+            elif angle == 179:
+                assert count == 1
+            elif angle == 180:
+                assert count == 4
+            else:
+                assert count == 0
+                
+        # test cis trans counts
+        assert cis_trans[0][1] == 4
+        assert cis_trans[1][1] == 9
+        
+        dihedral_range = "nonabs"
+        analyzer = DihedralsAnalyzer(dihedral_range=dihedral_range)
+        result = analyzer.compute(testGraph)
+        
+        # Unpack the dictionary
+        dihedrals = result['dihedrals']
+        dihedral_list = result['dihedral_list']
+        cis_trans = result['cistrans']
+        
+        # Test dihedral counts
+        for angle, count in dihedrals:
+            if angle == -175:
+                assert count == 1
+            elif angle == -81:
+                assert count == 1
+            elif angle == -2:
+                assert count == 1
+            elif angle == 172:
+                assert count == 1
+            elif angle == 64:
+                assert count == 1
+            elif angle == 66:
+                assert count == 1
+            elif angle == 177:
+                assert count == 2
+            elif angle == 179:
+                assert count == 1
+            elif angle == 180:
+                assert count == 4
+            else:
+                assert count == 0
+                
+        # test cis trans counts
+        assert cis_trans[0][1] == 4
+        assert cis_trans[1][1] == 9
+        
+    def test6_DihedralsAnalyzer_compute(self, sample_file3):
+        """Test compute function of DihedralsAnalyzer."""
+        xyz = next(readXYZ.readXYZ(sample_file3))
+        testGraph = graphs.GraphManager(xyz)
+        
+        dihedral_range = "abs"
+        analyzer = DihedralsAnalyzer(dihedral_range=dihedral_range)
+        result = analyzer.compute(testGraph)
+        
+        # Unpack the dictionary
+        dihedrals = result['dihedrals']
+        dihedral_list = result['dihedral_list']
+        cis_trans = result['cistrans']
+        
+        # Test dihedral counts
+        for angle, count in dihedrals:
+            if angle == 0:
+                assert count == 1
+            else:
+                assert count == 0
+                
+        # test cis trans counts
+        assert cis_trans[0][1] == 1
+        assert cis_trans[1][1] == 0
+        
+    # ---------------------------------------------------------
+        
+    def test_DihedralsAnalyzer_render_finalize_output(self, temp_file):
+        """Test render_output and finalize_output methods of DihedralsAnalyzer."""
+        dihedral_handler = OutputHandler(temp_file, mode='collect')
+        dihedral_list_handler = OutputHandler(temp_file.parent / "dihedral_list.csv", mode='collect')
+        cistrans_handler = OutputHandler(temp_file.parent / "cistrans.csv", mode='collect')
+        
+        analyzer = DihedralsAnalyzer(
+            dihedral_output_handler=dihedral_handler,
+            dihedral_list_output_handler=dihedral_list_handler,
+            cistrans_output_handler=cistrans_handler,
+            dihedral_range='abs'
+        )
+        analyzer.initialize_output()
+        
+        # Create mock data and render it
+        mock_graph = Mock()
+        mock_prepared_graph = Mock()
+        mock_subgraph = Mock()
+        
+        mock_graph.remove_1order.return_value = mock_prepared_graph
+        mock_prepared_graph.get_subgraphs.return_value = [mock_subgraph]
+        mock_subgraph.find_longest_path.return_value = [0, 1, 2, 3]
+        mock_subgraph.dihedral.side_effect = [65.0, 75.0]
+        
+        # Render first frame
+        result1 = analyzer.compute(mock_graph)
+        analyzer.render_output(result1, frame_idx=0)
+        
+        # Reset mock for second frame
+        mock_subgraph.dihedral.side_effect = [45.0, 85.0]
+        result2 = analyzer.compute(mock_graph)
+        analyzer.render_output(result2, frame_idx=1)
+        
+        # Finalize output
+        analyzer.finalize_output()
+        
+        # Verify dihedral counts file
+        assert temp_file.exists()
+        dihedral_content = temp_file.read_text()
+        lines = dihedral_content.strip().split('\n')
+        assert 'Angle' in lines[0]
+        assert 'Frame 0' in lines[0]
+        assert 'Frame 1' in lines[0]

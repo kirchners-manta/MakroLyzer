@@ -13,8 +13,8 @@ from MakroLyzer.structure_modules.MoleculeCount import MoleculeCountAnalyzer
 from MakroLyzer.structure_modules.EndToEndDistance import EndToEndDistanceAnalyzer
 from MakroLyzer.structure_modules.OrderParameter import OrderParameterAnalyzer
 from MakroLyzer.structure_modules.Ramachandran import RamachandranAnalyzer
+from MakroLyzer.structure_modules.Dihedrals import DihedralsAnalyzer
 
-from MakroLyzer.structure_modules.dihedrals import get_all_dihedrals, get_CisTrans
 from MakroLyzer.structure_modules.subgraphCoords import get_subgraph_coords
 
 from tqdm import tqdm
@@ -89,22 +89,27 @@ def main(args):
         analyzers['AminoAcidRamachandran'] = RamachandranAnalyzer(output_handler)
         analyzers['AminoAcidRamachandran'].initialize_output()
         
+    if args['dihedral'] or args['cisTrans']:
+        dihedral_handler = OutputHandler(args['dihedral_file'], mode='collect') if args['dihedral'] else None
+        dihedral_list_handler = OutputHandler(args['dihedral_file'].replace('.csv', '_list.csv'), mode='streaming') if args['dihedral'] else None
+        cistrans_handler = OutputHandler(args['CisTrans_file'], mode='streaming') if args['dihedral'] else None
+        analyzers['dihedrals'] = DihedralsAnalyzer(
+            dihedral_output_handler=dihedral_handler,
+            dihedral_list_output_handler=dihedral_list_handler,
+            cistrans_output_handler=cistrans_handler,
+            dihedral_range=args['dihedral_range']
+        )
+        analyzers['dihedrals'].initialize_output()
+        
     # ------------------------------------------------------------------------------------------------
     
     # create empty lists to store results
     results = {
         'formulas': [],
-        'dihedrals': [],
-        'dihedral_list': [],
-        'cisTrans': [],
-        'AARamachandran': [],
         'subgraph_coords': [],
 
         # Output file names
         'formulas_file': args['formula_file'],
-        'dihedrals_file': args['dihedral_file'],
-        'cisTrans_file': args['CisTrans_file'],
-        'AARamachandran_file': args['AARamachandran_file'],
         'subgraph_coords_file': args['subgraph_coord_file']
     }
     
@@ -150,6 +155,10 @@ def main(args):
         if 'AminoAcidRamachandran' in analyzers:
             analyzers['AminoAcidRamachandran'].run(boxGraph, i)
             
+        # Dihedrals and Cis-Trans
+        if 'dihedrals' in analyzers:
+            analyzers['dihedrals'].run(boxGraph, i)
+            
         # ---------------------------------------------------------------------
         
         # Repeating units for the Polymer
@@ -174,19 +183,6 @@ def main(args):
         if args['formula']:
             formulas = boxGraph.get_chemicalFormulas()
             results['formulas'].append(formulas)
-          
-        # Dihedral angles      
-        if args['dihedral']:
-            if args['dihedral_range'] == 'abs':
-                results['dihedrals'].append(get_all_dihedrals(boxGraph, sign=None)[0])
-                results['dihedral_list'].append(get_all_dihedrals(boxGraph, sign=None)[1])
-            elif args['dihedral_range'] == 'nonabs':
-                results['dihedrals'].append(get_all_dihedrals(boxGraph, sign=True)[0])
-                results['dihedral_list'].append(get_all_dihedrals(boxGraph, sign=True)[1])
-
-        # Cis Trans counts
-        if args['cisTrans']:
-            results['cisTrans'].append(get_CisTrans(boxGraph))
             
         # Subgraph coordinates
         if args['subgraph_coords']:

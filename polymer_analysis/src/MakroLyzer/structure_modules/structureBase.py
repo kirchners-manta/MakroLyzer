@@ -56,6 +56,23 @@ class OutputHandler:
             for row in rows:
                 f.write(row + '\n')
                 
+    def write_raw(self, data):
+        """
+        Write raw data to output file.
+
+        Args:
+            data (str): Raw data string to write.
+        """
+        # If the file exists, append a number to the filename to avoid overwriting
+        base, ext = os.path.splitext(self.file_path)
+        counter = 1
+        while os.path.exists(self.file_path):
+            self.file_path = f"{base}_{counter}{ext}"
+            counter += 1
+            
+        with open(self.file_path, 'w') as f:
+            f.write(data)
+                
     def initialize_file(self, header):
         """
         Initialize file (for 'streaming' mode)
