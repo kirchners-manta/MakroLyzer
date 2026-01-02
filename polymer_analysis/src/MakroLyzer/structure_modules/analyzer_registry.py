@@ -6,17 +6,17 @@ Each entry in `ANALYZERS_REGISTRATION` maps a short key to a factory
 callable that accepts `(args, **context)` and returns an analyzer
 instance or `None` if it should not be created for the given args.
 """
-from src.MakroLyzer.structure_modules.Hbonds import HBondsAnalyzer
-from src.MakroLyzer.structure_modules.Anisotropy import AnisotropyAnalyzer
-from src.MakroLyzer.structure_modules.Asphericity import AsphericityAnalyzer
-from src.MakroLyzer.structure_modules.RadiusOfGyration import RadiusOfGyrationAnalyzer
-from src.MakroLyzer.structure_modules.MoleculeCount import MoleculeCountAnalyzer
-from src.MakroLyzer.structure_modules.EndToEndDistance import EndToEndDistanceAnalyzer
-from src.MakroLyzer.structure_modules.OrderParameter import OrderParameterAnalyzer
-from src.MakroLyzer.structure_modules.Ramachandran import RamachandranAnalyzer
-from src.MakroLyzer.structure_modules.Dihedrals import DihedralsAnalyzer
-from src.MakroLyzer.structure_modules.ChemicalFormula import ChemicalFormulaAnalyzer
-from src.MakroLyzer.structure_modules.structureBase import OutputHandler
+from MakroLyzer.structure_modules.Hbonds import HBondsAnalyzer
+from MakroLyzer.structure_modules.Anisotropy import AnisotropyAnalyzer
+from MakroLyzer.structure_modules.Asphericity import AsphericityAnalyzer
+from MakroLyzer.structure_modules.RadiusOfGyration import RadiusOfGyrationAnalyzer
+from MakroLyzer.structure_modules.MoleculeCount import MoleculeCountAnalyzer
+from MakroLyzer.structure_modules.EndToEndDistance import EndToEndDistanceAnalyzer
+from MakroLyzer.structure_modules.OrderParameter import OrderParameterAnalyzer
+from MakroLyzer.structure_modules.Ramachandran import RamachandranAnalyzer
+from MakroLyzer.structure_modules.Dihedrals import DihedralsAnalyzer
+from MakroLyzer.structure_modules.ChemicalFormula import ChemicalFormulaAnalyzer
+from MakroLyzer.structure_modules.structureBase import OutputHandler
 
 
 def create_hbonds(args, **context):

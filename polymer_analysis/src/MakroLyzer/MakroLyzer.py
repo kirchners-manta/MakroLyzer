@@ -1,10 +1,7 @@
 import sys
 
 from MakroLyzer.input_handling import inputHandlingMain
-from MakroLyzer.structure_modules import graphs
-from MakroLyzer.structure_modules import structureAnalysisMain, structureMain
-from MakroLyzer.output_handling import outputHandlingMain
-
+from MakroLyzer.structure_modules import structureAnalysisMain
 
 def main():
     """

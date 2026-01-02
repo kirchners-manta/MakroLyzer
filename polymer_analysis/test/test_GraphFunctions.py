@@ -1,8 +1,8 @@
 import pytest
 
-from src.MakroLyzer.input_handling import readXYZ
-from src.MakroLyzer.input_handling import readXYZ
-from src.MakroLyzer.structure_modules import graphs
+from MakroLyzer.input_handling import readXYZ
+from MakroLyzer.input_handling import readXYZ
+from MakroLyzer.structure_modules import graphs
 
 @pytest.fixture
 def sample_data1():

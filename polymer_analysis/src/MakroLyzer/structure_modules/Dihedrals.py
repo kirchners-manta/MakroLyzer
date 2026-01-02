@@ -2,8 +2,7 @@ import pandas as pd
 import numpy as np
 from collections import Counter
 
-from MakroLyzer.structure_modules.structureBase import StructureAnalyzer, OutputHandler
-from MakroLyzer.structure_modules import dihedrals as dihedral_funcs
+from MakroLyzer.structure_modules.structureBase import StructureAnalyzer
 
 
 class DihedralsAnalyzer(StructureAnalyzer):

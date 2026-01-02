@@ -5,21 +5,21 @@ import numpy as np
 
 from unittest.mock import Mock, patch
 
-from src.MakroLyzer.input_handling import readXYZ
-from src.MakroLyzer.structure_modules import graphs
-from src.MakroLyzer.errorOutputs.ErrorOutputs import ErrorOutputs
+from MakroLyzer.input_handling import readXYZ
+from MakroLyzer.structure_modules import graphs
+from MakroLyzer.errorOutputs.ErrorOutputs import ErrorOutputs
 
-from src.MakroLyzer.structure_modules.structureBase import OutputHandler, StructureAnalyzer
-from src.MakroLyzer.structure_modules.Hbonds import HBondsAnalyzer
-from src.MakroLyzer.structure_modules.Anisotropy import AnisotropyAnalyzer
-from src.MakroLyzer.structure_modules.Asphericity import AsphericityAnalyzer
-from src.MakroLyzer.structure_modules.RadiusOfGyration import RadiusOfGyrationAnalyzer
-from src.MakroLyzer.structure_modules.MoleculeCount import MoleculeCountAnalyzer
-from src.MakroLyzer.structure_modules.EndToEndDistance import EndToEndDistanceAnalyzer
-from src.MakroLyzer.structure_modules.OrderParameter import OrderParameterAnalyzer
-from src.MakroLyzer.structure_modules.Ramachandran import RamachandranAnalyzer
-from src.MakroLyzer.structure_modules.Dihedrals import DihedralsAnalyzer
-from src.MakroLyzer.structure_modules.ChemicalFormula import ChemicalFormulaAnalyzer
+from MakroLyzer.structure_modules.structureBase import OutputHandler, StructureAnalyzer
+from MakroLyzer.structure_modules.Hbonds import HBondsAnalyzer
+from MakroLyzer.structure_modules.Anisotropy import AnisotropyAnalyzer
+from MakroLyzer.structure_modules.Asphericity import AsphericityAnalyzer
+from MakroLyzer.structure_modules.RadiusOfGyration import RadiusOfGyrationAnalyzer
+from MakroLyzer.structure_modules.MoleculeCount import MoleculeCountAnalyzer
+from MakroLyzer.structure_modules.EndToEndDistance import EndToEndDistanceAnalyzer
+from MakroLyzer.structure_modules.OrderParameter import OrderParameterAnalyzer
+from MakroLyzer.structure_modules.Ramachandran import RamachandranAnalyzer
+from MakroLyzer.structure_modules.Dihedrals import DihedralsAnalyzer
+from MakroLyzer.structure_modules.ChemicalFormula import ChemicalFormulaAnalyzer
 
 # OutputHandler Tests # ------------------------------------------------------------------
 class TestOutputHandler:
@@ -541,7 +541,7 @@ class TestAnisotropyAnalyzer:
         mock_graph = Mock()
         
         with patch(
-        "src.MakroLyzer.structure_modules.Anisotropy.get_Gtensor_eigVal_eigVec",
+        "MakroLyzer.structure_modules.Anisotropy.get_Gtensor_eigVal_eigVec",
         return_value=(np.array([3.2, 3.5, 1.4]), None),
         ) as mock_helper:
             kappa_sq = analyzer.compute(mock_graph)
@@ -549,7 +549,7 @@ class TestAnisotropyAnalyzer:
         assert kappa_sq == pytest.approx(0.058985, rel=1e-5)
         
         with patch(
-        "src.MakroLyzer.structure_modules.Anisotropy.get_Gtensor_eigVal_eigVec",
+        "MakroLyzer.structure_modules.Anisotropy.get_Gtensor_eigVal_eigVec",
         return_value=(np.array([2, 2, 2]), None),
         ) as mock_helper:
             kappa_sq = analyzer.compute(mock_graph)
@@ -557,7 +557,7 @@ class TestAnisotropyAnalyzer:
         assert kappa_sq == pytest.approx(0.00000, rel=1e-5)
         
         with patch(
-        "src.MakroLyzer.structure_modules.Anisotropy.get_Gtensor_eigVal_eigVec",
+        "MakroLyzer.structure_modules.Anisotropy.get_Gtensor_eigVal_eigVec",
         return_value=(np.array([10, 0.1, 0.1]), None),
         ) as mock_helper:
             kappa_sq = analyzer.compute(mock_graph)
@@ -604,7 +604,7 @@ class TestAnisotropyAnalyzer:
         mock_graph = Mock()
         
         with patch(
-        "src.MakroLyzer.structure_modules.Anisotropy.get_Gtensor_eigVal_eigVec",
+        "MakroLyzer.structure_modules.Anisotropy.get_Gtensor_eigVal_eigVec",
         return_value=(np.array([3.2, 3.5, 1.4]), None),
         ) as mock_helper:
             kappa_sq = analyzer.compute(mock_graph)
@@ -613,7 +613,7 @@ class TestAnisotropyAnalyzer:
         analyzer.render_output(kappa_sq, frame_idx=12)
         
         with patch(
-        "src.MakroLyzer.structure_modules.Anisotropy.get_Gtensor_eigVal_eigVec",
+        "MakroLyzer.structure_modules.Anisotropy.get_Gtensor_eigVal_eigVec",
         return_value=(np.array([2, 2, 2]), None),
         ) as mock_helper:
             kappa_sq = analyzer.compute(mock_graph)
@@ -661,7 +661,7 @@ class TestAsphericityAnalyzer:
         mock_graph = Mock()
         
         with patch(
-        "src.MakroLyzer.structure_modules.Asphericity.get_Gtensor_eigVal_eigVec",
+        "MakroLyzer.structure_modules.Asphericity.get_Gtensor_eigVal_eigVec",
         return_value=(np.array([0, 102, 0]), None),
         ) as mock_helper:
             b = analyzer.compute(mock_graph)
@@ -669,7 +669,7 @@ class TestAsphericityAnalyzer:
         assert b == pytest.approx(102.0000, rel=1e-5)
         
         with patch(
-        "src.MakroLyzer.structure_modules.Asphericity.get_Gtensor_eigVal_eigVec",
+        "MakroLyzer.structure_modules.Asphericity.get_Gtensor_eigVal_eigVec",
         return_value=(np.array([2, 4, 1]), None),
         ) as mock_helper:
             b = analyzer.compute(mock_graph)
@@ -677,7 +677,7 @@ class TestAsphericityAnalyzer:
         assert b == pytest.approx(2.50000, rel=1e-5)
         
         with patch(
-        "src.MakroLyzer.structure_modules.Asphericity.get_Gtensor_eigVal_eigVec",
+        "MakroLyzer.structure_modules.Asphericity.get_Gtensor_eigVal_eigVec",
         return_value=(np.array([3.2, 3.2, 3.2]), None),
         ) as mock_helper:
             b = analyzer.compute(mock_graph)
@@ -703,7 +703,7 @@ class TestAsphericityAnalyzer:
         mock_graph = Mock()
         
         with patch(
-        "src.MakroLyzer.structure_modules.Asphericity.get_Gtensor_eigVal_eigVec",
+        "MakroLyzer.structure_modules.Asphericity.get_Gtensor_eigVal_eigVec",
         return_value=(np.array([0, 0, 100]), None),
         ) as mock_helper:
             b = analyzer.compute(mock_graph)
@@ -712,7 +712,7 @@ class TestAsphericityAnalyzer:
         analyzer.render_output(b, frame_idx=12)
         
         with patch(
-        "src.MakroLyzer.structure_modules.Asphericity.get_Gtensor_eigVal_eigVec",
+        "MakroLyzer.structure_modules.Asphericity.get_Gtensor_eigVal_eigVec",
         return_value=(np.array([4, 2, 1]), None),
         ) as mock_helper:
             b = analyzer.compute(mock_graph)

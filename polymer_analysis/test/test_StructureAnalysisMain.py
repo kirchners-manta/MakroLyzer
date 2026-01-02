@@ -4,9 +4,9 @@ from unittest.mock import Mock
 
 import pytest
 
-from src.MakroLyzer.structure_modules import analyzer_registry
-from src.MakroLyzer.structure_modules import structureAnalysisMain
-from src.MakroLyzer.structure_modules.Anisotropy import AnisotropyAnalyzer
+from MakroLyzer.structure_modules import analyzer_registry
+from MakroLyzer.structure_modules import structureAnalysisMain
+from MakroLyzer.structure_modules.Anisotropy import AnisotropyAnalyzer
 
 
 class TestAnalyzerRegistry:
@@ -62,11 +62,11 @@ class TestStructureAnalysisMain:
 
 		monkeypatch.setattr(structureAnalysisMain, 'read', None, raising=False)
 		# Instead, patch the read function used by main through the module import names
-		monkeypatch.setattr('src.MakroLyzer.structure_modules.structureAnalysisMain.readXYZ.readXYZ', lambda p: fake_read(p))
-		monkeypatch.setattr('src.MakroLyzer.structure_modules.structureAnalysisMain.estimateFrames.EstimateFrames.estimateFramesXYZ', lambda p: 2)
+		monkeypatch.setattr('MakroLyzer.structure_modules.structureAnalysisMain.readXYZ.readXYZ', lambda p: fake_read(p))
+		monkeypatch.setattr('MakroLyzer.structure_modules.structureAnalysisMain.estimateFrames.EstimateFrames.estimateFramesXYZ', lambda p: 2)
 
 		# Patch GraphManager to accept the frame and return a dummy graph
-		monkeypatch.setattr('src.MakroLyzer.structure_modules.structureAnalysisMain.graphs.GraphManager', lambda frame, boxSize=None: Mock())
+		monkeypatch.setattr('MakroLyzer.structure_modules.structureAnalysisMain.graphs.GraphManager', lambda frame, boxSize=None: Mock())
 
 		# Run main
 		structureAnalysisMain.main(args)

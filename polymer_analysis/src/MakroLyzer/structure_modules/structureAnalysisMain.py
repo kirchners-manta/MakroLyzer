@@ -1,9 +1,9 @@
-from src.MakroLyzer.input_handling import readXYZ
-from src.MakroLyzer.input_handling import readLMP
-from src.MakroLyzer.input_handling import estimateFrames
-from src.MakroLyzer.structure_modules import graphs
+from MakroLyzer.input_handling import readXYZ
+from MakroLyzer.input_handling import readLMP
+from MakroLyzer.input_handling import estimateFrames
+from MakroLyzer.structure_modules import graphs
 
-from src.MakroLyzer.structure_modules.analyzer_registry import ANALYZERS_REGISTRATION
+from MakroLyzer.structure_modules.analyzer_registry import ANALYZERS_REGISTRATION
 
 from tqdm import tqdm
 
