@@ -3,66 +3,26 @@ import pytest
 from src.MakroLyzer.input_handling import readXYZ
 from src.MakroLyzer.input_handling import readXYZ
 from src.MakroLyzer.structure_modules import graphs
-from src.MakroLyzer.structure_modules.endToEndDistance import end_to_end_dist
-from src.MakroLyzer.structure_modules.dihedrals import get_all_dihedrals, get_CisTrans
-from src.MakroLyzer.structure_modules.radiusOfGyration import get_radius_of_gyration
-from src.MakroLyzer.structure_modules.anisotropy import get_anisotropy_factor
-from src.MakroLyzer.structure_modules.asphericityParameter import get_asphericity_parameter
-from src.MakroLyzer.structure_modules.hbonds import get_Hbonds
-from src.MakroLyzer.structure_modules.countSubgraphs import count_subgraphs, count_rings
-from src.MakroLyzer.structure_modules.orderParameter import get_S_from_Q
 
 @pytest.fixture
 def sample_data1():
-    return 'test_structures/01.xyz'
+    return 'test_structures/Graph/01.xyz'
 
 @pytest.fixture
 def sample_data2():
-    return 'test_structures/02.xyz'
+    return 'test_structures/Graph/02.xyz'
 
 @pytest.fixture
 def sample_data3():
-    return 'test_structures/03.xyz'
+    return 'test_structures/Graph/03.xyz'
 
 @pytest.fixture
 def sample_data4():
-    return 'test_structures/04.xyz'
+    return 'test_structures/Graph/04.xyz'
 
 @pytest.fixture
 def pattern_data04():
-    return 'test_structures/04pattern.txt'
-
-@pytest.fixture
-def sample_data5():
-    return 'test_structures/05.xyz'
-
-@pytest.fixture
-def sample_data5cis():
-    return 'test_structures/05cis.xyz'
-
-@pytest.fixture
-def sample_data5cis2():
-    return 'test_structures/05cis2.xyz'
-
-@pytest.fixture
-def sample_data5trans():
-    return 'test_structures/05trans.xyz'
-
-@pytest.fixture
-def sample_data6():
-    return 'test_structures/06.xyz'
-
-@pytest.fixture
-def sample_data7():
-    return 'test_structures/07.xyz'
-
-@pytest.fixture
-def sample_data8():
-    return 'test_structures/Hbonds/01.xyz'
-
-@pytest.fixture
-def sample_data9():
-    return 'test_structures/Hbonds/02.xyz'
+    return 'test_structures/Graph/04pattern.txt'
 
 @pytest.fixture
 def sample_data10():
@@ -73,75 +33,36 @@ def sample_data11():
     return 'test_structures/Hbonds/04.xyz'
 
 @pytest.fixture
-def sample_data12():        
-    return 'test_structures/Hbonds/05.xyz'
-
-@pytest.fixture
-def sample_data13():
-    return 'test_structures/13.xyz'
-
-@pytest.fixture
 def sample_data14():
-    return 'test_structures/14.xyz'
-
-@pytest.fixture
-def sample_data15():
-    return 'test_structures/15.xyz'
-
-@pytest.fixture
-def sample_data16():
-    return 'test_structures/Hbonds/06.xyz'
+    return 'test_structures/Graph/14.xyz'
 
 @pytest.fixture
 def sample_data18():
-    return 'test_structures/18.xyz'
+    return 'test_structures/Graph/18.xyz'
 
 @pytest.fixture
 def sample_data19():
-    return 'test_structures/19.xyz'
+    return 'test_structures/Graph/19.xyz'
 
 @pytest.fixture
 def sample_data20():
-    return 'test_structures/20.xyz'
+    return 'test_structures/Graph/20.xyz'
 
 @pytest.fixture
 def sample_data21():
-    return 'test_structures/21.xyz'
-
-@pytest.fixture
-def sample_data22():
-    return 'test_structures/22.xyz'
+    return 'test_structures/Graph/21.xyz'
 
 @pytest.fixture
 def sample_data23():
-    return 'test_structures/23.xyz'
+    return 'test_structures/Graph/23.xyz'
 
 @pytest.fixture
 def sample_data25():
-    return 'test_structures/25.xyz'
+    return 'test_structures/Graph/25.xyz'
 
 @pytest.fixture
 def sample_data26():
-    return 'test_structures/26.xyz'
-
-@pytest.fixture
-def sample_data30():
-    return 'test_structures/30.xyz'
-
-@pytest.fixture
-def sample_data31():
-    return 'test_structures/31.xyz'
-
-@pytest.fixture
-def sample_data32():
-    return 'test_structures/32.xyz'
-    
-def test_end_to_end(sample_data1):
-    xyz = next(readXYZ.readXYZ(sample_data1))
-    testGraph = graphs.GraphManager(xyz)
-    distance = end_to_end_dist(testGraph)
-    correctDistance = 5.595 
-    assert distance[0] == pytest.approx(correctDistance, abs=1e-3)
+    return 'test_structures/Graph/26.xyz'
     
 def test_remove_1order(sample_data1):
     xyz = next(readXYZ.readXYZ(sample_data1))
@@ -425,32 +346,6 @@ def test_find_patterns(sample_data4):
         elif i in range(52, 66):
             assert testGraph.nodes[node]['fragmentID'] == 3
         i += 1
-        
-    
-# Radius of gyration tests
-def test_radius_of_gyration(sample_data7):
-    xyz = next(readXYZ.readXYZ(sample_data7))
-    testGraph = graphs.GraphManager(xyz)
-    
-    print(testGraph.size())
-    
-    # test center of mass
-    com = testGraph.get_com()
-    assert com[0] == pytest.approx(-0.6814, abs=1e-3) 
-    assert com[1] == pytest.approx(-0.8874, abs=1e-3)
-    assert com[2] == pytest.approx(0.0000, abs=1e-3)
-    
-    # Calculate radius of gyration
-    Rg_subgraphs, R_whole = get_radius_of_gyration(testGraph)
-    
-    # Check radius of gyration for the whole graph
-    assert R_whole == pytest.approx(3.6197, abs=1e-3)  
-    
-    # Check radius of gyration for subgraphs
-    assert len(Rg_subgraphs) == 4 
-    for R in Rg_subgraphs:
-        assert R == pytest.approx(0.0, abs=1e-4)
-        
     
 # PBC
 def test_pbc(sample_data21):

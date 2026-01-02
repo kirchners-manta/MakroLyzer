@@ -14,10 +14,7 @@ def main():
     args = inputHandlingMain.main(sys.argv)
     
     # Call the main analysis of the polymer structure
-    results = structureAnalysisMain.main(args)
-    # Call the output handling module to save results
-    outputHandlingMain.main(results)
-
+    structureAnalysisMain.main(args)
     
 if __name__ == "__main__":
     main()
