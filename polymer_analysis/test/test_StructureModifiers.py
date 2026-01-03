@@ -183,6 +183,7 @@ class TestPatternModifier:
         expected_header = f"2\nelement x          y         z          FragmentID"
         mock_handler.write_output.assert_called_once_with(expected_header, g, attributes=['fragmentID'])
 
+# AminoSaturationModifier Tests # ------------------------------------------------------------------
 
 class TestAminoSaturationModifier:
     """Tests for the AminoSaturationModifier."""
@@ -233,4 +234,48 @@ class TestAminoSaturationModifier:
         mock_handler.write_output.assert_called_once_with(expected, g)
         
     
+
+class TestSubgraphPrintModifier:
+    """Tests for the SubgraphPrintModifier."""
+
+    def test_SubgraphPrintModifier_init(self):
+        from MakroLyzer.modify_modules.SubgraphPrint import SubgraphPrintModifier
+        handler = Mock()
+        mod = SubgraphPrintModifier(output_handler=handler)
+        assert mod.output_handler == handler
+        assert mod.frame_number == 0
+
+    def test_SubgraphPrintModifier_compute(self):
+        from MakroLyzer.modify_modules.SubgraphPrint import SubgraphPrintModifier
+
+        class G:
+            def get_subgraphs(self):
+                g1 = Mock()
+                g2 = Mock()
+                return [g1, g2]
+
+        mod = SubgraphPrintModifier()
+        res = mod.compute(G())
+        assert isinstance(res, list)
+        assert len(res) == 2
+
+    def test_SubgraphPrintModifier_render_output(self):
+        from MakroLyzer.modify_modules.SubgraphPrint import SubgraphPrintModifier
+        mock_handler = Mock()
+        mod = SubgraphPrintModifier(output_handler=mock_handler)
+
+        s1 = Mock()
+        s1.number_of_nodes.return_value = 2
+        s2 = Mock()
+        s2.number_of_nodes.return_value = 3
+        subgraphs = [s1, s2]
+
+        mod.render_output(subgraphs, frame_idx=0)
+
+        expected1 = f"2\nelement  x         y        z"
+        expected2 = f"3\nelement  x         y        z"
+        mock_handler.write_output.assert_any_call(expected1, s1, ID=1)
+        mock_handler.write_output.assert_any_call(expected2, s2, ID=2)
+        assert mock_handler.write_output.call_count == 2
+
     

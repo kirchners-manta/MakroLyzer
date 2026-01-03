@@ -28,7 +28,7 @@ class ModifyOutputHandler:
         """
         self.file_path = file_path
         
-    def write_output(self, header, graph, attributes=None):
+    def write_output(self, header, graph, attributes=None, ID=None):
         """
         Write fragment data for `graph` to CSV.
 
@@ -39,13 +39,19 @@ class ModifyOutputHandler:
         """
         # If the file exists, append a number to the filename to avoid overwriting
         base, ext = os.path.splitext(self.file_path)
+        if ID:
+            new_path = f"{base}_frag{ID}{ext}"
+        else:
+            new_path = self.file_path
+            
+        base, ext = os.path.splitext(new_path)
         counter = 1
-        while os.path.exists(self.file_path):
-            self.file_path = f"{base}_{counter}{ext}"
+        while os.path.exists(new_path):
+            new_path = f"{base}_{counter}{ext}"
             counter += 1
-                   
-        # Write data           
-        with open(self.file_path, 'w') as f:
+
+        # Write data
+        with open(new_path, 'w') as f:
             f.write(header + '\n')
             for node in graph.nodes():
                 d = graph.nodes[node]
@@ -57,7 +63,8 @@ class ModifyOutputHandler:
                 if attributes:
                     for attr in attributes:
                         row += f"    {d.get(attr, '')}"
-                f.write(row + '\n')                                
+                f.write(row + '\n')      
+        new_path = None               
                     
 class StructureModifier(ABC):
     """

@@ -9,6 +9,7 @@ instance or `None` if it should not be created for the given args.
 from MakroLyzer.modify_modules.Patterns import PatternModifier
 from MakroLyzer.modify_modules.structureModifierBase import ModifyOutputHandler
 from MakroLyzer.modify_modules.AminoSaturation import AminoSaturationModifier
+from MakroLyzer.modify_modules.SubgraphPrint import SubgraphPrintModifier
 
 
 def create_patterns(args, **context):
@@ -24,8 +25,15 @@ def create_nylonSatturation(args, **context):
     output_handler = ModifyOutputHandler('Saturated.xyz')
     return AminoSaturationModifier(output_handler)
 
+def create_subgraph_print(args, **context):
+    if not args.get('subgraph_coords'):
+        return None
+    output_handler = ModifyOutputHandler('Subgraph.xyz')
+    return SubgraphPrintModifier(output_handler)
+
 
 MODIFIERS_REGISTRATION = {
     'patternFile': create_patterns,
     'nylonSaturation': create_nylonSatturation,
+    'subgraphPrint': create_subgraph_print,
 }
