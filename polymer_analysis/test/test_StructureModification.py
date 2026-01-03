@@ -182,6 +182,55 @@ class TestPatternModifier:
 
         expected_header = f"2\nelement x          y         z          FragmentID"
         mock_handler.write_output.assert_called_once_with(expected_header, g, attributes=['fragmentID'])
+
+
+class TestAminoSaturationModifier:
+    """Tests for the AminoSaturationModifier."""
+    
+    # SetUp fixtures -----------------------------------------
+
+    @pytest.fixture
+    def temp_file(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            yield Path(tmpdir) / "output.csv"
+            
+    # ---------------------------------------------------------
+
+    def test_AminoSaturationModifier_init(self):
+        handler = Mock()
+        from MakroLyzer.modify_modules.AminoSaturation import AminoSaturationModifier
+        mod = AminoSaturationModifier(output_handler=handler)
+        assert mod.output_handler == handler
+
+    def test_AminoSaturationModifier_compute(self):
+        from MakroLyzer.modify_modules.AminoSaturation import AminoSaturationModifier
+
+        class G:
+            def __init__(self):
+                self.saturated = False
+
+            def saturate(self):
+                self.saturated = True
+
+        g = G()
+        mod = AminoSaturationModifier()
+        res = mod.compute(g)
+        assert res is g
+        assert g.saturated is True
+
+    def test_AminoSaturationModifier_render_output(self, temp_file):
+        from MakroLyzer.modify_modules.AminoSaturation import AminoSaturationModifier
+        mock_handler = Mock()
+        mod = AminoSaturationModifier(output_handler=mock_handler)
+
+        class G:
+            def number_of_nodes(self):
+                return 4
+
+        g = G()
+        mod.render_output(g, frame_idx=0)
+        expected = f"4\nelement  x         y        z"
+        mock_handler.write_output.assert_called_once_with(expected, g)
         
     
     

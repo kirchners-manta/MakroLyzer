@@ -8,6 +8,7 @@ instance or `None` if it should not be created for the given args.
 """
 from MakroLyzer.modify_modules.Patterns import PatternModifier
 from MakroLyzer.modify_modules.structureModifierBase import ModifyOutputHandler
+from MakroLyzer.modify_modules.AminoSaturation import AminoSaturationModifier
 
 
 def create_patterns(args, **context):
@@ -17,7 +18,14 @@ def create_patterns(args, **context):
     output_handler = ModifyOutputHandler('Patterns.csv')
     return PatternModifier(pattern_path, output_handler)
 
+def create_nylonSatturation(args, **context):
+    if not args.get('saturation'):
+        return None
+    output_handler = ModifyOutputHandler('Saturated.xyz')
+    return AminoSaturationModifier(output_handler)
+
 
 MODIFIERS_REGISTRATION = {
     'patternFile': create_patterns,
+    'nylonSaturation': create_nylonSatturation,
 }

@@ -611,7 +611,8 @@ class GraphManager(nx.Graph):
         
         # Add the new oxygen atom
         new_index = max(self.nodes) + 1
-        self.add_node(new_index, index=new_index, element='OH_T', x=coords_OH[0], y=coords_OH[1], z=coords_OH[2])
+        #self.add_node(new_index, index=new_index, element='OH_T', x=coords_OH[0], y=coords_OH[1], z=coords_OH[2])
+        self.add_node(new_index, index=new_index, element='O', x=coords_OH[0], y=coords_OH[1], z=coords_OH[2])
         self.add_edge(node, new_index)
         
         # calculate the coordinates of the new H atom
@@ -621,7 +622,8 @@ class GraphManager(nx.Graph):
         
         # Add the new hydrogen atom
         new_index = max(self.nodes) + 1
-        self.add_node(new_index, index=new_index, element='HO_T', x=coords_[0], y=coords_[1], z=coords_[2])
+        #self.add_node(new_index, index=new_index, element='HO_T', x=coords_[0], y=coords_[1], z=coords_[2])
+        self.add_node(new_index, index=new_index, element='H', x=coords_[0], y=coords_[1], z=coords_[2])
         self.add_edge(new_index, new_index - 1)
         
     def add_H_to_amide(self, node):
@@ -675,7 +677,8 @@ class GraphManager(nx.Graph):
         self.nodes[neighbor_H]['z'] = coords_new_H1[2]
         # Add the new hydrogen atom
         new_index = max(self.nodes) + 1
-        self.add_node(new_index, index=new_index, element='HN_T2', x=coords_new_H2[0], y=coords_new_H2[1], z=coords_new_H2[2])
+        #self.add_node(new_index, index=new_index, element='HN_T2', x=coords_new_H2[0], y=coords_new_H2[1], z=coords_new_H2[2])
+        self.add_node(new_index, index=new_index, element='H', x=coords_new_H2[0], y=coords_new_H2[1], z=coords_new_H2[2])
         self.add_edge(node, new_index)
         
         #if np.linalg.norm(coords_new_H1 - neighbor_H) > 0.8:
