@@ -23,11 +23,9 @@ src/MakroLyzer/modify_modules/AminoSaturation.py
 src/MakroLyzer/modify_modules/Patterns.py
 src/MakroLyzer/modify_modules/SubgraphPrint.py
 src/MakroLyzer/modify_modules/modifier_registry.py
-src/MakroLyzer/modify_modules/structureMain.py
 src/MakroLyzer/modify_modules/structureModificationMain.py
 src/MakroLyzer/modify_modules/structureModifierBase.py
 src/MakroLyzer/modify_modules/subgraphCoords.py
-src/MakroLyzer/output_handling/outputHandlingMain.py
 src/MakroLyzer/structure_modules/Anisotropy.py
 src/MakroLyzer/structure_modules/Asphericity.py
 src/MakroLyzer/structure_modules/ChemicalFormula.py
@@ -46,4 +44,5 @@ src/MakroLyzer/structure_modules/structureBase.py
 test/test_GraphFunctions.py
 test/test_StructureAnalysisMain.py
 test/test_StructureAnalyzers.py
-test/test_StructureModification.py
+test/test_StructureModificationMain.py
+test/test_StructureModifiers.py
