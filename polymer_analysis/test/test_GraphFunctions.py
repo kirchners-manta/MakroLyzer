@@ -2,7 +2,7 @@ import pytest
 
 from MakroLyzer.input_handling import readXYZ
 from MakroLyzer.input_handling import readXYZ
-from MakroLyzer.structure_modules import graphs
+from MakroLyzer import graphs
 
 @pytest.fixture
 def sample_data1():

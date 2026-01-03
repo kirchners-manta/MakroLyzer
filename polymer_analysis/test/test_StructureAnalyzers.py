@@ -6,7 +6,7 @@ import numpy as np
 from unittest.mock import Mock, patch
 
 from MakroLyzer.input_handling import readXYZ
-from MakroLyzer.structure_modules import graphs
+from MakroLyzer import graphs
 from MakroLyzer.errorOutputs.ErrorOutputs import ErrorOutputs
 
 from MakroLyzer.structure_modules.structureBase import OutputHandler, StructureAnalyzer

@@ -1,17 +1,8 @@
 from MakroLyzer.input_handling import readXYZ
 from MakroLyzer.input_handling import readLMP
 from MakroLyzer.input_handling import estimateFrames
-from MakroLyzer.structure_modules import graphs
+from MakroLyzer import graphs
 from MakroLyzer.structure_modules import readPatterns
-from MakroLyzer.structure_modules.endToEndDistance import end_to_end_dist
-from MakroLyzer.structure_modules.countSubgraphs import count_subgraphs, count_rings
-from MakroLyzer.structure_modules.dihedrals import get_all_dihedrals, get_CisTrans, get_Ramachandran
-from MakroLyzer.structure_modules.radiusOfGyration import get_radius_of_gyration
-from MakroLyzer.structure_modules.anisotropy import get_anisotropy_factor
-from MakroLyzer.structure_modules.asphericityParameter import get_asphericity_parameter
-from MakroLyzer.structure_modules.hbonds import get_Hbonds
-from MakroLyzer.structure_modules.subgraphCoords import get_subgraph_coords
-from MakroLyzer.structure_modules.orderParameter import get_order_parameter, get_S_from_Q
 
 from tqdm import tqdm
 
@@ -100,69 +91,8 @@ def main(args):
             saturation_file = f"{args['saturation_file'].rsplit('.', 1)[0]}_frame_{i}.xyz"
             boxGraph.write_xyz(saturation_file)
             
-        # Chemical formulas
-        if args['formula']:
-            formulas = boxGraph.get_chemicalFormulas()
-            results['formulas'].append(formulas)
-            
-        # Number of subgraphs
-        if args['noSubgraphs']:
-            noSub = count_subgraphs(boxGraph)
-            results['noSub'].append(noSub)
-           
-        # End-to-end distance     
-        if args['endToEndDistance']:
-            dist = end_to_end_dist(boxGraph)
-            results.setdefault('distances', []).append(dist)
-          
-        # Dihedral angles      
-        if args['dihedral']:
-            if args['dihedral_range'] == 'abs':
-                results['dihedrals'].append(get_all_dihedrals(boxGraph, sign=None)[0])
-                results['dihedral_list'].append(get_all_dihedrals(boxGraph, sign=None)[1])
-            elif args['dihedral_range'] == 'nonabs':
-                results['dihedrals'].append(get_all_dihedrals(boxGraph, sign=True)[0])
-                results['dihedral_list'].append(get_all_dihedrals(boxGraph, sign=True)[1])
-
-        # Cis Trans counts
-        if args['cisTrans']:
-            results['cisTrans'].append(get_CisTrans(boxGraph))
-
-        # Amino Acid Ramachandran plot data
-        if args['AminoAcidRamachandran']:
-            results['AARamachandran'].append(get_Ramachandran(boxGraph))
-
-        # Radius of gyration 
-        if args['radiusOfGyration']:
-            results['Rg'].append(get_radius_of_gyration(boxGraph))
-          
-        # Hydrogen bonds  
-        if args['hydrogenBonds']:
-            cutoffs = args['hydrogenBonds']
-            results['hbonds'].append(get_Hbonds(boxGraph, cutoffs))
             
         # Subgraph coordinates
         if args['subgraph_coords']:
             results['subgraph_coords'].append(get_subgraph_coords(boxGraph))
-            
-        # Anisotropy factor
-        if args['anisotropyFactor']:
-            results['anisotropy_factor'].append(get_anisotropy_factor(boxGraph))
-            
-            
-        # Asphericity parameter
-        if args['asphericityParameter']:
-            results['asphericity_parameter'].append(get_asphericity_parameter(boxGraph))
-            
-        # Order parameter
-        if args['orderParameter']:
-            boxSize, n, unitSize = args['orderParameter']
-            results['orderParameter'].append(get_S_from_Q(
-                boxGraph, boxSize, n, unitSize))
-            
-        # Ring and strand count
-        if args['RingStrandCount']:
-            ring_strand_count = count_rings(boxGraph)
-            results['RingStrandCount'].append(ring_strand_count)
-
     return results

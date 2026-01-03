@@ -3,6 +3,7 @@ pyproject.toml
 src/MakroLyzer/MakroLyzer.py
 src/MakroLyzer/__init__.py
 src/MakroLyzer/dictionaries.py
+src/MakroLyzer/graphs.py
 src/MakroLyzer.egg-info/PKG-INFO
 src/MakroLyzer.egg-info/SOURCES.txt
 src/MakroLyzer.egg-info/dependency_links.txt
@@ -18,10 +19,13 @@ src/MakroLyzer/input_handling/readInput.py
 src/MakroLyzer/input_handling/readLMP.py
 src/MakroLyzer/input_handling/readXYZ.py
 src/MakroLyzer/math/Box.py
+src/MakroLyzer/modify_modules/Patterns.py
+src/MakroLyzer/modify_modules/modifier_registry.py
+src/MakroLyzer/modify_modules/structureMain.py
+src/MakroLyzer/modify_modules/structureModificationMain.py
+src/MakroLyzer/modify_modules/structureModifierBase.py
+src/MakroLyzer/modify_modules/subgraphCoords.py
 src/MakroLyzer/output_handling/outputHandlingMain.py
-src/MakroLyzer/structure_modification/readPatterns.py
-src/MakroLyzer/structure_modification/structureMain.py
-src/MakroLyzer/structure_modification/subgraphCoords.py
 src/MakroLyzer/structure_modules/Anisotropy.py
 src/MakroLyzer/structure_modules/Asphericity.py
 src/MakroLyzer/structure_modules/ChemicalFormula.py
@@ -35,9 +39,9 @@ src/MakroLyzer/structure_modules/RadiusOfGyration.py
 src/MakroLyzer/structure_modules/Ramachandran.py
 src/MakroLyzer/structure_modules/__init__.py
 src/MakroLyzer/structure_modules/analyzer_registry.py
-src/MakroLyzer/structure_modules/graphs.py
 src/MakroLyzer/structure_modules/structureAnalysisMain.py
 src/MakroLyzer/structure_modules/structureBase.py
 test/test_GraphFunctions.py
 test/test_StructureAnalysisMain.py
 test/test_StructureAnalyzers.py
+test/test_StructureModification.py

@@ -3,7 +3,7 @@ from MakroLyzer.input_handling import readLMP
 from MakroLyzer.input_handling import estimateFrames
 from MakroLyzer import graphs
 
-from MakroLyzer.structure_modules.analyzer_registry import ANALYZERS_REGISTRATION
+from MakroLyzer.modify_modules.modifier_registry import MODIFIERS_REGISTRATION
 
 from tqdm import tqdm
 
@@ -26,27 +26,19 @@ def main(args):
     
     # Get the box size
     boxSize = args.get('BoxSize', None)
-        # check if the order parameter is provided
-    if args['orderParameter']:
-        BoxSize, NoCellsPerDim, MolecularVectorLength = args['orderParameter']
-    if not boxSize and args['orderParameter']:
-        boxSize = BoxSize[0]
-            
-    
-    # Build analyzers from registry ---------------------------------------------------------------
-    analyzers = {}
-    # prepare context for factories
-    context = {'boxSize': boxSize}
-    if args.get('orderParameter'):
-        context.update({'BoxSize': BoxSize, 'NoCellsPerDim': NoCellsPerDim, 'MolecularVectorLength': MolecularVectorLength})
 
-    for key, factory in ANALYZERS_REGISTRATION.items():
+
+    # Build modifiers from registry ---------------------------------------------------------------
+    modifiers = {}
+    # prepare context for factories
+    context = {'boxSize': boxSize}    
+    for key, factory in MODIFIERS_REGISTRATION.items():
         try:
             instance = factory(args, **context)
         except Exception:
             instance = None
         if instance is not None:
-            analyzers[key] = instance
+            modifiers[key] = instance
             if hasattr(instance, 'initialize_output'):
                 instance.initialize_output()
 
@@ -57,11 +49,7 @@ def main(args):
         
         # Get Graph object of the polymer box
         boxGraph = graphs.GraphManager(xyz_frame, boxSize=boxSize)
-        
-        # Run all registered analyzers for this frame
-        for analyzer in analyzers.values():
-            analyzer.run(boxGraph, i)
-            
-    # Finalize output for class-based analyzers ---------------------------------
-    for analyzer_name, analyzer in analyzers.items():
-        analyzer.finalize_output()
+
+        # Run all registered modifiers for this frame
+        for modifier in modifiers.values():
+            modifier.run(boxGraph, i)
