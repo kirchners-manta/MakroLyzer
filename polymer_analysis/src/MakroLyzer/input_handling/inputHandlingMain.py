@@ -9,6 +9,8 @@ def main(args):
     """    
     
     args = readInput.readCommandLine()
+    analyzer = True
+    modifier = True
     
     try:
         checkInput.checkInput(args)
@@ -22,4 +24,20 @@ def main(args):
         print(f"An unexpected error occurred: {e}")
         sys.exit(1)
         
-    return args
+    # Check if args from analyzer_group are called
+    analyzer_args = [
+        'hydrogenBonds', 'anisotropyFactor', 'asphericityParameter',
+        'radiusOfGyration', 'NoSubgraphs', 'endToEndDistance', 'orderParameter',
+        'formula', 'Ramachandran'
+    ]
+    if not any(arg in args and args[arg] is not None for arg in analyzer_args):
+        analyzer = False
+        
+    # Check if args from modifier_group are called
+    modifier_args = [
+        'patternFile', 'saturation', 'subgraph_coords'
+    ]
+    if not any(arg in args and args[arg] is not None for arg in modifier_args):
+        modifier = False
+
+    return analyzer, modifier, args

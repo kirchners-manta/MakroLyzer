@@ -42,6 +42,7 @@ src/MakroLyzer/structure_modules/analyzer_registry.py
 src/MakroLyzer/structure_modules/structureAnalysisMain.py
 src/MakroLyzer/structure_modules/structureBase.py
 test/test_GraphFunctions.py
+test/test_InputHandling.py
 test/test_StructureAnalysisMain.py
 test/test_StructureAnalyzers.py
 test/test_StructureModificationMain.py

@@ -16,24 +16,29 @@ def create_patterns(args, **context):
     pattern_path = args.get('patternFile')
     if not pattern_path:
         return None
-    output_handler = ModifyOutputHandler('Patterns.csv')
+    out_file = args.get('patternID_file') if args.get('patternID_file') is not None else 'patternIDs.csv'
+    output_handler = ModifyOutputHandler(out_file)
     return PatternModifier(pattern_path, output_handler)
 
-def create_nylonSatturation(args, **context):
-    if not args.get('saturation'):
+def create_AminoSaturation(args, **context):
+    val = args.get('saturation')
+    if val is None:
         return None
-    output_handler = ModifyOutputHandler('Saturated.xyz')
+    out_file = val if isinstance(val, str) else 'saturatedPolymers.xyz'
+    output_handler = ModifyOutputHandler(out_file)
     return AminoSaturationModifier(output_handler)
 
 def create_subgraph_print(args, **context):
-    if not args.get('subgraph_coords'):
+    val = args.get('subgraph_coords')
+    if val is None:
         return None
-    output_handler = ModifyOutputHandler('Subgraph.xyz')
+    out_file = val if isinstance(val, str) else 'subgraphCoordinates.xyz'
+    output_handler = ModifyOutputHandler(out_file)
     return SubgraphPrintModifier(output_handler)
 
 
 MODIFIERS_REGISTRATION = {
     'patternFile': create_patterns,
-    'nylonSaturation': create_nylonSatturation,
+    'AminoSaturation': create_AminoSaturation,
     'subgraphPrint': create_subgraph_print,
 }

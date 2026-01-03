@@ -23,42 +23,53 @@ def create_hbonds(args, **context):
     if not args.get('hydrogenBonds'):
         return None
     cutoffs = args['hydrogenBonds']
-    output_handler = OutputHandler(args['hbonds_file'], mode='streaming')
+    hbonds_file = args.get('hbonds_file') or 'hydrogenBonds.csv'
+    output_handler = OutputHandler(hbonds_file, mode='streaming')
     return HBondsAnalyzer(cutoffs, output_handler)
 
 
 def create_anisotropy(args, **context):
-    if not args.get('anisotropyFactor'):
+    val = args.get('anisotropyFactor')
+    if val is None:
         return None
-    output_handler = OutputHandler(args['anisotropy_file'], mode='streaming')
+    out_file = args.get('anisotropy_file') if args.get('anisotropy_file') is not None else (val if isinstance(val, str) else 'anisotropyFactor.csv')
+    output_handler = OutputHandler(out_file, mode='streaming')
     return AnisotropyAnalyzer(output_handler)
 
 
 def create_asphericity(args, **context):
-    if not args.get('asphericityParameter'):
+    val = args.get('asphericityParameter')
+    if val is None:
         return None
-    output_handler = OutputHandler(args['asphericity_file'], mode='streaming')
+    out_file = args.get('asphericity_file') if args.get('asphericity_file') is not None else (val if isinstance(val, str) else 'asphericityParameter.csv')
+    output_handler = OutputHandler(out_file, mode='streaming')
     return AsphericityAnalyzer(output_handler)
 
 
 def create_radius_of_gyration(args, **context):
-    if not args.get('radiusOfGyration'):
+    val = args.get('radiusOfGyration')
+    if val is None:
         return None
-    output_handler = OutputHandler(args['Rg_file'], mode='streaming')
+    out_file = args.get('Rg_file') if args.get('Rg_file') is not None else (val if isinstance(val, str) else 'Rg.csv')
+    output_handler = OutputHandler(out_file, mode='streaming')
     return RadiusOfGyrationAnalyzer(output_handler)
 
 
 def create_molecule_count(args, **context):
-    if not args.get('noSubgraphs'):
+    val = args.get('NoSubgraphs')
+    if val is None:
         return None
-    output_handler = OutputHandler(args['noSub_file'], mode='streaming')
+    out_file = args.get('NoSub_file') if args.get('NoSub_file') is not None else (val if isinstance(val, str) else 'NoSubGraphs.csv')
+    output_handler = OutputHandler(out_file, mode='streaming')
     return MoleculeCountAnalyzer(output_handler)
 
 
 def create_end_to_end(args, **context):
-    if not args.get('endToEndDistance'):
+    val = args.get('endToEndDistance')
+    if val is None:
         return None
-    output_handler = OutputHandler(args['e2e_file'], mode='streaming')
+    out_file = args.get('e2e_file') if args.get('e2e_file') is not None else (val if isinstance(val, str) else 'e2eDistances.csv')
+    output_handler = OutputHandler(out_file, mode='streaming')
     return EndToEndDistanceAnalyzer(output_handler)
 
 
@@ -69,23 +80,34 @@ def create_order_parameter(args, **context):
     BoxSize = context.get('BoxSize')
     NoCellsPerDim = context.get('NoCellsPerDim')
     MolecularVectorLength = context.get('MolecularVectorLength')
-    output_handler = OutputHandler(args['order_file'], mode='streaming')
+    order_file = args.get('order_file') or 'orderParameter.csv'
+    output_handler = OutputHandler(order_file, mode='streaming')
     return OrderParameterAnalyzer(BoxSize, NoCellsPerDim, MolecularVectorLength, output_handler)
 
 
 def create_ramachandran(args, **context):
-    if not args.get('AminoAcidRamachandran'):
+    val = args.get('Ramachandran')
+    if val is None:
         return None
-    output_handler = OutputHandler(args['AARamachandran_file'], mode='streaming')
+    out_file = args.get('Ramachandran_file') if args.get('Ramachandran_file') is not None else (val if isinstance(val, str) else 'Ramachandran.csv')
+    output_handler = OutputHandler(out_file, mode='streaming')
     return RamachandranAnalyzer(output_handler)
 
 
 def create_dihedrals(args, **context):
-    if not (args.get('dihedral') or args.get('cisTrans')):
+    dihedral_val = args.get('dihedral')
+    cistrans_val = args.get('cisTrans')
+    if dihedral_val is None:
         return None
-    dihedral_handler = OutputHandler(args['dihedral_file'], mode='collect') if args.get('dihedral') else None
-    dihedral_list_handler = OutputHandler(args['dihedral_file'].replace('.csv', '_list.csv'), mode='streaming') if args.get('dihedral') else None
-    cistrans_handler = OutputHandler(args['CisTrans_file'], mode='streaming') if args.get('dihedral') else None
+    dihedral_handler = None
+    dihedral_list_handler = None
+    cistrans_handler = None
+    if dihedral_val is not None:
+        dihedral_file = 'dihedrals.csv'
+        dihedral_handler = OutputHandler(dihedral_file, mode='collect')
+        dihedral_list_handler = OutputHandler(dihedral_file.replace('.csv', '_list.csv'), mode='streaming')
+        cistrans_file = 'CisTrans.csv'
+        cistrans_handler = OutputHandler(cistrans_file, mode='streaming')
     return DihedralsAnalyzer(
         dihedral_output_handler=dihedral_handler,
         dihedral_list_output_handler=dihedral_list_handler,
@@ -95,9 +117,11 @@ def create_dihedrals(args, **context):
 
 
 def create_chemical_formula(args, **context):
-    if not args.get('formula'):
+    val = args.get('formula')
+    if val is None:
         return None
-    formula_handler = OutputHandler(args['formula_file'], mode='streaming')
+    out_file = args.get('formula_file') if args.get('formula_file') is not None else (val if isinstance(val, str) else 'chemicalFormulas.csv')
+    formula_handler = OutputHandler(out_file, mode='streaming')
     return ChemicalFormulaAnalyzer(formula_handler)
 
 

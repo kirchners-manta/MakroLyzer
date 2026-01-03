@@ -1,6 +1,42 @@
 import argparse
 import sys
-import argparse
+
+ASCII_ART = r"""
+                             
+                                @    @@ @            
+                              @@ @@ @    @           
+                              @   @@    @           
+                             @     @      @@         
+                             @         @@    @        
+                            @@         @@     @      
+                            @                  @     
+                            @                 @      
+                            @                @@      
+                            @              @@        
+                           @               @         
+                         @                 @         
+                       @                   @         
+                     @                      @    +---------------------------|-----------------------------+    
+                    @                       @    |   __  __       _          |   _                         |  
+                   @                        @    |  |  \/  | __ _| | ___ __ _|_ | |   _   _ _______ _ __   |   
+                  @                         @    |  | |\/| |/ _` | |/ / '__/ _ \| |  | | | |_  / _ \ '__|  |
+                 @           @              @    |  | |  | | (_| |   <| | | (_) | |__| |_| |/ /  __/ |     |  
+     @@ @        @           @              @    |  |_|  |_|\__,_|_|\_\_|  \___/|_____\__, /___\___|_|     |
+   @@    @       @           @       @      @    |                          /|        |___/                |   
+  @@    @@      @            @       @      @    |                                                         |
+  @    @@       @            @       @     @     |    MakroLyzer - Makromolecule Analyzer                  |   
+  @    @@       @             @      @     @     +---------------------------------------------------------+   
+  @     @@      @             @      @    @         
+   @        @@                 @     @    @          
+    @@                          @    @    @          
+      @@@                       @    @    @          
+          @ @ @ @ @ @ @ @ @     @ @  @  @ @                    
+                                                                                                                
+"""
+
+class ArtParser(argparse.ArgumentParser):
+    def format_help(self):
+        return ASCII_ART + "\n" + super().format_help()
 
 def readCommandLine() -> dict:
     
@@ -12,198 +48,153 @@ def readCommandLine() -> dict:
     """
     
     # Create the argument parser
-    parser = argparse.ArgumentParser(description='PolyLyzer - Polymer Analysis Tool')
+    parser = ArtParser(prog='MakroLyzer',
+                       formatter_class=argparse.RawTextHelpFormatter,
+                       description='MakroLyzer - Makromolecule Analysis Tool')
     
-    # Add arguments
-    parser.add_argument('-xyz', '--xyzFile', 
-                        help='Path to the XYZ/trajectory file', 
-                        default=None
-    ) 
+    # Input Group # ----------------------------------------------------------------------------------------
+    input_group = parser.add_argument_group('----------------| Arguments for specifying input files and settings |----------------')
+    file_group = input_group.add_mutually_exclusive_group(required=True)
     
-    parser.add_argument('-lmp', '--lmpFile', 
-                        help='Path to the LAMMPS trajectory file (default: None)',
-                        default=None
-    )
+    file_group.add_argument('-xyz', '--xyzFile', 
+                        help='Path to the XYZ-trajectory file', 
+                        default=None) 
+    file_group.add_argument('-lmp', '--lmpFile', 
+                        help='Path to the LAMMPS-trajectory file',
+                        default=None)
     
-    parser.add_argument('-nth', '--nthStep',
-                        help='Read every nth step from the trajectory (default: 1)',
+    input_group.add_argument('-nth', '--nthStep',
+                        help='Analyze/Modify every nth step from the trajectory (default: 1)',
                         type=int,
-                        default=1
-    )
-    
-    parser.add_argument('-bs', '--BoxSize', 
+                        default=1)
+    input_group.add_argument('-bs', '--BoxSize', 
                         help='Box size for periodic boundary conditions. (default: None)',
-                        type=float
-    )
+                        type=float)
     
-    parser.add_argument('-p', '--patternFile', 
-                        help='Path to the TXT file -> Finds repeating units (default: false)',
-    )
     
-    parser.add_argument('--repeatingUnits-file',
-                        help='Output file name for repeating units (default: repeatingUnits.csv)',
-                        default='repeatingUnits.csv'
-    )
+    # Structure Analyzers Group # -------------------------------------------------------------------------------
+    analyzer_group = parser.add_argument_group(title='----------------| Arguments for structure analyzers |----------------',
+                                               description='This module includes various analyzers to compute structural properties of macromolecules.')
     
-    parser.add_argument('-s', '--saturation', 
-                        help='Saturate the ends polymers (default: false)', 
-                        action='store_true'
-    )
-    
-    parser.add_argument('--saturation-file',
-                        help='Output file name for saturated polymers (default: saturatedPolymers.xyz)',
-                        default='saturatedPolymers.xyz'
-    )
-    
-    parser.add_argument('-f', '--formula',
-                        help='Get chemical formulas of the polymer (default: false)', 
-                        action='store_true'
-    )
-    
-    parser.add_argument('-noSub', '--noSubgraphs',
-                        help='Calculate the number of subgraphs in the polymer (default: false)',
-                        action='store_true'
-    )
-    
-    parser.add_argument('--noSub-file',
-                        help='Output file name for number of subgraphs (default: noSubGraphs.csv)',
-                        default='noSubGraphs.csv'
-    )
-    
-    parser.add_argument('--formula-file',
-                        help='Output file name for chemical formulas (default: chemicalFormulas.csv)',
-                        default='chemicalFormulas.csv'
-    )
-    
-    parser.add_argument('-e2e', '--endToEndDistance', 
-                        help='Calculate end-to-end distance (default: false)', 
-                        action='store_true'
-    )
-    
-    parser.add_argument(
-                        '--e2e-file',
-                        help='Output file name for end-to-end distances (default: endToEndDistances.csv)',
-                        default='endToEndDistances.csv'
-    )
-    
-    parser.add_argument(
+    analyzer_group.add_argument(
                         '-d', '--dihedral',
-                        help='Calculate dihedral angles (default: false)',
-                        action='store_true'
-    )
-    parser.add_argument(
+                        nargs='?', const='dihedrals.csv', default=None,
+                        help='Calculate dihedral angles.\n'
+                        '1. Dihedral angle counts (file: dihedrals.csv)\n'
+                        '2. Dihedral angles per along each polymer strand (file: dihedrals_list.csv)\n'
+                        '3. Cis-trans counts (file: cisTrans.csv)\n'
+                        'Optionally provide a base-output filename (default: dihedrals.csv)')
+    
+    analyzer_group.add_argument(
                         '--dihedral-range',
-                        help='Range of dihedral angles - abs (0-180), nonabs (-180-180) (default: 0-180)',
+                        help='Range of dihedral angles.\n'
+                        '"abs": (0-180), "nonabs": (-180-180), (default: 0-180)',
                         choices=['abs', 'nonabs'],
-                        default='abs'
-    )
-    parser.add_argument(
-                        '--dihedral-file',
-                        help='Output file name (default: dihedrals.csv)',
-                        default='dihedrals.csv'
-    )
-    parser.add_argument(
-                        '-ct', '--cisTrans',
-                        help='Calculate cis and trans counts (default: false)',
-                        action='store_true'
-    )
-    parser.add_argument(
-                        '--CisTrans-file',
-                        help='Output file name (default: CisTrans.csv)',
-                        default='CisTrans.csv'
-    )
-    parser.add_argument(
-                        '-AAramachandran', '--AminoAcidRamachandran',
-                        help='Calculate Ramachandran plot data (default: false)',
-                        action='store_true'
-    )
-    parser.add_argument(
-                        '--AARamachandran-file',
-                        help='Output file name (default: AARamachandran.csv)',
-                        default='AARamachandran.csv'
-    )
-    parser.add_argument(
-                        '-r', '--radiusOfGyration',
-                        help='Calculate radius of gyration (default: false)',
-                        action='store_true'
-    )
-    parser.add_argument(
-                        '--Rg-file',
-                        help='Output file name (default: radiusOfGyration.csv)',
-                        default='radiusOfGyration.csv'
-    )
-    parser.add_argument(
-                        '-hb', '--hydrogenBonds',
-                        nargs='+',
-                        help="List of (Acceptor:H-Acceptor-Distance:Donor-Acceptor-Distance:(D-H-A)Angle-Cutoff) tuples for hydrogen bonds (e.g., -hb O:2.4:3.4:30 N:2.8:3.9:25)",
-                        type=element_distance_tuple
-    )
+                        default='abs')
     
-    parser.add_argument(
-                        '--hbonds-file',
-                        help='Output file name for hydrogen bonds (default: hydrogenBonds.csv)',
-                        default='hydrogenBonds.csv'
-    )
+    analyzer_group.add_argument(
+                        '-Rg', '--radiusOfGyration',
+                        nargs='?', const='Rg.csv', default=None,
+                        help='Calculate radius of gyration for the whole polymer.\n'
+                             'Optionally provide an output filename (default: Rg.csv)')
     
-    parser.add_argument(
-                        '-sub', '--subgraph-coords',
-                        help='Get subgraph-coordinates (default: false)',
-                        action='store_true'   
-    )
-    
-    parser.add_argument(
-                        '--subgraph-coord-file',
-                        help='Output file name for subgraph coordinates (default: subgraphCoordinates.csv)',
-                        default='subgraphCoordinates.xyz'
-    )
-    
-    parser.add_argument(
+    analyzer_group.add_argument(
                         '-af', '--anisotropyFactor',
-                        help='Calculate anisotropy factor (default: false)',
-                        action='store_true'
-    )
+                        nargs='?', const='anisotropyFactor.csv', default=None,
+                        help='Calculate anisotropy factor.\n'
+                        'Optionally provide an output filename (default: anisotropyFactor.csv)')
     
-    parser.add_argument(
-                        '--anisotropy-file',
-                        help='Output file name for anisotropy factor (default: anisotropyFactor.csv)',
-                        default='anisotropyFactor.csv'
-    )
-    
-    parser.add_argument(
+    analyzer_group.add_argument(
                         '-as', '--asphericityParameter',
-                        help='Calculate asphericity parameter (default: false)',
-                        action='store_true'
-    )
+                        nargs='?', const='asphericityParameter.csv', default=None,
+                        help='Calculate asphericity parameter.\n'
+                        'Optionally provide an output filename (default: asphericityParameter.csv)')
     
-    parser.add_argument(
-                        '--asphericity-file',
-                        help='Output file name for asphericity parameter (default: asphericityParameter.csv)',
-                        default='asphericityParameter.csv'
-    )
+    analyzer_group.add_argument(
+                    '-hb', '--hydrogenBonds',
+                    nargs='+',
+                    help='Calculate the number of hydrogen bonds in the given polymer with specific cutoffs.\n'
+                    'Data to be specified:   Acceptor Element Type : b : c : alpha\n'
+                    '                        b : maximum hydrogen atom (H) - acceptor atom (A) distance (float)\n'
+                    '                        c : maximum donor atom (D) - acceptor atom distance (float)\n'
+                    '                        alpha : maximum angle between the D-H and H-A vectors (float)\n'
+                    'Usage example: -hb O:2.4:3.4:30 N:2.8:3.9:25',
+                    type=element_distance_tuple)
     
-    parser.add_argument(
+    analyzer_group.add_argument(
+                        '-hb-file', '--hbonds-file',
+                        nargs='?', const='hydrogenBonds.csv', default='hydrogenBonds.csv',
+                        help='Output filename for hydrogen bonds (default: hydrogenBonds.csv)')
+    
+    analyzer_group.add_argument(
                         '-op', '--orderParameter',
-                        help='Calculate order parameter S (default: false). Parameters have to be given like this BoxSize:n:unitSize where n specifies the number of bins in each direction and unitSize is the number of atoms to be used for a vector.',
-                        type=OrderParam
-    )
+                        help='Calculate the nematic order parameter S* for the polymer structure\n'
+                        'The order parameter S* can either be calculated for the entire graph, or the space can be divided into\n'
+                        'smaller cells, and S* can be calculated for each cell individually.\n'
+                        'The overall order parameter is then the average of the order parameters of all cells.\n'
+                        'Parameters that need to be specified:   BoxSize : NoCellsPerDim : MolecularVectorLength\n'
+                        '                    BoxSize : Size of the simulation box in x, y, z directions (float,float,float) or one value if symmetrical\n'
+                        '                    NoCellsPerDim : Number of cells in each direction (int, int, int) or only one value if symmetrical\n'
+                        '                    MolecularVectorLength : Number of atoms that are used to calculate a molecular vector from (int)\n'
+                        'Usage example: -op 100:1:3',
+                        type=OrderParam)
     
-    parser.add_argument(
-                        '--order-file',
-                        help='Output file name for order parameter (default: orderParameter.csv)',
-                        default='orderParameter.csv'
-    )
+    analyzer_group.add_argument(
+                        '-op-file', '--order-file',
+                        nargs='?', const='orderParameter.csv', default='orderParameter.csv',
+                        help='Output filename for the nematic order parameter S* (default: orderParameter.csv)')
     
-    parser.add_argument(
-                        '-RScount', '--RingStrandCount',
-                        help='Calculate ring and strand count of a graph (default: false)',
-                        action='store_true'
-    )
+    analyzer_group.add_argument(
+                        '-e2e', '--endToEndDistance',
+                        nargs='?', const='endToEndDistances.csv', default=None,
+                        help='Calculate end-to-end distance.\n'
+                        'Optionally provide an output filename (default: e2eDistances.csv)')
+    
+    analyzer_group.add_argument(
+                        '-Ramachandran', '--Ramachandran',
+                        nargs='?', const='AARamachandran.csv', default=None,
+                        help='Calculate Ramachandran matrix.\n'
+                        'Optionally provide an output filename (default: Ramachandran.csv)')
 
-    parser.add_argument(
-                        '--RingStrandCount-file',
-                        help='Output file name for ring and strand count (default: RingStrandCount.csv)',
-                        default='RingStrandCount.csv'
-    )
+    analyzer_group.add_argument(
+                        '-NoSub', '--NoSubgraphs',
+                        nargs='?', const='noSubGraphs.csv', default=None,
+                        help=('Calculate the number of polymer strands, as well as the number of chains and rings.\n'
+                              'Optionally provide an output filename (default: noSubGraphs.csv)'))
+    
+    analyzer_group.add_argument(
+                        '-f', '--formula',
+                        nargs='?', const='chemicalFormulas.csv', default=None,
+                        help='Get chemical formulas of the polymer.\n'
+                        'Optionally provide an output filename (default: chemicalFormulas.csv)')
+    
+    
+    # Structure Modifiers Group # ------------------------------------------------------------------------------
+    modifier_group = parser.add_argument_group('----------------| Arguments for structure modifiers |----------------')
+    
+    modifier_group.add_argument(
+                        '-p', '--patternFile',
+                        dest='patternFile',
+                        help='Assigns specific pattern IDs to fragments based on predefined patterns.\n'
+                        'Required argument: Path to the TXT file containing the patterns in list of lists format.\n'
+                        'Example pattern file content: [[C,C,C],[C,C,O]]')
+
+    modifier_group.add_argument(
+                        '-pID-file', '--patternID-file',
+                        nargs='?', const='patternIDs.csv', default=None,
+                        help='Output file name for assigned patterns (default: patternIDs.csv)')
+    
+    modifier_group.add_argument(
+                        '-s', '--saturation',
+                        nargs='?', const='saturatedPolymers.xyz', default=None,
+                        help='Saturate the ends polymers.\n'
+                        'Optionally provide an output filename (default: saturatedPolymers.xyz)')
+    
+    modifier_group.add_argument(
+                    '-sub', '--subgraph-coords',
+                    nargs='?', const='subgraphCoordinates.xyz', default=None,
+                    help='Get subgraph-coordinates; optionally provide output filename (default: subgraphCoordinates.xyz)')
+
     
     args = vars(parser.parse_args())
     
