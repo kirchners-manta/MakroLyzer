@@ -173,6 +173,19 @@ def readCommandLine() -> dict:
     modifier_group = parser.add_argument_group('----------------| Arguments for structure modifiers |----------------')
     
     modifier_group.add_argument(
+                        '-funcPE', '--functionalizePE',
+                        nargs='?', const=(10, 'CO'), default=None,
+                        help='Functionalize Polyethylene (PE) by replacing CH2 groups with CO groups.\n'
+                        'Provide a percentage value (0-100) indicating the degree of functionalization.\n'
+                        'Usage example: -funcPE 15:CO to functionalize 15%% of CH2 groups to CO groups.',
+                        type=functionalize)
+    
+    modifier_group.add_argument(
+                        '-funcPE-file', '--functionalizePE-file',
+                        nargs='?', const='functionalizedPE.xyz', default=None,
+                        help='Output filename for functionalized polyethylene (default: functionalizedPE.xyz)')
+    
+    modifier_group.add_argument(
                         '-p', '--patternFile',
                         dest='patternFile',
                         help='Assigns specific pattern IDs to fragments based on predefined patterns.\n'
@@ -238,3 +251,26 @@ def OrderParam(value):
         n = (n[0], n[0], n[0])
     unitSize = int(parts[2])
     return (boxSize, n, unitSize)
+
+def functionalize(value):
+    parts = value.split(':')
+    if len(parts) != 2:
+        raise argparse.ArgumentTypeError(
+            f"Invalid format: '{value}'. Expected format: <percentage>:<func_type>"
+        )
+    try:
+        percentage = int(parts[0])
+    except ValueError:
+        raise argparse.ArgumentTypeError(
+            f"Invalid percentage value in '{value}'. Expected an integer between 0 and 100."
+        )
+    func_type = parts[1]
+    if func_type not in ['CO']:
+        raise argparse.ArgumentTypeError(
+            f"Invalid func_type in '{value}'. Expected 'CO'."
+        )
+    if not (0 <= percentage <= 100):
+        raise argparse.ArgumentTypeError(
+            f"Percentage must be between 0 and 100 in '{value}'."
+        )
+    return (percentage, func_type)

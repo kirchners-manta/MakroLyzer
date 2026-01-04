@@ -20,6 +20,7 @@ src/MakroLyzer/input_handling/readLMP.py
 src/MakroLyzer/input_handling/readXYZ.py
 src/MakroLyzer/math/Box.py
 src/MakroLyzer/modify_modules/AminoSaturation.py
+src/MakroLyzer/modify_modules/FunctionalizePE.py
 src/MakroLyzer/modify_modules/Patterns.py
 src/MakroLyzer/modify_modules/SubgraphPrint.py
 src/MakroLyzer/modify_modules/modifier_registry.py

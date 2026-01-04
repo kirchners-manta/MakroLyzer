@@ -234,6 +234,7 @@ class TestAminoSaturationModifier:
         mock_handler.write_output.assert_called_once_with(expected, g)
         
     
+# SubgraphPrintModifier Tests # ------------------------------------------------------------------
 
 class TestSubgraphPrintModifier:
     """Tests for the SubgraphPrintModifier."""
@@ -278,4 +279,37 @@ class TestSubgraphPrintModifier:
         mock_handler.write_output.assert_any_call(expected2, s2, ID=2)
         assert mock_handler.write_output.call_count == 2
 
+# FunctionalizePEModifier Tests # ------------------------------------------------------------------
+class TestFunctionalizePEModifier:
+    """Tests for the FunctionalizePEModifier."""
     
+    def test_FunctionalizePEModifier_init(self):
+        from MakroLyzer.modify_modules.FunctionalizePE import FunctionalizePEModifier
+        handler = Mock()
+        mod = FunctionalizePEModifier(15, 'CO', output_handler=handler)
+        assert mod.output_handler == handler
+        assert mod.frame_number == 0
+        assert mod.percentage == 15
+        assert mod.func_type == 'CO'
+        
+    def test_FunctionalizePEModifier_compute(self):
+        from MakroLyzer.modify_modules.FunctionalizePE import FunctionalizePEModifier
+        mock_graph = Mock()
+        mod = FunctionalizePEModifier(25, 'CO')
+        res = mod.compute(mock_graph)
+        assert res is mock_graph
+        mock_graph.functionalizePE.assert_called_once_with(25, 'CO')
+
+    def test_FunctionalizePEModifier_render_output(self):
+        from MakroLyzer.modify_modules.FunctionalizePE import FunctionalizePEModifier
+        mock_handler = Mock()
+        mod = FunctionalizePEModifier(10, 'CO', output_handler=mock_handler)
+
+        class G:
+            def number_of_nodes(self):
+                return 5
+
+        g = G()
+        mod.render_output(g, frame_idx=0)
+        expected = f"5\nelement  x         y        z"
+        mock_handler.write_output.assert_called_once_with(expected, g)

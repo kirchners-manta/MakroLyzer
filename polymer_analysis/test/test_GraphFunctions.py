@@ -424,4 +424,32 @@ def test_AAbackbone_2(sample_data11):
             assert testGraph.nodes[backbone[i]]['element'] == 'N'
         else:
             assert testGraph.nodes[backbone[i]]['element'] == 'C'
-            
+
+
+def test_functionalize_pe_co():
+    graph = graphs.GraphManager()
+    # Three-carbon chain, middle C has two H neighbors to functionalize
+    graph.add_node(0, index=0, element='C', x=0.0, y=0.0, z=0.0)
+    graph.add_node(1, index=1, element='C', x=1.54, y=0.0, z=0.0)
+    graph.add_node(2, index=2, element='C', x=3.08, y=0.0, z=0.0)
+    graph.add_node(3, index=3, element='H', x=1.54, y=1.0, z=0.0)
+    graph.add_node(4, index=4, element='H', x=2.0, y=-0.5, z=0.2)
+
+    graph.add_edge(0, 1)
+    graph.add_edge(1, 2)
+    graph.add_edge(1, 3)
+    graph.add_edge(1, 4)
+
+    before_nodes = graph.number_of_nodes()
+    before_h = sum(1 for n in graph.nodes() if graph.nodes[n]['element'] == 'H')
+
+    graph.functionalizePE(100, 'CO')
+
+    after_nodes = graph.number_of_nodes()
+    after_h = sum(1 for n in graph.nodes() if graph.nodes[n]['element'] == 'H')
+    o_nodes = [n for n in graph.nodes() if graph.nodes[n]['element'] == 'O']
+
+    assert after_nodes == before_nodes - 1
+    assert after_h == before_h - 2
+    assert len(o_nodes) == 1
+    assert o_nodes[0] in graph.neighbors(1)

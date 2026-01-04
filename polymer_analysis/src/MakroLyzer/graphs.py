@@ -692,6 +692,67 @@ class GraphManager(nx.Graph):
         #else:
         #    raise ValueError("No new H atom can be added to the amide nitrogen.")
         
+    def functionalizePE(self, percentage, func_type):
+        """
+        Functionalize polyethylene (PE) features.
+
+        Args:
+            percentage (int): 0 <= percentage <= 100, percentage of PE units to be functionalized.
+            func_type (str): The type of functionalization (only 'CO' so far).
+        """
+        if func_type not in ['CO']:
+            raise ValueError("func_type must be 'CO'.")
+        
+        # Find all C atoms in the graph
+        C_nodes = [node for node in self.nodes if self.nodes[node]['element'] == 'C']
+        
+        # Remove those with only one C-neighbor (chain ends)
+        C_nodes = [node for node in C_nodes if sum(1 for neighbor in self.neighbors(node) if self.nodes[neighbor]['element'] == 'C') > 1]
+        
+        # Determine the number of C atoms to functionalize
+        num_to_functionalize = int(len(C_nodes) * (percentage / 100.0))
+        
+        # Randomly select C atoms to functionalize
+        np.random.shuffle(C_nodes)
+        selected_C_nodes = C_nodes[:num_to_functionalize]
+        
+        # For each selected C atom, add the functional group
+        for node in selected_C_nodes:
+            if func_type == 'CO':
+                self.add_CO_to_PE(node)
+                
+    def add_CO_to_PE(self, node):
+        """
+        Add CO functional group to a polyethylene (PE) carbon atom.
+
+        Args:
+            node (int): The index of the carbon atom to functionalize.
+        """
+        # Get H atom neighbors
+        H_neighbors = [neighbor for neighbor in self.neighbors(node) if self.nodes[neighbor]['element'] == 'H']
+        if len(H_neighbors) < 1:
+            raise ValueError("PE carbon must have at least one H neighbor to functionalize.")
+        
+        # Get midpoint of H atoms
+        H_coords = np.array([self.get_coordinates(neighbor) for neighbor in H_neighbors])
+        midpoint = np.mean(H_coords, axis=0)
+        
+        # Get C-midpoint vector and stretch it to 1.23 Å (C=O bond length)
+        C_coords = self.get_coordinates(node)
+        # remove H atoms
+        for H_node in H_neighbors:
+            self.remove_node(H_node)
+        CO_vector = midpoint - C_coords
+        CO_vector /= np.linalg.norm(CO_vector)
+        CO_vector *= 1.23 
+        # Calculate new O atom coordinates
+        O_coords = C_coords + CO_vector
+        
+        # Add the new oxygen atom and remove one H atoms
+        new_index = max(self.nodes) + 1
+        self.add_node(new_index, index=new_index, element='O', x=O_coords[0], y=O_coords[1], z=O_coords[2])
+        self.add_edge(node, new_index)
+
     def get_chemicalFormulas(self):
         """
         Get the chemical formulas of the polymers.

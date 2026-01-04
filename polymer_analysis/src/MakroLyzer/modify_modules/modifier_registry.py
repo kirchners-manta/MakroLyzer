@@ -36,8 +36,19 @@ def create_subgraph_print(args, **context):
     output_handler = ModifyOutputHandler(out_file)
     return SubgraphPrintModifier(output_handler)
 
+def create_functionalize_PE(args, **context):
+    val = args.get('functionalizePE')
+    if val is None:
+        return None
+    percentage, func_type = val
+    out_file = args.get('functionalizePE_file') if args.get('functionalizePE_file') is not None else 'functionalizedPE.xyz'
+    output_handler = ModifyOutputHandler(out_file)
+    from MakroLyzer.modify_modules.FunctionalizePE import FunctionalizePEModifier
+    return FunctionalizePEModifier(percentage, func_type, output_handler)
+
 
 MODIFIERS_REGISTRATION = {
+    'functionalizePE': create_functionalize_PE,
     'patternFile': create_patterns,
     'AminoSaturation': create_AminoSaturation,
     'subgraphPrint': create_subgraph_print,

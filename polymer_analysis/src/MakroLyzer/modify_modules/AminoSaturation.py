@@ -30,7 +30,7 @@ class AminoSaturationModifier(StructureModifier):
 
     def render_output(self, graph, frame_idx):
         """
-        Write graph xyz and fragment IDs to file.
+        Write graph xyz to file.
 
         Args:
             graph (GraphManager): The modified graph.
