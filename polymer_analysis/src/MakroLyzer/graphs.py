@@ -7,11 +7,12 @@ from collections import defaultdict
 from MakroLyzer import dictionaries
 
 class GraphManager(nx.Graph):
-    def __init__(self, data=None, boxSize=None, **kwargs):
+    def __init__(self, data=None, boxSize=None, vib_factor=None, **kwargs):
         """
         Args:
             data : elements together with their coordinates.
             boxSize : optional, size of the box for periodic boundary conditions.
+            vib_factor : optional, factor to scale bond distance cutoff.
             **kwargs : additional keyword arguments for graph initialization.
         """
         
@@ -30,13 +31,15 @@ class GraphManager(nx.Graph):
             self.add_edges_from(data.edges(data=True))
         else:
             # Handle other types of data, such as initialization from raw data
-            kwargs = {}
+            create_kwargs = {}
             if boxSize is not None:
-                kwargs['boxSize'] = boxSize
-            self.create_graph(data, **kwargs)
+                create_kwargs['boxSize'] = boxSize
+            if vib_factor is not None:
+                create_kwargs['vib_factor'] = vib_factor
+            self.create_graph(data, **create_kwargs)
 
     
-    def create_graph(self, atomData, boxSize=None):
+    def create_graph(self, atomData, boxSize=None, vib_factor=1.15):
         exception = False
         
         covalentRadii = dictionaries.dictCovalent()
@@ -67,7 +70,7 @@ class GraphManager(nx.Graph):
         maxd2 = np.zeros((M, M), dtype=float)
         for i, e1 in enumerate(unique_elems):
             for j, e2 in enumerate(unique_elems):
-                d = (covalentRadii[e1] + covalentRadii[e2]) * 1.15
+                d = (covalentRadii[e1] + covalentRadii[e2]) * vib_factor
                 maxd2[i, j] = d * d
 
         # Build KD-tree 

@@ -33,6 +33,7 @@ def main(args):
     # Get the box size 
     #################################################################################################
     boxSize = args.get('BoxSize', None)
+    vib_factor = args.get('vibFactor', None)
         
             
     # Get selections about static-topology and subgraph selection 
@@ -73,7 +74,7 @@ def main(args):
             # The if statement is only False if base_graph is not None and static_topology is True 
             # (skipped when: We already have a base graph and we want static_topology)
             # -> We need to (re)build the graph
-            boxGraph = graphs.GraphManager(xyz_frame, boxSize=boxSize)
+            boxGraph = graphs.GraphManager(xyz_frame, boxSize=boxSize, vib_factor=vib_factor)
             
             if static_topology:
                 # The user wants a static-topology analyis

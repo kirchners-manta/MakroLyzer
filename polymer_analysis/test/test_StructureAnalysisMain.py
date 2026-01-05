@@ -37,6 +37,7 @@ class TestStructureAnalysisMain:
 			'lmpFile': None,
 			'nthStep': 1,
 			'BoxSize': None,
+			'vibFactor': 1.15,
 			'orderParameter': ([1.0], None, None),
 			# enable a test analyzer name used in the patched registry
 			'test_flag': True,
@@ -66,7 +67,10 @@ class TestStructureAnalysisMain:
 		monkeypatch.setattr('MakroLyzer.structure_modules.structureAnalysisMain.estimateFrames.EstimateFrames.estimateFramesXYZ', lambda p: 2)
 
 		# Patch GraphManager to accept the frame and return a dummy graph
-		monkeypatch.setattr('MakroLyzer.structure_modules.structureAnalysisMain.graphs.GraphManager', lambda frame, boxSize=None: Mock())
+		monkeypatch.setattr(
+			'MakroLyzer.structure_modules.structureAnalysisMain.graphs.GraphManager',
+			lambda frame, boxSize=None, vib_factor=None: Mock(),
+		)
 
 		# Run main
 		structureAnalysisMain.main(args)
@@ -109,9 +113,10 @@ class TestStructureAnalysisMain:
 		class FakeGraphManager:
 			created = []
 
-			def __init__(self, data=None, boxSize=None):
+			def __init__(self, data=None, boxSize=None, vib_factor=None):
 				self.data = data
 				self.boxSize = boxSize
+				self.vib_factor = vib_factor
 				self.update_calls = 0
 				self.select_calls = 0
 				FakeGraphManager.created.append(self)

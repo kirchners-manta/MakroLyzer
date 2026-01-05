@@ -58,7 +58,10 @@ class TestStructureModificationMain:
         monkeypatch.setattr('MakroLyzer.modify_modules.structureModificationMain.estimateFrames.EstimateFrames.estimateFramesXYZ', lambda p: 2)
 
         # Patch GraphManager to accept the frame and return a dummy graph
-        monkeypatch.setattr('MakroLyzer.modify_modules.structureModificationMain.graphs.GraphManager', lambda frame, boxSize=None: Mock())
+        monkeypatch.setattr(
+            'MakroLyzer.modify_modules.structureModificationMain.graphs.GraphManager',
+            lambda frame, boxSize=None, vib_factor=None: Mock(),
+        )
 
         # Run main
         structureModificationMain.main(args)
@@ -98,9 +101,10 @@ class TestStructureModificationMain:
         class FakeGraphManager:
             created = []
 
-            def __init__(self, data=None, boxSize=None):
+            def __init__(self, data=None, boxSize=None, vib_factor=None):
                 self.data = data
                 self.boxSize = boxSize
+                self.vib_factor = vib_factor
                 self.update_calls = 0
                 self.select_calls = 0
                 FakeGraphManager.created.append(self)

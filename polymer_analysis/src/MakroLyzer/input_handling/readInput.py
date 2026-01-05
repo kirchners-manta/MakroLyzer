@@ -70,6 +70,11 @@ def readCommandLine() -> dict:
     input_group.add_argument('-bs', '--BoxSize', 
                         help='Box size for periodic boundary conditions. (default: None)',
                         type=float)
+    input_group.add_argument('-vf', '--vibFactor',
+                        dest='vibFactor',
+                        help='Vibration factor to scale covalent bond cutoff. (default: 1.15)',
+                        type=float,
+                        default=None)
     input_group.add_argument(
                         '--static-topology',
                         dest='staticTopology',
