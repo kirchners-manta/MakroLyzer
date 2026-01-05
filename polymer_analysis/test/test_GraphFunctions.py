@@ -95,6 +95,22 @@ def test_update_degree(sample_data1):
             assert newGraph.nodes[node]['degree'] == 2
         elif newGraph.nodes[node]['element'] == 'C' and newGraph.nodes[node]['surroundingAtoms'] == 'C_CHHH':
             assert newGraph.nodes[node]['degree'] == 1
+
+def test_update_coordinates(sample_data1):
+    xyz = next(readXYZ.readXYZ(sample_data1))
+    testGraph = graphs.GraphManager(xyz)
+
+    original = testGraph.get_coordinates(0).copy()
+    updated = xyz.copy()
+    updated[['x', 'y', 'z']] = updated[['x', 'y', 'z']] + 2.5
+
+    testGraph.update_coordinates(updated)
+    assert testGraph.get_coordinates(0) == pytest.approx(original + 2.5)
+
+    bad_data = updated.copy()
+    bad_data.loc[0, 'atom'] = 'O' if bad_data.loc[0, 'atom'] != 'O' else 'C'
+    with pytest.raises(ValueError):
+        testGraph.update_coordinates(bad_data)
         
 def test_longest_path(sample_data1):
     xyz = next(readXYZ.readXYZ(sample_data1))
