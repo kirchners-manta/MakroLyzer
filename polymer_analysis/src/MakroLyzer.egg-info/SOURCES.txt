@@ -18,6 +18,7 @@ src/MakroLyzer/input_handling/inputHandlingMain.py
 src/MakroLyzer/input_handling/readInput.py
 src/MakroLyzer/input_handling/readLMP.py
 src/MakroLyzer/input_handling/readXYZ.py
+src/MakroLyzer/input_handling/subgraphSelection.py
 src/MakroLyzer/math/Box.py
 src/MakroLyzer/modify_modules/AminoSaturation.py
 src/MakroLyzer/modify_modules/FunctionalizePE.py

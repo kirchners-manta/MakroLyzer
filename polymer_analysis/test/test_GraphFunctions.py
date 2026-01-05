@@ -1,7 +1,7 @@
 import pytest
 
 from MakroLyzer.input_handling import readXYZ
-from MakroLyzer.input_handling import readXYZ
+from MakroLyzer.input_handling import subgraphSelection
 from MakroLyzer import graphs
 
 @pytest.fixture
@@ -453,3 +453,52 @@ def test_functionalize_pe_co():
     assert after_h == before_h - 2
     assert len(o_nodes) == 1
     assert o_nodes[0] in graph.neighbors(1)
+
+
+def test_parse_selection_list():
+    selections = subgraphSelection.parse_selection_list(['C2H6', 'CHO'])
+    assert selections[0]['mode'] == 'exact'
+    assert selections[0]['counts'] == {'C': 2, 'H': 6}
+    assert selections[1]['mode'] == 'elements'
+    assert selections[1]['elements'] == {'C', 'H', 'O'}
+
+
+def test_select_subgraph_nodes():
+    graph = graphs.GraphManager()
+    # Subgraph 1: C2H6
+    graph.add_node(0, element='C')
+    graph.add_node(1, element='C')
+    graph.add_nodes_from([(2, {'element': 'H'}), (3, {'element': 'H'}), (4, {'element': 'H'}),
+                          (5, {'element': 'H'}), (6, {'element': 'H'}), (7, {'element': 'H'})])
+    graph.add_edge(0, 1)
+    for h in [2, 3, 4]:
+        graph.add_edge(0, h)
+    for h in [5, 6, 7]:
+        graph.add_edge(1, h)
+
+    # Subgraph 2: C1H4
+    graph.add_node(8, element='C')
+    graph.add_nodes_from([(9, {'element': 'H'}), (10, {'element': 'H'}),
+                          (11, {'element': 'H'}), (12, {'element': 'H'})])
+    for h in [9, 10, 11, 12]:
+        graph.add_edge(8, h)
+
+    # Subgraph 3: CHO (element-only selection)
+    graph.add_node(13, element='C')
+    graph.add_node(14, element='O')
+    graph.add_node(15, element='H')
+    graph.add_edge(13, 14)
+    graph.add_edge(14, 15)
+
+    # Subgraph 4: N2 (should be excluded)
+    graph.add_node(16, element='N')
+    graph.add_node(17, element='N')
+    graph.add_edge(16, 17)
+
+    selections = subgraphSelection.parse_selection_list(['C2H6', 'C1H4', 'CHO'])
+    selected_nodes = graph.select_subgraph_nodes(selections)
+    assert selected_nodes == set(range(0, 16))
+    
+    # no N in set
+    for n in selected_nodes:
+        assert graph.nodes[n]['element'] != 'N'

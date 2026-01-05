@@ -70,6 +70,11 @@ def readCommandLine() -> dict:
     input_group.add_argument('-bs', '--BoxSize', 
                         help='Box size for periodic boundary conditions. (default: None)',
                         type=float)
+    input_group.add_argument(
+                        '--static-topology',
+                        dest='staticTopology',
+                        action='store_true',
+                        help='Build graph topology only on the first frame and only update coordinates afterwards.')
     
     
     # Structure Analyzers Group # -------------------------------------------------------------------------------
@@ -167,6 +172,17 @@ def readCommandLine() -> dict:
                         nargs='?', const='chemicalFormulas.csv', default=None,
                         help='Get chemical formulas of the polymer.\n'
                         'Optionally provide an output filename (default: chemicalFormulas.csv)')
+
+    analyzer_group.add_argument(
+                        '-sel', '--subgraph-selection',
+                        dest='subgraphSelection',
+                        nargs='+',
+                        default=None,
+                        help='Select subgraphs by exact formula or element set.\n'
+                        'Exact composition: include digits (e.g. C2H6, CH4, C1H4).\n'
+                        'Element set only: no digits (e.g. CHO) -> any counts, only these elements.\n'
+                        'Provide multiple selections separated by space or comma.\n'
+                        'Example: -sel C2H6 C4H10 C1H4 CHO')
     
     
     # Structure Modifiers Group # ------------------------------------------------------------------------------

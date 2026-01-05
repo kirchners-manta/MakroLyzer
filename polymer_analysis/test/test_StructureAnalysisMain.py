@@ -76,3 +76,61 @@ class TestStructureAnalysisMain:
 		# run should be called once per yielded frame
 		assert analyzer_mock.run.call_count == 2
 		analyzer_mock.finalize_output.assert_called()
+
+	def test_main_static_topology_and_selection(self, monkeypatch, tmp_path):
+		xyz_path = str(tmp_path / "traj.xyz")
+		args = {
+			'xyzFile': xyz_path,
+			'lmpFile': None,
+			'nthStep': 1,
+			'BoxSize': None,
+			'orderParameter': None,
+			'staticTopology': True,
+			'subgraphSelection': ['C2H6'],
+		}
+
+		analyzer_mock = Mock()
+		analyzer_mock.initialize_output = Mock()
+		analyzer_mock.run = Mock()
+		analyzer_mock.finalize_output = Mock()
+
+		def factory(a, **ctx):
+			return analyzer_mock
+
+		monkeypatch.setattr(structureAnalysisMain, 'ANALYZERS_REGISTRATION', {'test_analyzer': factory})
+
+		def fake_read(path):
+			yield 'frame1'
+			yield 'frame2'
+
+		monkeypatch.setattr('MakroLyzer.structure_modules.structureAnalysisMain.readXYZ.readXYZ', lambda p: fake_read(p))
+		monkeypatch.setattr('MakroLyzer.structure_modules.structureAnalysisMain.estimateFrames.EstimateFrames.estimateFramesXYZ', lambda p: 2)
+
+		class FakeGraphManager:
+			created = []
+
+			def __init__(self, data=None, boxSize=None):
+				self.data = data
+				self.boxSize = boxSize
+				self.update_calls = 0
+				self.select_calls = 0
+				FakeGraphManager.created.append(self)
+
+			def update_coordinates(self, frame, boxSize=None):
+				self.update_calls += 1
+
+			def select_subgraph_nodes(self, selections):
+				self.select_calls += 1
+				return {0}
+
+			def subgraph(self, nodes):
+				return {'nodes': nodes}
+
+		monkeypatch.setattr('MakroLyzer.structure_modules.structureAnalysisMain.graphs.GraphManager', FakeGraphManager)
+
+		structureAnalysisMain.main(args)
+
+		base_graph = FakeGraphManager.created[0]
+		assert base_graph.update_calls == 1
+		assert base_graph.select_calls == 1
+		assert analyzer_mock.run.call_count == 2

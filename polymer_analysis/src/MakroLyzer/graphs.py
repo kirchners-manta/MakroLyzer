@@ -1,10 +1,7 @@
+import numpy as np
 import networkx as nx
 from scipy.spatial import cKDTree
-import numpy as np
-from IPython.display import display
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
-import csv
 from collections import defaultdict
 
 from MakroLyzer import dictionaries
@@ -145,7 +142,6 @@ class GraphManager(nx.Graph):
         ], axis=0)
         return nodes, coords
     
-
     def remove_1order(self):
         """
         Remove 1-order nodes from the graph.
@@ -191,7 +187,6 @@ class GraphManager(nx.Graph):
         com /= total_mass
         return com           
     
-    
     def surrounding(self):
         """
         Find the surrounding atoms of the graph.
@@ -230,6 +225,31 @@ class GraphManager(nx.Graph):
             subgraphs.append(subgraph)
         return subgraphs
     
+    def select_subgraph_nodes(self, selections):
+        """
+        Select nodes from subgraphs matching any selection.
+
+        Args:
+            selections (list[dict]): Output from parse_selection_list.
+
+        Returns:
+            set: Node indices that belong to matching subgraphs.
+        """    
+        if not selections:
+            return set(self.nodes)
+        
+        # Get the chemical formula of the subgraph and check if it matches one of the 
+        # provided user selections
+        selected_nodes = set()
+        for subgraph in self.get_subgraphs():
+            counts = {}
+            for node in subgraph.nodes:
+                element = subgraph.nodes[node]['element']
+                counts[element] = counts.get(element, 0) + 1
+            elements = set(counts.keys())
+            if any(_selection_matches(counts, elements, sel) for sel in selections):
+                selected_nodes.update(subgraph.nodes)
+        return selected_nodes
     
     def find_longest_path(self, startAtom=None):
         """
@@ -288,7 +308,6 @@ class GraphManager(nx.Graph):
                    
         return longest
     
-    
     def distance(self, node1, node2):
         """
         Calculate the distance between two nodes in the graph.
@@ -344,7 +363,6 @@ class GraphManager(nx.Graph):
             dihedral = np.abs(np.degrees(dihedral))
 
         return dihedral
-    
     
     def get_hbonds(self, Acceptor, HAcceptor_dist, DonorAcceptor_dist, Angle_cut):
         H_type = "H"
@@ -846,30 +864,6 @@ class GraphManager(nx.Graph):
                             subf.write(line)
 
 
-
-    def write_fragment_data_to_csv(self, file):
-        """
-        Write the fragment data to a CSV file.
-
-        Args:
-            filename (str): The name of the output CSV file.
-        """
-        with open(file, 'w', newline='') as csvfile:
-            writer = csv.writer(csvfile, delimiter=';')
-            writer.writerow(['Index', 'Element', 'X', 'Y', 'Z', 'FragmentID'])
-
-            for node in self.nodes:
-                data = self.nodes[node]
-                writer.writerow([
-                    data['index'],
-                    data['element'],
-                    data['x'],
-                    data['y'],
-                    data['z'],
-                    data['fragmentID']
-                ])
-
-
     def AminoAcidBackbone(self):
         """
         Find the backbone atoms of an amino acid.
@@ -1012,6 +1006,11 @@ class GraphManager(nx.Graph):
 
         return backbone
 
+def _selection_matches(counts, elements, selection):
+    if selection["mode"] == "exact":
+        return counts == selection["counts"]
+    if selection["mode"] == "elements":
+        return elements == selection["elements"]
 
 def min_image_distance(pos1, pos2, boxSize) -> tuple:
     """
@@ -1029,8 +1028,6 @@ def min_image_distance(pos1, pos2, boxSize) -> tuple:
     delta = pos1 - pos2
     delta -= np.round(delta / boxSize) * boxSize
     return delta[0], delta[1], delta[2]
-
-
 
 def shift_coordinates(coords: np.ndarray, box_size):
     """
