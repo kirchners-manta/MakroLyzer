@@ -206,7 +206,7 @@ def readCommandLine() -> dict:
                         dest='patternFile',
                         help='Assigns specific pattern IDs to fragments based on predefined patterns.\n'
                         'Required argument: Path to the TXT file containing the patterns in list of lists format.\n'
-                        'Example pattern file content: [[C,C,C],[C,C,O]]')
+                        'Example pattern file content: [[‘O_CC’, ‘C_CO’, ‘C_CO’], [‘C_CC, ‘C_CC’]]')
 
     modifier_group.add_argument(
                         '-pID-file', '--patternID-file',
