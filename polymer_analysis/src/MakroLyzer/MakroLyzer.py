@@ -1,24 +1,23 @@
 import sys
-from IPython.display import display
 
 from MakroLyzer.input_handling import inputHandlingMain
-from MakroLyzer.structure_modules import graphs
-from MakroLyzer.structure_modules import structureMain
-from MakroLyzer.output_handling import outputHandlingMain
-
+from MakroLyzer.structure_modules import structureAnalysisMain
+from MakroLyzer.modify_modules import structureModificationMain
 
 def main():
     """
-    Main function to run the PolyLyzer program.
+    Main function to run the MakroLyzer program.
     """
     # Get command line arguments and xyz data
-    args = inputHandlingMain.main(sys.argv)
+    analyzer, modifier,args = inputHandlingMain.main(sys.argv)
+        
+    # Call the structure analysis of the polymer structure
+    if analyzer:
+        structureAnalysisMain.main(args)
     
-    # Call the main analysis of the polymer structure
-    results = structureMain.main(args)
-    # Call the output handling module to save results
-    outputHandlingMain.main(results)
-
+    # Call the modify modules 
+    if modifier:
+        structureModificationMain.main(args)
     
 if __name__ == "__main__":
     main()

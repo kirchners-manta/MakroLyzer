@@ -1,20 +1,18 @@
+import numpy as np
 import networkx as nx
 from scipy.spatial import cKDTree
-import numpy as np
-from IPython.display import display
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
-import csv
 from collections import defaultdict
 
 from MakroLyzer import dictionaries
 
 class GraphManager(nx.Graph):
-    def __init__(self, data=None, boxSize=None, **kwargs):
+    def __init__(self, data=None, boxSize=None, vib_factor=None, **kwargs):
         """
         Args:
             data : elements together with their coordinates.
             boxSize : optional, size of the box for periodic boundary conditions.
+            vib_factor : optional, factor to scale bond distance cutoff.
             **kwargs : additional keyword arguments for graph initialization.
         """
         
@@ -33,13 +31,15 @@ class GraphManager(nx.Graph):
             self.add_edges_from(data.edges(data=True))
         else:
             # Handle other types of data, such as initialization from raw data
-            kwargs = {}
+            create_kwargs = {}
             if boxSize is not None:
-                kwargs['boxSize'] = boxSize
-            self.create_graph(data, **kwargs)
+                create_kwargs['boxSize'] = boxSize
+            if vib_factor is not None:
+                create_kwargs['vib_factor'] = vib_factor
+            self.create_graph(data, **create_kwargs)
 
     
-    def create_graph(self, atomData, boxSize=None):
+    def create_graph(self, atomData, boxSize=None, vib_factor=1.15):
         exception = False
         
         covalentRadii = dictionaries.dictCovalent()
@@ -70,7 +70,7 @@ class GraphManager(nx.Graph):
         maxd2 = np.zeros((M, M), dtype=float)
         for i, e1 in enumerate(unique_elems):
             for j, e2 in enumerate(unique_elems):
-                d = (covalentRadii[e1] + covalentRadii[e2]) * 1.15
+                d = (covalentRadii[e1] + covalentRadii[e2]) * vib_factor
                 maxd2[i, j] = d * d
 
         # Build KD-tree 
@@ -145,7 +145,32 @@ class GraphManager(nx.Graph):
         ], axis=0)
         return nodes, coords
     
+    def update_coordinates(self, atomData, boxSize=None):
+        """
+        Update node coordinates without rebuilding topology.
 
+        Args:
+            atomData: DataFrame with columns ['atom','x','y','z'] and same ordering.
+            boxSize: Optional box size for periodic boundary conditions.
+        """
+        elements = atomData['atom'].values
+        coords = atomData[['x', 'y', 'z']].values
+
+        if len(coords) != self.number_of_nodes():
+            raise ValueError("Number of atoms does not match graph topology.")
+
+        if boxSize is not None:
+            coords = np.mod(coords, boxSize)
+            coords = shift_coordinates(coords, boxSize)
+
+        for idx in range(len(coords)):
+            if self.nodes[idx]['element'] != elements[idx]:
+                raise ValueError("Element ordering does not match graph topology.")
+            self.nodes[idx]['x'] = coords[idx, 0]
+            self.nodes[idx]['y'] = coords[idx, 1]
+            self.nodes[idx]['z'] = coords[idx, 2]
+        return self
+    
     def remove_1order(self):
         """
         Remove 1-order nodes from the graph.
@@ -191,7 +216,6 @@ class GraphManager(nx.Graph):
         com /= total_mass
         return com           
     
-    
     def surrounding(self):
         """
         Find the surrounding atoms of the graph.
@@ -230,6 +254,31 @@ class GraphManager(nx.Graph):
             subgraphs.append(subgraph)
         return subgraphs
     
+    def select_subgraph_nodes(self, selections):
+        """
+        Select nodes from subgraphs matching any selection.
+
+        Args:
+            selections (list[dict]): Output from parse_selection_list.
+
+        Returns:
+            set: Node indices that belong to matching subgraphs.
+        """    
+        if not selections:
+            return set(self.nodes)
+        
+        # Get the chemical formula of the subgraph and check if it matches one of the 
+        # provided user selections
+        selected_nodes = set()
+        for subgraph in self.get_subgraphs():
+            counts = {}
+            for node in subgraph.nodes:
+                element = subgraph.nodes[node]['element']
+                counts[element] = counts.get(element, 0) + 1
+            elements = set(counts.keys())
+            if any(_selection_matches(counts, elements, sel) for sel in selections):
+                selected_nodes.update(subgraph.nodes)
+        return selected_nodes
     
     def find_longest_path(self, startAtom=None):
         """
@@ -288,7 +337,6 @@ class GraphManager(nx.Graph):
                    
         return longest
     
-    
     def distance(self, node1, node2):
         """
         Calculate the distance between two nodes in the graph.
@@ -344,7 +392,6 @@ class GraphManager(nx.Graph):
             dihedral = np.abs(np.degrees(dihedral))
 
         return dihedral
-    
     
     def get_hbonds(self, Acceptor, HAcceptor_dist, DonorAcceptor_dist, Angle_cut):
         H_type = "H"
@@ -611,7 +658,8 @@ class GraphManager(nx.Graph):
         
         # Add the new oxygen atom
         new_index = max(self.nodes) + 1
-        self.add_node(new_index, index=new_index, element='OH_T', x=coords_OH[0], y=coords_OH[1], z=coords_OH[2])
+        #self.add_node(new_index, index=new_index, element='OH_T', x=coords_OH[0], y=coords_OH[1], z=coords_OH[2])
+        self.add_node(new_index, index=new_index, element='O', x=coords_OH[0], y=coords_OH[1], z=coords_OH[2])
         self.add_edge(node, new_index)
         
         # calculate the coordinates of the new H atom
@@ -621,7 +669,8 @@ class GraphManager(nx.Graph):
         
         # Add the new hydrogen atom
         new_index = max(self.nodes) + 1
-        self.add_node(new_index, index=new_index, element='HO_T', x=coords_[0], y=coords_[1], z=coords_[2])
+        #self.add_node(new_index, index=new_index, element='HO_T', x=coords_[0], y=coords_[1], z=coords_[2])
+        self.add_node(new_index, index=new_index, element='H', x=coords_[0], y=coords_[1], z=coords_[2])
         self.add_edge(new_index, new_index - 1)
         
     def add_H_to_amide(self, node):
@@ -675,7 +724,8 @@ class GraphManager(nx.Graph):
         self.nodes[neighbor_H]['z'] = coords_new_H1[2]
         # Add the new hydrogen atom
         new_index = max(self.nodes) + 1
-        self.add_node(new_index, index=new_index, element='HN_T2', x=coords_new_H2[0], y=coords_new_H2[1], z=coords_new_H2[2])
+        #self.add_node(new_index, index=new_index, element='HN_T2', x=coords_new_H2[0], y=coords_new_H2[1], z=coords_new_H2[2])
+        self.add_node(new_index, index=new_index, element='H', x=coords_new_H2[0], y=coords_new_H2[1], z=coords_new_H2[2])
         self.add_edge(node, new_index)
         
         #if np.linalg.norm(coords_new_H1 - neighbor_H) > 0.8:
@@ -689,6 +739,67 @@ class GraphManager(nx.Graph):
         #else:
         #    raise ValueError("No new H atom can be added to the amide nitrogen.")
         
+    def functionalizePE(self, percentage, func_type):
+        """
+        Functionalize polyethylene (PE) features.
+
+        Args:
+            percentage (int): 0 <= percentage <= 100, percentage of PE units to be functionalized.
+            func_type (str): The type of functionalization (only 'CO' so far).
+        """
+        if func_type not in ['CO']:
+            raise ValueError("func_type must be 'CO'.")
+        
+        # Find all C atoms in the graph
+        C_nodes = [node for node in self.nodes if self.nodes[node]['element'] == 'C']
+        
+        # Remove those with only one C-neighbor (chain ends)
+        C_nodes = [node for node in C_nodes if sum(1 for neighbor in self.neighbors(node) if self.nodes[neighbor]['element'] == 'C') > 1]
+        
+        # Determine the number of C atoms to functionalize
+        num_to_functionalize = int(len(C_nodes) * (percentage / 100.0))
+        
+        # Randomly select C atoms to functionalize
+        np.random.shuffle(C_nodes)
+        selected_C_nodes = C_nodes[:num_to_functionalize]
+        
+        # For each selected C atom, add the functional group
+        for node in selected_C_nodes:
+            if func_type == 'CO':
+                self.add_CO_to_PE(node)
+                
+    def add_CO_to_PE(self, node):
+        """
+        Add CO functional group to a polyethylene (PE) carbon atom.
+
+        Args:
+            node (int): The index of the carbon atom to functionalize.
+        """
+        # Get H atom neighbors
+        H_neighbors = [neighbor for neighbor in self.neighbors(node) if self.nodes[neighbor]['element'] == 'H']
+        if len(H_neighbors) < 1:
+            raise ValueError("PE carbon must have at least one H neighbor to functionalize.")
+        
+        # Get midpoint of H atoms
+        H_coords = np.array([self.get_coordinates(neighbor) for neighbor in H_neighbors])
+        midpoint = np.mean(H_coords, axis=0)
+        
+        # Get C-midpoint vector and stretch it to 1.23 Å (C=O bond length)
+        C_coords = self.get_coordinates(node)
+        # remove H atoms
+        for H_node in H_neighbors:
+            self.remove_node(H_node)
+        CO_vector = midpoint - C_coords
+        CO_vector /= np.linalg.norm(CO_vector)
+        CO_vector *= 1.23 
+        # Calculate new O atom coordinates
+        O_coords = C_coords + CO_vector
+        
+        # Add the new oxygen atom and remove one H atoms
+        new_index = max(self.nodes) + 1
+        self.add_node(new_index, index=new_index, element='O', x=O_coords[0], y=O_coords[1], z=O_coords[2])
+        self.add_edge(node, new_index)
+
     def get_chemicalFormulas(self):
         """
         Get the chemical formulas of the polymers.
@@ -780,30 +891,6 @@ class GraphManager(nx.Graph):
                         f.write(line)
                         if exception:
                             subf.write(line)
-
-
-
-    def write_fragment_data_to_csv(self, file):
-        """
-        Write the fragment data to a CSV file.
-
-        Args:
-            filename (str): The name of the output CSV file.
-        """
-        with open(file, 'w', newline='') as csvfile:
-            writer = csv.writer(csvfile, delimiter=';')
-            writer.writerow(['Index', 'Element', 'X', 'Y', 'Z', 'FragmentID'])
-
-            for node in self.nodes:
-                data = self.nodes[node]
-                writer.writerow([
-                    data['index'],
-                    data['element'],
-                    data['x'],
-                    data['y'],
-                    data['z'],
-                    data['fragmentID']
-                ])
 
 
     def AminoAcidBackbone(self):
@@ -948,6 +1035,11 @@ class GraphManager(nx.Graph):
 
         return backbone
 
+def _selection_matches(counts, elements, selection):
+    if selection["mode"] == "exact":
+        return counts == selection["counts"]
+    if selection["mode"] == "elements":
+        return elements == selection["elements"]
 
 def min_image_distance(pos1, pos2, boxSize) -> tuple:
     """
@@ -965,8 +1057,6 @@ def min_image_distance(pos1, pos2, boxSize) -> tuple:
     delta = pos1 - pos2
     delta -= np.round(delta / boxSize) * boxSize
     return delta[0], delta[1], delta[2]
-
-
 
 def shift_coordinates(coords: np.ndarray, box_size):
     """

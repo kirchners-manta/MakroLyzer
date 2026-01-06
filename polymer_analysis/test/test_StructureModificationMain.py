@@ -1,0 +1,129 @@
+import tempfile
+from pathlib import Path
+from unittest.mock import Mock
+
+import pytest
+
+from MakroLyzer.modify_modules import modifier_registry
+from MakroLyzer.modify_modules import structureModificationMain
+from MakroLyzer.modify_modules.SubgraphPrint import SubgraphPrintModifier
+
+
+class TestModifierRegistry:
+    def test_create_subgraph_print_none_and_instance(self, tmp_path):
+        # No flag -> factory returns None
+        args = {}
+        assert modifier_registry.create_subgraph_print(args) is None
+
+        # With flag -> returns SubgraphPrintModifier instance
+        temp_file = tmp_path / "Subgraph.xyz"
+        args = {"subgraph_coords": True}
+        instance = modifier_registry.create_subgraph_print(args)
+        assert isinstance(instance, SubgraphPrintModifier)
+
+
+class TestStructureModificationMain:
+    def test_main_uses_registry_and_runs_modifiers(self, monkeypatch, tmp_path):
+        # Prepare args expected by structureModificationMain
+        xyz_path = str(tmp_path / "traj.xyz")
+
+        args = {
+            'xyzFile': xyz_path,
+            'lmpFile': None,
+            'nthStep': 1,
+            'BoxSize': None,
+            # enable a test modifier flag used in the patched registry
+            'test_flag': True,
+        }
+
+        # Create a mock modifier with initialize_output and run
+        modifier_mock = Mock()
+        modifier_mock.initialize_output = Mock()
+        modifier_mock.run = Mock()
+
+        # Factory returns our mock modifier
+        def factory(a, **ctx):
+            return modifier_mock
+
+        # Patch the registry used by structureModificationMain to only contain our factory
+        monkeypatch.setattr(structureModificationMain, 'MODIFIERS_REGISTRATION', {'test_modifier': factory})
+
+        # Patch readXYZ and estimateFrames to yield two frames
+        def fake_read(path):
+            yield 'frame1'
+            yield 'frame2'
+
+        monkeypatch.setattr(structureModificationMain, 'read', None, raising=False)
+        monkeypatch.setattr('MakroLyzer.modify_modules.structureModificationMain.readXYZ.readXYZ', lambda p: fake_read(p))
+        monkeypatch.setattr('MakroLyzer.modify_modules.structureModificationMain.estimateFrames.EstimateFrames.estimateFramesXYZ', lambda p: 2)
+
+        # Patch GraphManager to accept the frame and return a dummy graph
+        monkeypatch.setattr(
+            'MakroLyzer.modify_modules.structureModificationMain.graphs.GraphManager',
+            lambda frame, boxSize=None, vib_factor=None: Mock(),
+        )
+
+        # Run main
+        structureModificationMain.main(args)
+
+        # validate factory produced modifier and lifecycle methods were called
+        modifier_mock.initialize_output.assert_called()
+        # run should be called once per yielded frame
+        assert modifier_mock.run.call_count == 2
+
+    def test_main_static_topology_and_selection(self, monkeypatch, tmp_path):
+        xyz_path = str(tmp_path / "traj.xyz")
+        args = {
+            'xyzFile': xyz_path,
+            'lmpFile': None,
+            'nthStep': 1,
+            'BoxSize': None,
+            'staticTopology': True,
+            'subgraphSelection': ['C2H6'],
+        }
+
+        modifier_mock = Mock()
+        modifier_mock.initialize_output = Mock()
+        modifier_mock.run = Mock()
+
+        def factory(a, **ctx):
+            return modifier_mock
+
+        monkeypatch.setattr(structureModificationMain, 'MODIFIERS_REGISTRATION', {'test_modifier': factory})
+
+        def fake_read(path):
+            yield 'frame1'
+            yield 'frame2'
+
+        monkeypatch.setattr('MakroLyzer.modify_modules.structureModificationMain.readXYZ.readXYZ', lambda p: fake_read(p))
+        monkeypatch.setattr('MakroLyzer.modify_modules.structureModificationMain.estimateFrames.EstimateFrames.estimateFramesXYZ', lambda p: 2)
+
+        class FakeGraphManager:
+            created = []
+
+            def __init__(self, data=None, boxSize=None, vib_factor=None):
+                self.data = data
+                self.boxSize = boxSize
+                self.vib_factor = vib_factor
+                self.update_calls = 0
+                self.select_calls = 0
+                FakeGraphManager.created.append(self)
+
+            def update_coordinates(self, frame, boxSize=None):
+                self.update_calls += 1
+
+            def select_subgraph_nodes(self, selections):
+                self.select_calls += 1
+                return {0}
+
+            def subgraph(self, nodes):
+                return {'nodes': nodes}
+
+        monkeypatch.setattr('MakroLyzer.modify_modules.structureModificationMain.graphs.GraphManager', FakeGraphManager)
+
+        structureModificationMain.main(args)
+
+        base_graph = FakeGraphManager.created[0]
+        assert base_graph.update_calls == 1
+        assert base_graph.select_calls == 1
+        assert modifier_mock.run.call_count == 2
