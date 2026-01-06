@@ -1,9 +1,11 @@
-# Macromolecule Analyzer
+# MaKroLyzer
+MakroLyzer is a graph based python tool for analyzing and modifying makromolecular structures of natural or synthetic origin, such as peptides or nanoplastics. 
+See our [manual](https://makrolyzer.readthedocs.io/en/latest/index.html) and our [publication](https://pubs.acs.org/doi/10.1021/acs.jpcb.5c06175) for more information.
 
-See the documentation at [online documentation](https://makrolyzer.readthedocs.io/en/latest/index.html) for more information.
+![MakroLyzer Logo](docs/source/figures/MakroLyzer.png)
 
 ## Installation
-Change to the directory "polymer_analysis" and run the following command to install the package:
+Clone the MakroLyzer repository from GitHub, change to the directory "polymer_analysis" and run the following command to install the package:
 
 ```bash
 pip install .
@@ -19,13 +21,5 @@ MakroLyzer
 For more information on how to use the program, type:
 
 ```bash
-MakroLyzer --h
-```
-
-
-## Run Tests
-To run the tests, you can use the following command:
-
-```bash
-pytest tests/
+MakroLyzer -h
 ```

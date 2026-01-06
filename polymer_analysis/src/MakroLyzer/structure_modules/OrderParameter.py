@@ -35,7 +35,7 @@ class OrderParameterAnalyzer(StructureAnalyzer):
     a given molecule, and N is the number of molecules.
     Q and Q' share the same eigenvalues, so we can calculate S* from the largest eigenvalue of Q'.
     S and S* differ only for negative values for S.
-    S* ∈ [-0.5,1], while S* ∈ [0,1]. 
+    S ∈ [-0.5,1], while S* ∈ [0,1]. 
     
     A value of S* = 1 indicates perfect alignment of all molecules along a common direction, while
     S* = 0 indicates isotropic orientation.

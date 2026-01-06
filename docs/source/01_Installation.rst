@@ -1,17 +1,15 @@
 Installation
 =================
 
-Requirements
--------------
-- `Git <https://git-scm.com/docs/user-manual>`_ 
-
-To install MakroLyzer, clone the repository to your local machine:
+The only requirement to install MakroLyzer is `Git <https://git-scm.com/docs/user-manual>`_.
+To install MakroLyzer, first clone the repository to your local machine:
 
 .. code-block:: bash
 
    # SSH 
    git clone git@github.com:kirchners-manta/MakroLyzer.git
-   # HTTPS (recommended if you don't have SSH keys set up)
+
+   # HTTPS 
    git clone https://github.com/kirchners-manta/MakroLyzer.git
 
 
@@ -30,7 +28,7 @@ Why use a virtual environment?
 - Keeps your global Python environment clean
 
 
-Set up with ``conda``
+Set up with conda
 ---------------------
 Conda is a package and environment manager.
 
@@ -38,6 +36,7 @@ Conda is a package and environment manager.
 
    conda create -n makrolyzer python=3.12
    conda activate makrolyzer
+
    # If you prefer conda-forge:
    conda create -n makrolyzer -c conda-forge python=3.12
 
@@ -46,15 +45,17 @@ Conda is a package and environment manager.
 A user guide for conda can be found `here <https://docs.conda.io/projects/conda/en/stable/user-guide/getting-started.html>`_.
 
    
-Set up with ``venv``
+Set up with venv
 --------------------
-``venv`` is built into Python and creates lightweight virtual environments.
+Venv is built into Python and creates lightweight virtual environments.
 
 .. code-block:: bash
 
    python3 -m venv makrolyzer-env
+
    # macOS/Linux
    source makrolyzer-env/bin/activate
+   
    # Windows (PowerShell)
    .\makrolyzer-env\Scripts\Activate.ps1
 

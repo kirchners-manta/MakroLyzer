@@ -1,0 +1,28 @@
+End-to-End Distance
+===================
+
+.. figure:: ../figures/structureAnalysis/07e2e.png
+   :width: 250
+   :align: center
+
+The end-to-end distance measures the distance between the first and last backbone
+atoms of each connected subgraph (after removing 1-order nodes).
+
+Command line
+------------
+.. line-block::
+  ``-e2e``
+  ``--endToEndDistance``
+      Calculate end-to-end distances. Optionally provide an output filename.
+      *Default: endToEndDistances.csv*
+
+Example
+^^^^^^^
+.. code-block:: bash
+
+   MakroLyzer -xyz polymer.xyz -e2e
+
+Output
+------
+Each row starts with the frame index followed by one distance per subgraph. 
+The number of distance columns depends on the number of connected subgraphs.
