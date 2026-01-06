@@ -227,7 +227,8 @@ def readCommandLine() -> dict:
     modifier_group.add_argument(
                     '-sub', '--subgraph-coords',
                     nargs='?', const='subgraphCoordinates.xyz', default=None,
-                    help='Get subgraph-coordinates; optionally provide output filename (default: subgraphCoordinates.xyz)')
+                    help='Get subgraph-coordinates.\n'
+                    'Optionally provide an output filename (default: subgraphCoordinates.xyz)')
 
     
     args = vars(parser.parse_args())
