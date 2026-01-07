@@ -1,5 +1,5 @@
-Chemical Formulas
-=================
+Chemical Formulas [1]_
+======================
 
 This analyzer reports the chemical formulas of all connected subgraphs and their counts per frame. 
 Element symbols are sorted alphabetically in each formula.
@@ -28,3 +28,6 @@ The output file contains one row per formula and frame:
      - Formula string (e.g. C6H12O6)
    * - Count
      - Number of subgraphs with this formula
+
+.. [1]  Drysch, K.; Dawer, Y.; Zaby, P.; Buchmüller, K.; Dick, L.; Mutzel, P.; Hollóczki, O.; Kirchner, B. MakroLyzer: A Graph-Based Software to Comb through Molecular Hairballs Using the Example of Nanoplastics. J. Phys. Chem. B 2025
+       DOI: 10.1021/acs.jpcb.5c06175

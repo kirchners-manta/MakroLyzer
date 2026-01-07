@@ -1,4 +1,4 @@
-General Input Parameters
+General Input Parameters [1]_
 ===========================
 
 To run MakroLyzer, a structure file either in **XYZ** or **LAMMPS** format is required. 
@@ -37,20 +37,20 @@ In case the user does not want to analyze the structure at each frame, the ``-nt
 Backbone determination
 ======================
 For some structure analysis, such as dihedral angle calculation along the backbone of a macromolecule, the backbone of each connected subgraph needs to be determined.
-The backbone is determined by MakroLyzer in two distinct ways, depending on whether the specific polymer is a chain or forms a cycle. 
+It is determined by MakroLyzer in two distinct ways, depending on whether the specific polymer is a chain or forms a cycle. 
 When the subgraph is a chain, the backbone is determined by first removing all nodes with a degree equal to one, i.e., the atoms with a single covalent bond. 
 These nodes are typically hydrogen atoms or double-bonded oxygen atoms and are not considered part of the backbone by definition. 
 Then, depth-first searches are conducted starting at atoms that now have a degree of one to identify the longest path, which corresponds to the backbone of the polymer strand. 
 When the strand forms a cycle, the Paton algorithm for finding a fundamental set of cycles within a graph is applied, as implemented in the NetworkX Python package. 
 The program automatically identifies whether a strand is a cycle or a chain. 
-Therefore, users do not need to provide this detail. 
+Therefore, users do not need to provide this detail. [3]_
 
 .. note::
   For more complex cases like cross-linked or branched polymers, MakroLyzer cannot currently determine the "correct" backbone.
 
 Atom Parameters
 ===========================
-The following table lists all element types currently available in MakroLyzer, along with their atomic mass, van der Waals (vdW) radius [1], and covalent radius [2].
+The following table lists all element types currently available in MakroLyzer, along with their atomic mass, van der Waals (vdW) radius [1]_, and covalent radius [2]_.
 
 .. list-table::
    :widths: 25 25 25 25
@@ -135,3 +135,5 @@ The following table lists all element types currently available in MakroLyzer, a
        DOI: doi.org/10.1021/j100785a001
 .. [2] B. Cordero, V. Gómez, A. Platero-Prats, M. Revés, J. Echeverría, E. Cremades, F. Barragán, S. Alvarez, Covalent radii revisited, Journal of the Chemical Society. Dalton Transactions (2008), 2832–2838
        DOI: doi.org/10.1039/b801115j
+.. [3]  Drysch, K.; Dawer, Y.; Zaby, P.; Buchmüller, K.; Dick, L.; Mutzel, P.; Hollóczki, O.; Kirchner, B. MakroLyzer: A Graph-Based Software to Comb through Molecular Hairballs Using the Example of Nanoplastics. J. Phys. Chem. B 2025
+       DOI: 10.1021/acs.jpcb.5c06175

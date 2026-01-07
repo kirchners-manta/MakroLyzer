@@ -1,5 +1,5 @@
-Connected Substructures
-=======================
+Connected Substructures [1]_
+============================
 
 This analyzer counts the number of connected subgraphs (molecules) and classifies each as a chain or ring. 
 A subgraph is considered a chain if its backbone has free ends after removing 1-order nodes, otherwise it is classified as a ring.
@@ -36,3 +36,6 @@ The output file contains one row per frame:
      - Number of chain subgraphs
    * - Ring count
      - Number of ring subgraphs
+
+.. [1]  Drysch, K.; Dawer, Y.; Zaby, P.; Buchmüller, K.; Dick, L.; Mutzel, P.; Hollóczki, O.; Kirchner, B. MakroLyzer: A Graph-Based Software to Comb through Molecular Hairballs Using the Example of Nanoplastics. J. Phys. Chem. B 2025
+       DOI: 10.1021/acs.jpcb.5c06175

@@ -1,5 +1,6 @@
-Ramachandran Matrix
-===================
+Ramachandran Matrix [1]_
+========================
+
 The Ramachandran matrix tabulates backbone :math:`\varphi` and :math:`\psi` dihedral angles for amino-acid and alternative amino-acid backbones, which are defined by the four consecutive backbone atoms :math:`N-C_\alpha-C-N`.
 
 .. figure:: ../figures/structureAnalysis/08ramachandran-explain.png
@@ -41,3 +42,5 @@ Output
 Each frame is written as a separate matrix file named ``<base>_frame<idx>.csv``.
 Each file is a 360x360 CSV matrix where rows are :math:`\phi` (0-359) and columns are :math:`\psi` (0-359).
 
+.. [1]  Drysch, K.; Dawer, Y.; Zaby, P.; Buchmüller, K.; Dick, L.; Mutzel, P.; Hollóczki, O.; Kirchner, B. MakroLyzer: A Graph-Based Software to Comb through Molecular Hairballs Using the Example of Nanoplastics. J. Phys. Chem. B 2025
+       DOI: 10.1021/acs.jpcb.5c06175
