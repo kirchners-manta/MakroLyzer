@@ -36,13 +36,11 @@ def main(args):
     vib_factor = args.get('vibFactor', None)
         
             
-    # Get selections about static-topology and subgraph selection 
+    # Get selections about subgraph selection 
     #################################################################################################
-    static_topology =args.get('staticTopology', False)
     selection_raw = args.get('subgraphSelection')
     selection_sorted = subgraphSelection.parse_selection_list(selection_raw)
     
-    base_graph = None
     selected_nodes = None
     
 
@@ -67,49 +65,14 @@ def main(args):
         if i % nthStep != 0:
             continue
          
-        # The base_graph contains all atoms as nodes that we read from the specific file, 
-        # not only the user selection.
-        if base_graph is None or not static_topology:
-            # We dont have a base_graph OR the user does not want a static-topology analyis
-            # The if statement is only False if base_graph is not None and static_topology is True 
-            # (skipped when: We already have a base graph and we want static_topology)
-            # -> We need to (re)build the graph
-            boxGraph = graphs.GraphManager(xyz_frame, boxSize=boxSize, vib_factor=vib_factor)
+        boxGraph = graphs.GraphManager(xyz_frame, boxSize=boxSize, vib_factor=vib_factor)
             
-            if static_topology:
-                # The user wants a static-topology analyis
-                # We only arive here if we didn't have a base_graph before
-                # -> We save the generated graph as base_graph
-                base_graph = boxGraph
-                
-                if selection_sorted:
-                    # The used additionally selected specific subgraphs
-                    # We only arive here if we didn't have a base_graph before and the user wants static_topology
-                    # -> We need to select the nodes in the graph
-                    selected_nodes = boxGraph.select_subgraph_nodes(selection_sorted)
-                    
-        else:
-            # We already have a base graph and we want static_topology
-            # -> we reuse the base_graph from the iteration before and update the coordinates
-            boxGraph = base_graph
-            boxGraph.update_coordinates(xyz_frame, boxSize=boxSize)
-            
-        # -> Now we select the graph to perform the analysis with
-        graph_for_analysis = boxGraph
-        
         if selection_sorted:
-            # If the user selected specific subgraphs, we need to adjust the graph_for_analysis
-            
-            if selected_nodes is None or not static_topology:
-                # The nodes are not selected yet, or they are selected, but the user does not want a static topology
-                # (skipped when: The nodes are selected and the user wants static topology analysis)
-                selected_nodes = boxGraph.select_subgraph_nodes(selection_sorted)
-
-            # -> We need to update the graph_for_analyis 
-            # We only analyze the selected subgraphs (They are all contained in boxGraph.subgraph(selected_nodes))
+            selected_nodes = boxGraph.select_subgraph_nodes(selection_sorted)
             graph_for_analysis = graphs.GraphManager(boxGraph.subgraph(selected_nodes))
+            boxGraph = graph_for_analysis
         
         # Run all registered analyzers for this frame with the graph_for_analyis
         for modifier in modifiers.values():
-            modifier.run(graph_for_analysis, i)
+            modifier.run(boxGraph, i)
     ##########################################################################################################################################

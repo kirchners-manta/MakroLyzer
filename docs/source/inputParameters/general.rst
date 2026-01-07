@@ -25,7 +25,7 @@ Additionally, the user can decide whether the analysis should be performed with 
 The static topology option is useful for analysis of structures where bonds do not change over time.
 
 .. note::
-    The ``--static-topology`` is not recommended for the modification functionalities of MakroLyzer!
+    The ``--static-topology`` is not possible for the modification functionalities of MakroLyzer! The keyword will be ignored if provided. If structure modification and structure analysis methods are requested by the user and the ``--static-topology`` keyword is given, the structure analysis are performed with static topology while the structure modification are performed with dynamic topology.
 
 If only specific molecules of the structure should be considered during the analysis or modification, the user can select them using the ``-sel`` flag followed by a selection string.
 Molecules can either be selected by exact formula or an element set. An exact composition includes digits (e.g. C2H6, CH4, C1H4), while an element set only contains element symbols without digits (e.g. CHO, CNH).
@@ -33,6 +33,8 @@ The first selection would select all molecules with exactly 2 carbon and 6 hydro
 Multiple selections can be provided separated by space (e.g. ``-sel C2H6 CH4 CHO``).
 
 In case the user does not want to analyze the structure at each frame, the ``-nth`` flag can be used, followed by an integer number to analyze every n-th frame of the trajectory.
+
+In one MakroLyzer run, as many methods as desired can be called. 
 
 Backbone determination
 ======================

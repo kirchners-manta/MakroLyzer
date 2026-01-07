@@ -123,7 +123,8 @@ class TestStructureModificationMain:
 
         structureModificationMain.main(args)
 
-        base_graph = FakeGraphManager.created[0]
-        assert base_graph.update_calls == 1
-        assert base_graph.select_calls == 1
+        base_graphs = [g for g in FakeGraphManager.created if isinstance(g.data, str)]
+        assert len(base_graphs) == 2
+        assert all(g.update_calls == 0 for g in base_graphs)
+        assert all(g.select_calls == 1 for g in base_graphs)
         assert modifier_mock.run.call_count == 2
