@@ -35,7 +35,7 @@ def main(args):
         
     # Check if args from modifier_group are called
     modifier_args = [
-        'functionalizePE', 'patternFile', 'saturation', 'subgraph_coords'
+        'functionalizePE', 'functionalizePEsurface', 'patternFile', 'saturation', 'subgraph_coords'
     ]
     if not any(arg in args and args[arg] is not None for arg in modifier_args):
         modifier = False

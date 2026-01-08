@@ -7,6 +7,7 @@ Polyethylene Functionalization [1]_
 
 This modifier functionalizes polyethylene (PE) by replacing selected CH2 units with
 CO groups. A random subset of eligible backbone carbons is chosen.
+End-group carbons are excluded.
 
 Command line
 ------------

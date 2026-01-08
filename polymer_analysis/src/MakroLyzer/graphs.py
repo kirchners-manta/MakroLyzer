@@ -739,7 +739,7 @@ class GraphManager(nx.Graph):
         #else:
         #    raise ValueError("No new H atom can be added to the amide nitrogen.")
         
-    def functionalizePE(self, percentage, func_type):
+    def functionalizePE(self, percentage, func_type, surfaceAtoms=None):
         """
         Functionalize polyethylene (PE) features.
 
@@ -750,8 +750,11 @@ class GraphManager(nx.Graph):
         if func_type not in ['CO']:
             raise ValueError("func_type must be 'CO'.")
         
-        # Find all C atoms in the graph
-        C_nodes = [node for node in self.nodes if self.nodes[node]['element'] == 'C']
+        if surfaceAtoms:
+            C_nodes = [node for node in surfaceAtoms.nodes if surfaceAtoms.nodes[node]['element'] == 'C']
+        else:
+            # Find all C atoms in the graph
+            C_nodes = [node for node in self.nodes if self.nodes[node]['element'] == 'C']
         
         # Remove those with only one C-neighbor (chain ends)
         C_nodes = [node for node in C_nodes if sum(1 for neighbor in self.neighbors(node) if self.nodes[neighbor]['element'] == 'C') > 1]
@@ -763,11 +766,37 @@ class GraphManager(nx.Graph):
         np.random.shuffle(C_nodes)
         selected_C_nodes = C_nodes[:num_to_functionalize]
         
+        # If two selected C nodes are adjecent, switch if possible
+        selected_set = set(selected_C_nodes)
+        remaining = [node for node in C_nodes if node not in selected_set]
+
+        def has_selected_c_neighbor(node_id):
+            for neighbor in self.neighbors(node_id):
+                if self.nodes[neighbor]['element'] == 'C' and neighbor in selected_set:
+                    return True
+            return False
+
+        for idx, node in enumerate(selected_C_nodes):
+            if not has_selected_c_neighbor(node):
+                continue
+            replacement = None
+            for candidate in list(remaining):
+                if not has_selected_c_neighbor(candidate):
+                    replacement = candidate
+                    break
+            if replacement is None:
+                continue
+            selected_set.remove(node)
+            selected_set.add(replacement)
+            remaining.remove(replacement)
+            remaining.append(node)
+            selected_C_nodes[idx] = replacement
+        
         # For each selected C atom, add the functional group
         for node in selected_C_nodes:
             if func_type == 'CO':
                 self.add_CO_to_PE(node)
-                
+                           
     def add_CO_to_PE(self, node):
         """
         Add CO functional group to a polyethylene (PE) carbon atom.

@@ -63,7 +63,7 @@ A user guide for venv can be found `here <https://docs.python.org/3/library/venv
 
 
 Install MakroLyzer
-=================
+==================
 After activating the virtual environment, install the dependencies using pip.
 Make sure you are in the ``polymer_analysis`` directory of the cloned repository.
 

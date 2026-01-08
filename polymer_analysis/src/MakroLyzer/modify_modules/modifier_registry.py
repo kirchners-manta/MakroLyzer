@@ -46,9 +46,21 @@ def create_functionalize_PE(args, **context):
     from MakroLyzer.modify_modules.FunctionalizePE import FunctionalizePEModifier
     return FunctionalizePEModifier(percentage, func_type, output_handler)
 
+def create_functionalize_PEsurf(args, **context):
+    val = args.get('functionalizePEsurface')
+    if val is None:
+        return None
+    percentage, func_type = val
+    out_file = args.get('functionalizePE_file') if args.get('functionalizePE_file') is not None else 'functionalizedPE.xyz'
+    output_handler = ModifyOutputHandler(out_file)
+    box_size = context.get('boxSize')
+    from MakroLyzer.modify_modules.FunctionalizePEsurface import FunctionalizePEsurfaceModifier
+    return FunctionalizePEsurfaceModifier(percentage, func_type, output_handler, box_size=box_size)
+
 
 MODIFIERS_REGISTRATION = {
     'functionalizePE': create_functionalize_PE,
+    'functionalizePEsurface': create_functionalize_PEsurf,    
     'patternFile': create_patterns,
     'AminoSaturation': create_AminoSaturation,
     'subgraphPrint': create_subgraph_print,

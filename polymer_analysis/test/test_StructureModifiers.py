@@ -10,6 +10,8 @@ from MakroLyzer import graphs
 
 from MakroLyzer.modify_modules.structureModifierBase import ModifyOutputHandler, StructureModifier
 from MakroLyzer.modify_modules.Patterns import PatternModifier
+from MakroLyzer.modify_modules.FunctionalizePE import FunctionalizePEModifier
+from MakroLyzer.modify_modules.FunctionalizePEsurface import FunctionalizePEsurfaceModifier
 
 # OutputHandler Tests # ------------------------------------------------------------------
 class TestModifyOutputHandler:
@@ -313,3 +315,55 @@ class TestFunctionalizePEModifier:
         mod.render_output(g, frame_idx=0)
         expected = f"5\nelement  x         y        z"
         mock_handler.write_output.assert_called_once_with(expected, g)
+
+# FunctionalizePEsurfaceModifier Tests # ------------------------------------------------------------------
+class TestFunctionalizePEsurfaceModifier:
+    """Tests for the FunctionalizePEsurfaceModifier."""
+
+    def test_FunctionalizePEsurfaceModifier_init(self):
+        pytest.importorskip("pytim")
+        pytest.importorskip("MDAnalysis")
+        handler = Mock()
+        mod = FunctionalizePEsurfaceModifier(20, 'CO', output_handler=handler, box_size=25.0)
+        assert mod.output_handler == handler
+        assert mod.frame_number == 0
+        assert mod.percentage == 20
+        assert mod.func_type == 'CO'
+        assert mod.box_size == 25.0
+
+    def test_FunctionalizePEsurfaceModifier_compute(self):
+        pytest.importorskip("pytim")
+        pytest.importorskip("MDAnalysis")
+        mod = FunctionalizePEsurfaceModifier(30, 'CO')
+        mock_graph = Mock()
+        surface_graph = Mock()
+        mock_graph.subgraph.return_value = surface_graph
+        with patch.object(mod, "_find_surface_atoms", return_value=[1, 2]):
+            res = mod.compute(mock_graph)
+        assert res is mock_graph
+        mock_graph.subgraph.assert_called_once_with([1, 2])
+        mock_graph.functionalizePE.assert_called_once_with(30, 'CO', surfaceAtoms=surface_graph)
+
+    def test_FunctionalizePEsurfaceModifier_find_surface_atoms(self):
+        pytest.importorskip("pytim")
+        pytest.importorskip("MDAnalysis")
+        from MakroLyzer.modify_modules import FunctionalizePEsurface as mod
+
+        g = graphs.GraphManager()
+        g.add_node(0, element='C', x=0.0, y=0.0, z=0.0)
+        g.add_node(1, element='H', x=1.0, y=0.0, z=0.0)
+        g.add_node(2, element='H', x=0.0, y=1.0, z=0.0)
+
+        class FakeLayer:
+            indices = np.array([0, 2])
+
+        class FakeInterface:
+            layers = [FakeLayer()]
+
+        def fake_gitim(*_args, **_kwargs):
+            return FakeInterface()
+
+        with patch.object(mod.pytim, "GITIM", side_effect=fake_gitim):
+            fmod = mod.FunctionalizePEsurfaceModifier(10, 'CO')
+            surface = fmod._find_surface_atoms(g)
+        assert surface == [0, 2]

@@ -202,6 +202,14 @@ def readCommandLine() -> dict:
                         type=functionalize)
     
     modifier_group.add_argument(
+                        '-funcPEsurf', '--functionalizePEsurface',
+                        nargs='?', const=(10, 'CO'), default=None,
+                        help='Functionalize Polyethylene (PE) surface CH2 groups with CO groups using pytim.\n'
+                        'Provide a percentage value (0-100) indicating the degree of functionalization.\n'
+                        'Usage example: -funcPEsurf 15:CO to functionalize 15%% of surface CH2 groups to CO groups.',
+                        type=functionalize)
+    
+    modifier_group.add_argument(
                         '-funcPE-file', '--functionalizePE-file',
                         nargs='?', const='functionalizedPE.xyz', default=None,
                         help='Output filename for functionalized polyethylene (default: functionalizedPE.xyz)')

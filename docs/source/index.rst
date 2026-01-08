@@ -46,5 +46,6 @@ The program has two main functionalities:
 
    structureModification/01patternID.rst
    structureModification/02functionalization.rst
+   structureModification/02bfunctionalizationSurface.rst
    structureModification/03saturation.rst
    structureModification/04subgraphCoords.rst

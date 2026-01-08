@@ -49,6 +49,10 @@ test = [
 dev = [
     "pre-commit"
 ]
+surface = [
+    "MDAnalysis",
+    "pytim"
+]
 
 [project.urls]
 
