@@ -238,6 +238,12 @@ def readCommandLine() -> dict:
                     help='Get subgraph-coordinates.\n'
                     'Optionally provide an output filename (default: subgraphCoordinates.xyz)')
 
+    modifier_group.add_argument(
+                    '-wrap', '--wrapGraphPrint',
+                    nargs='?', const='wrappedGraph.xyz', default=None,
+                    help='Write the wrapped graph coordinates. Requires a box size.\n'
+                    'Optionally provide an output filename (default: wrappedGraph.xyz)')
+
     
     args = vars(parser.parse_args())
     

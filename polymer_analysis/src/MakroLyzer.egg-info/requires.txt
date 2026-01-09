@@ -9,6 +9,10 @@ IPython
 [dev]
 pre-commit
 
+[surface]
+MDAnalysis
+pytim
+
 [test]
 pytest
 pytest-cov

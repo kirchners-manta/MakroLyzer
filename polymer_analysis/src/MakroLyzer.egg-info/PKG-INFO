@@ -25,4 +25,7 @@ Requires-Dist: pytest-benchmark; extra == "test"
 Requires-Dist: tox; extra == "test"
 Provides-Extra: dev
 Requires-Dist: pre-commit; extra == "dev"
+Provides-Extra: surface
+Requires-Dist: MDAnalysis; extra == "surface"
+Requires-Dist: pytim; extra == "surface"
 Dynamic: license-file

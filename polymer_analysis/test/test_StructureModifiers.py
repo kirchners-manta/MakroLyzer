@@ -12,6 +12,7 @@ from MakroLyzer.modify_modules.structureModifierBase import ModifyOutputHandler,
 from MakroLyzer.modify_modules.Patterns import PatternModifier
 from MakroLyzer.modify_modules.FunctionalizePE import FunctionalizePEModifier
 from MakroLyzer.modify_modules.FunctionalizePEsurface import FunctionalizePEsurfaceModifier
+from MakroLyzer.modify_modules.WrapGraph import WrapGraphModifier
 
 # OutputHandler Tests # ------------------------------------------------------------------
 class TestModifyOutputHandler:
@@ -286,7 +287,6 @@ class TestFunctionalizePEModifier:
     """Tests for the FunctionalizePEModifier."""
     
     def test_FunctionalizePEModifier_init(self):
-        from MakroLyzer.modify_modules.FunctionalizePE import FunctionalizePEModifier
         handler = Mock()
         mod = FunctionalizePEModifier(15, 'CO', output_handler=handler)
         assert mod.output_handler == handler
@@ -295,7 +295,6 @@ class TestFunctionalizePEModifier:
         assert mod.func_type == 'CO'
         
     def test_FunctionalizePEModifier_compute(self):
-        from MakroLyzer.modify_modules.FunctionalizePE import FunctionalizePEModifier
         mock_graph = Mock()
         mod = FunctionalizePEModifier(25, 'CO')
         res = mod.compute(mock_graph)
@@ -303,7 +302,6 @@ class TestFunctionalizePEModifier:
         mock_graph.functionalizePE.assert_called_once_with(25, 'CO')
 
     def test_FunctionalizePEModifier_render_output(self):
-        from MakroLyzer.modify_modules.FunctionalizePE import FunctionalizePEModifier
         mock_handler = Mock()
         mod = FunctionalizePEModifier(10, 'CO', output_handler=mock_handler)
 
@@ -314,6 +312,35 @@ class TestFunctionalizePEModifier:
         g = G()
         mod.render_output(g, frame_idx=0)
         expected = f"5\nelement  x         y        z"
+        mock_handler.write_output.assert_called_once_with(expected, g)
+
+# WrapGraphPrintModifier Tests # ------------------------------------------------------------------
+class TestWrapGraphModifier:
+    """Tests for the WrapGraphPrintModifier."""
+
+    def test_WrapGraphModifier_init(self):
+        handler = Mock()
+        mod = WrapGraphModifier(output_handler=handler)
+        assert mod.output_handler == handler
+        assert mod.frame_number == 0
+
+    def test_WrapGraphPrintModifier_compute(self):
+        mod = WrapGraphModifier()
+        mock_graph = Mock()
+        res = mod.compute(mock_graph)
+        assert res is mock_graph
+
+    def test_WrapGraphModifier_render_output(self):
+        mock_handler = Mock()
+        mod = WrapGraphModifier(output_handler=mock_handler)
+
+        class G:
+            def number_of_nodes(self):
+                return 3
+
+        g = G()
+        mod.render_output(g, frame_idx=0)
+        expected = f"3\nelement  x         y        z"
         mock_handler.write_output.assert_called_once_with(expected, g)
 
 # FunctionalizePEsurfaceModifier Tests # ------------------------------------------------------------------

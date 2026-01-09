@@ -10,6 +10,7 @@ from MakroLyzer.modify_modules.Patterns import PatternModifier
 from MakroLyzer.modify_modules.structureModifierBase import ModifyOutputHandler
 from MakroLyzer.modify_modules.AminoSaturation import AminoSaturationModifier
 from MakroLyzer.modify_modules.SubgraphPrint import SubgraphPrintModifier
+from MakroLyzer.modify_modules.WrapGraph import WrapGraphModifier
 
 
 def create_patterns(args, **context):
@@ -35,6 +36,14 @@ def create_subgraph_print(args, **context):
     out_file = val if isinstance(val, str) else 'subgraphCoordinates.xyz'
     output_handler = ModifyOutputHandler(out_file)
     return SubgraphPrintModifier(output_handler)
+
+def create_wrap_graph_print(args, **context):
+    val = args.get('wrapGraphPrint')
+    if val is None:
+        return None
+    out_file = val if isinstance(val, str) else 'wrappedGraph.xyz'
+    output_handler = ModifyOutputHandler(out_file)
+    return WrapGraphModifier(output_handler)
 
 def create_functionalize_PE(args, **context):
     val = args.get('functionalizePE')
@@ -64,4 +73,5 @@ MODIFIERS_REGISTRATION = {
     'patternFile': create_patterns,
     'AminoSaturation': create_AminoSaturation,
     'subgraphPrint': create_subgraph_print,
+    'wrapGraphPrint': create_wrap_graph_print,
 }

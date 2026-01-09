@@ -68,5 +68,9 @@ def checkInput(args):
         # Check if the file is empty
         if os.path.getsize(patternPath) == 0:
             raise EmptyFileError(f"File '{patternPath}' is empty.")
+
+    #---Wrap Graph Print---#
+    if args.get('wrapGraphPrint') is not None and args.get('BoxSize') is None:
+        raise ValueError("'-wrap/--wrapGraphPrint' requires '-bs/--BoxSize'.")
         
     

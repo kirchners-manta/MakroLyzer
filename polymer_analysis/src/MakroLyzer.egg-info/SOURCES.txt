@@ -25,6 +25,7 @@ src/MakroLyzer/modify_modules/FunctionalizePE.py
 src/MakroLyzer/modify_modules/FunctionalizePEsurface.py
 src/MakroLyzer/modify_modules/Patterns.py
 src/MakroLyzer/modify_modules/SubgraphPrint.py
+src/MakroLyzer/modify_modules/WrapGraph.py
 src/MakroLyzer/modify_modules/modifier_registry.py
 src/MakroLyzer/modify_modules/structureModificationMain.py
 src/MakroLyzer/modify_modules/structureModifierBase.py
