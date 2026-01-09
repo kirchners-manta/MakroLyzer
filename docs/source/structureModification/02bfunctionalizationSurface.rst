@@ -1,4 +1,4 @@
-Polyethylene Surface Functionalization [1]_
+Polyethylene Surface Functionalization 
 ===========================================
 
 .. figure:: ../figures/structureModification/02bfuncPE3.png
@@ -7,7 +7,7 @@ Polyethylene Surface Functionalization [1]_
 
 This modifier functionalizes polyethylene (PE) surfaces by replacing selected CH2 units at
 the particle surface with CO groups. Surface atoms are identified using the GITIM algorithm
-from pytim [2]_ [3]_ on an MDAnalysis universe [4]_. A random subset of eligible backbone carbons
+from pytim [1]_ [2]_ on an MDAnalysis universe [3]_. A random subset of eligible backbone carbons
 is chosen.
 End-group carbons are excluded.
 
@@ -40,11 +40,9 @@ Output
 An XYZ file containing the modified structure.
 
 
-.. [1]  Drysch, K.; Dawer, Y.; Zaby, P.; Buchmüller, K.; Dick, L.; Mutzel, P.; Hollóczki, O.; Kirchner, B. MakroLyzer: A Graph-Based Software to Comb through Molecular Hairballs Using the Example of Nanoplastics. J. Phys. Chem. B 2025
-       DOI: 10.1021/acs.jpcb.5c06175
-.. [2]  Sega, M.; Kantorovich, S.; Jedlovszky, P.; Jorge, M. The generalized identification of truly interfacial molecules (ITIM) algorithm for nonplanar interfaces. J. Chem. Phys. 2013, 138, 044110.
+.. [1]  Sega, M.; Kantorovich, S.; Jedlovszky, P.; Jorge, M. The generalized identification of truly interfacial molecules (ITIM) algorithm for nonplanar interfaces. J. Chem. Phys. 2013, 138, 044110.
        DOI: 10.1063/1.4774361
-.. [3] Sega, M.; Hantal, G.; Fábián, B.; Jedlovszky, P. Pytim: A Python Package for the Interfacial Analysis of Molecular Simulations. J. Comput. Chem. 2018, 39, 2118-2125
+.. [2] Sega, M.; Hantal, G.; Fábián, B.; Jedlovszky, P. Pytim: A Python Package for the Interfacial Analysis of Molecular Simulations. J. Comput. Chem. 2018, 39, 2118-2125
        DOI:  10.1002/jcc.25384
-.. [4]  Michaud-Agrawal, N.; Denning, E. J.; Woolf, T. B.; Beckstein, O. MDAnalysis: A toolkit for the analysis of molecular dynamics simulations. J. Comput. Chem. 2011, 32, 2319-2327.
+.. [3]  Michaud-Agrawal, N.; Denning, E. J.; Woolf, T. B.; Beckstein, O. MDAnalysis: A toolkit for the analysis of molecular dynamics simulations. J. Comput. Chem. 2011, 32, 2319-2327.
        DOI: 10.1002/jcc.21787
