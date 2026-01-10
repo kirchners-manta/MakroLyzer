@@ -1,7 +1,9 @@
 import argparse
 import sys
 
-ASCII_ART = r"""
+ASCII_ART = (
+    "\x1b[1m"
+    r"""
                              
                                 @    @@ @            
                               @@ @@ @    @           
@@ -28,11 +30,25 @@ ASCII_ART = r"""
   @    @@       @             @      @     @     +---------------------------------------------------------+   
   @     @@      @             @      @    @         
    @        @@                 @     @    @          
-    @@                          @    @    @          
+    @@                          @    @    @                                         
       @@@                       @    @    @          
-          @ @ @ @ @ @ @ @ @     @ @  @  @ @                    
-                                                                                                                
+          @ @ @ @ @ @ @ @ @     @ @  @  @ @      
+    """
+    "\x1b[0m"
+    r"""                                                                
+--------------------------------------------------------------------------------------------------
+   Group of Prof. Dr. Barbara Kirchner
+   Maintainer: Katrin Drysch
+   
+   Please cite:
+   - J. Phys. Chem. B 2025, 129, 50, 12997-13008 (DOI: 10.1021/acs.jpcb.5c06175)
+   
+   For the polyethylene surface functionalization module, please additionally cite:
+   - J. Comput. Chem. 2018, 39, 2118-2125 (DOI: 10.1002/jcc.25384)
+   - J. Comput. Chem. 2011, 32, 2319-2327 (DOI: 10.1002/jcc.21787)
+--------------------------------------------------------------------------------------------------
 """
+)
 
 class ArtParser(argparse.ArgumentParser):
     def format_help(self):
