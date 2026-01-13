@@ -96,7 +96,6 @@ def create_ramachandran(args, **context):
 
 def create_dihedrals(args, **context):
     dihedral_val = args.get('dihedral')
-    cistrans_val = args.get('cisTrans')
     if dihedral_val is None:
         return None
     dihedral_handler = None
@@ -112,7 +111,8 @@ def create_dihedrals(args, **context):
         dihedral_output_handler=dihedral_handler,
         dihedral_list_output_handler=dihedral_list_handler,
         cistrans_output_handler=cistrans_handler,
-        dihedral_range=args.get('dihedral_range')
+        dihedral_range=args.get('dihedral_range'),
+        special_dihedral=args.get('special_dihedral')
     )
 
 

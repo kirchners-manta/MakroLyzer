@@ -1579,6 +1579,10 @@ class TestDihedralsAnalyzer:
     def sample_file6(self):
         return "test_structures/Dihedrals/trans.xyz"
     
+    @pytest.fixture
+    def sample_file7(self):
+        return "test_structures/Dihedrals/specialDihedral.xyz"
+    
     # ---------------------------------------------------------
     
     def test_DihedralsAnalyzer_init(self, temp_file):
@@ -1591,13 +1595,15 @@ class TestDihedralsAnalyzer:
             dihedral_output_handler=dihedral_output_handler,
             dihedral_list_output_handler=dihedral_list_output_handler,
             cistrans_output_handler=cisTrans_output_handler,
-            dihedral_range=sign
+            dihedral_range=sign,
+            special_dihedral=None
         )
         
         assert analyzer.dihedral_handler == dihedral_output_handler
         assert analyzer.dihedral_list_handler == dihedral_list_output_handler
         assert analyzer.cistrans_handler == cisTrans_output_handler
         assert analyzer.sign == True
+        assert analyzer.special_dihedral == None
         
     # ---------------------------------------------------------
     
@@ -2015,6 +2021,79 @@ class TestDihedralsAnalyzer:
         # test cis trans counts
         assert cis_trans[0][1] == 1
         assert cis_trans[1][1] == 0
+        
+    # ---------------------------------------------------------
+        
+    def test7_DihedralsAnalyzer_compute(self, sample_file7):
+        """Test compute function of DihedralsAnalyzer."""
+        xyz = next(readXYZ.readXYZ(sample_file7))
+        testGraph = graphs.GraphManager(xyz)
+        
+        dihedral_range = "abs"
+        special_dihedral = ['OCCO']
+        analyzer = DihedralsAnalyzer(dihedral_range=dihedral_range, special_dihedral=special_dihedral)
+        result = analyzer.compute(testGraph)
+        
+        # Unpack the dictionary
+        dihedrals = result['dihedrals']
+        dihedral_list = result['dihedral_list']
+        cis_trans = result['cistrans']
+        
+        # Test dihedral counts
+        for angle, count in dihedrals:
+            if angle == 165:
+                assert count == 1
+            elif angle == 176:
+                assert count == 1
+            elif angle == 179:
+                assert count == 1
+            else:
+                assert count == 0
+                
+        # test cis trans counts
+        assert cis_trans[0][1] == 0
+        assert cis_trans[1][1] == 3
+
+    def test8_DihedralsAnalyzer_compute(self):
+        """Test special dihedral parsing and compute path with a mock graph."""
+        analyzer = DihedralsAnalyzer(dihedral_range="abs", special_dihedral=['OCCO'])
+        assert analyzer.special_dihedral == ['O', 'C', 'C', 'O']
+        
+        mock_graph = Mock()
+        mock_prepared_graph = Mock()
+        mock_subgraph = Mock()
+        
+        mock_graph.remove_1order.return_value = mock_prepared_graph
+        mock_prepared_graph.surrounding.return_value = None
+        mock_prepared_graph.update_degree.return_value = None
+        mock_prepared_graph.get_subgraphs.return_value = [mock_subgraph]
+        
+        mock_subgraph.find_longest_path.return_value = [0, 1, 2, 3, 4]
+        mock_subgraph.nodes = {
+            0: {"element": "O"},
+            1: {"element": "C"},
+            2: {"element": "C"},
+            3: {"element": "O"},
+            4: {"element": "H"},
+        }
+        mock_subgraph.dihedral.return_value = 176.0
+        
+        result = analyzer.compute(mock_graph)
+        
+        dihedrals = result['dihedrals']
+        dihedral_list = result['dihedral_list']
+        cis_trans = result['cistrans']
+        
+        assert mock_subgraph.dihedral.call_count == 1
+        assert dihedral_list[0] == [176]
+        assert any(angle == 176 and count == 1 for angle, count in dihedrals)
+        assert cis_trans[0][1] == 0
+        assert cis_trans[1][1] == 1
+
+    def test9_DihedralsAnalyzer_compute(self):
+        """Test invalid special dihedral input."""
+        with pytest.raises(ValueError, match="Only one special dihedral allowed."):
+            DihedralsAnalyzer(dihedral_range="abs", special_dihedral=['OCCO', 'COCO'])
         
     # ---------------------------------------------------------
         

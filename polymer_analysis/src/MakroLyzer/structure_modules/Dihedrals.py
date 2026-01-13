@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 from collections import Counter
+import re
 
 from MakroLyzer.structure_modules.structureBase import StructureAnalyzer
 
@@ -20,7 +21,7 @@ class DihedralsAnalyzer(StructureAnalyzer):
     """
     
     def __init__(self, dihedral_output_handler=None, dihedral_list_output_handler=None, 
-                 cistrans_output_handler=None, dihedral_range='abs'):
+                 cistrans_output_handler=None, dihedral_range='abs', special_dihedral=None):
         """
         Initialize the DihedralsAnalyzer.
 
@@ -42,9 +43,46 @@ class DihedralsAnalyzer(StructureAnalyzer):
         # Set sign parameter based on dihedral_range
         self.sign = True if dihedral_range == 'nonabs' else None
         
+        # Get special dihedral
+        if special_dihedral:
+            self.special_dihedral = self._get_special_dihedral(special_dihedral)
+        else:
+            self.special_dihedral = None
+        
         # Cache for compiled dihedral counts across frames
         # Necessary since OutputHandler can only append rows, not columns
         self.all_dihedral_data = []
+        
+    def _get_special_dihedral(self, special_dihedral):
+        """Get the four consecutive atoms for the special dihedral."""
+        
+        if not (isinstance(special_dihedral, list)):
+            raise ValueError("Special dihedral input must be a string")
+        if len(special_dihedral) > 1:
+            raise ValueError("Only one special dihedral allowed.")
+        
+        # check if the element is availible in MakroLyzer.dictionaries
+        # re checks if a pattern starting at position i in the token matches on of the elements
+        # long element names are in the front of the check to prevent for example Cl to be identified
+        # as C
+        special_dihedral = special_dihedral[0]
+        
+        elements = []
+        i=0
+        while i < len(special_dihedral):
+            match = re.match(r'(Li|Na|K|Mg|Ca|Zn|Cl|Br|Ag|Au|N|O|B|F|P|S|C|H|I|D|X)', special_dihedral[i:])
+            if not match:
+                raise ValueError(f"Invalid element type in special dihedral selection: {special_dihedral}")
+            
+            element = match.group(0)
+            elements.append(element)
+            i += len(element)
+ 
+        # Check if we got exacltly four elements
+        if not (len(elements) == 4):
+            raise ValueError("The special dihedral input needs exactly four elements.")
+        
+        return elements
         
     def initialize_output(self):
         """
@@ -121,6 +159,17 @@ class DihedralsAnalyzer(StructureAnalyzer):
                 node2 = longestPath[i + 1]
                 node3 = longestPath[i + 2]
                 node4 = longestPath[i + 3]
+                
+                if self.special_dihedral is not None:
+                    # Check if the four consecutive atoms are the special ones
+                    if not (
+                        subgraph.nodes[node1]["element"] == self.special_dihedral[0]
+                        and subgraph.nodes[node2]["element"] == self.special_dihedral[1]
+                        and subgraph.nodes[node3]["element"] == self.special_dihedral[2]
+                        and subgraph.nodes[node4]["element"] == self.special_dihedral[3]
+                    ):
+                        continue
+                
                 
                 d = round(subgraph.dihedral(node1, node2, node3, node4, self.sign))
                 # 180 and -180 are equivalent, count them together

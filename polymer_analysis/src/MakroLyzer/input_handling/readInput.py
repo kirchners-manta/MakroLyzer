@@ -130,6 +130,16 @@ def readCommandLine() -> dict:
                         default='abs')
     
     analyzer_group.add_argument(
+                        '--special-dihedral',
+                        dest='special_dihedral',
+                        nargs='+',
+                        default=None,
+                        help='Take only certain dihedrals into account.\n'
+                        'Provide the atom types of the four consecutive elements along the backbone you\n'
+                        'want to calculate the dihedral angles for.\n'
+                        'Usage example: -d --special-dihedral OCCO')
+    
+    analyzer_group.add_argument(
                         '-Rg', '--radiusOfGyration',
                         nargs='?', const='Rg.csv', default=None,
                         help='Calculate radius of gyration for the whole polymer.\n'

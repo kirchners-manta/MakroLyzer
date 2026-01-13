@@ -21,6 +21,12 @@ Command Line Input
       ``abs`` gives 0-180 degrees (absolute angles), ``nonabs`` gives -179-180 degrees.
       *Default: abs*
 
+   ``--special-dihedral``
+      Take only certain dihedrals into account.
+      Provide the atom types of the four consecutive elements along the backbone you
+      want to calculate the dihedral angles for.
+      Usage example: -d --special-dihedral OCCO
+
 By default, the filenames are **dihedrals.csv**, **dihedrals_list.csv**, and **cisTrans.csv**.
 The basename for the first two files can be changed by providing the desired name after the ``-d`` or ``--dihedral`` flag.
 

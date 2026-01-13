@@ -62,8 +62,9 @@ def main(args):
     for key, factory in ANALYZERS_REGISTRATION.items():
         try:
             instance = factory(args, **context)
-        except Exception:
-            instance = None
+        except Exception as exc:
+            print(f"Analyzer '{key}' failed to initialize: {exc}")
+            raise
         if instance is not None:
             analyzers[key] = instance
             if hasattr(instance, 'initialize_output'):
