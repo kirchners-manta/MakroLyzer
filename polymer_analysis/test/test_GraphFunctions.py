@@ -1,4 +1,5 @@
 import pytest
+import numpy as np
 
 from MakroLyzer.input_handling import readXYZ
 from MakroLyzer.input_handling import subgraphSelection
@@ -459,7 +460,7 @@ def test_functionalize_pe_co():
     before_nodes = graph.number_of_nodes()
     before_h = sum(1 for n in graph.nodes() if graph.nodes[n]['element'] == 'H')
 
-    graph.functionalizePE(100, 'CO')
+    graph.functionalizePE("random", "CO", percentage=100, neighbor_exclusion=1)
 
     after_nodes = graph.number_of_nodes()
     after_h = sum(1 for n in graph.nodes() if graph.nodes[n]['element'] == 'H')
@@ -469,6 +470,74 @@ def test_functionalize_pe_co():
     assert after_h == before_h - 2
     assert len(o_nodes) == 1
     assert o_nodes[0] in graph.neighbors(1)
+
+
+def _build_linear_pe_chain(num_c):
+    graph = graphs.GraphManager()
+    h_index = num_c
+    for i in range(num_c):
+        x = 1.54 * i
+        graph.add_node(i, index=i, element='C', x=x, y=0.0, z=0.0)
+        if i > 0:
+            graph.add_edge(i - 1, i)
+        # Two hydrogens per carbon for functionalization geometry.
+        graph.add_node(h_index, index=h_index, element='H', x=x, y=1.0, z=0.5)
+        graph.add_edge(i, h_index)
+        h_index += 1
+        graph.add_node(h_index, index=h_index, element='H', x=x, y=-1.0, z=0.0)
+        graph.add_edge(i, h_index)
+        h_index += 1
+    return graph
+
+
+def test_functionalize_pe_ester_random():
+    np.random.seed(0)
+    graph = _build_linear_pe_chain(6)
+    before_c = sum(1 for n in graph.nodes() if graph.nodes[n]['element'] == 'C')
+    before_o = sum(1 for n in graph.nodes() if graph.nodes[n]['element'] == 'O')
+    before_n = sum(1 for n in graph.nodes() if graph.nodes[n]['element'] == 'N')
+
+    graph.functionalizePE("random", "ester", percentage=100, neighbor_exclusion=1)
+
+    after_c = sum(1 for n in graph.nodes() if graph.nodes[n]['element'] == 'C')
+    after_o = sum(1 for n in graph.nodes() if graph.nodes[n]['element'] == 'O')
+    after_n = sum(1 for n in graph.nodes() if graph.nodes[n]['element'] == 'N')
+
+    assert after_c == before_c - 1
+    assert after_o == before_o + 2
+    assert after_n == before_n
+
+
+def test_functionalize_pe_amide_random():
+    np.random.seed(0)
+    graph = _build_linear_pe_chain(6)
+    before_c = sum(1 for n in graph.nodes() if graph.nodes[n]['element'] == 'C')
+    before_o = sum(1 for n in graph.nodes() if graph.nodes[n]['element'] == 'O')
+    before_n = sum(1 for n in graph.nodes() if graph.nodes[n]['element'] == 'N')
+
+    graph.functionalizePE("random", "amide", percentage=100, neighbor_exclusion=1)
+
+    after_c = sum(1 for n in graph.nodes() if graph.nodes[n]['element'] == 'C')
+    after_o = sum(1 for n in graph.nodes() if graph.nodes[n]['element'] == 'O')
+    after_n = sum(1 for n in graph.nodes() if graph.nodes[n]['element'] == 'N')
+
+    assert after_c == before_c - 1
+    assert after_o == before_o + 1
+    assert after_n == before_n + 1
+
+
+def test_functionalize_pe_co_periodic():
+    graph = _build_linear_pe_chain(6)
+    before_o = sum(1 for n in graph.nodes() if graph.nodes[n]['element'] == 'O')
+    before_h = sum(1 for n in graph.nodes() if graph.nodes[n]['element'] == 'H')
+
+    graph.functionalizePE("periodic", "CO", distance=2)
+
+    after_o = sum(1 for n in graph.nodes() if graph.nodes[n]['element'] == 'O')
+    after_h = sum(1 for n in graph.nodes() if graph.nodes[n]['element'] == 'H')
+
+    assert after_o == before_o + 2
+    assert after_h == before_h - 4
 
 
 def test_parse_selection_list():

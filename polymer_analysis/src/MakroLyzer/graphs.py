@@ -2,7 +2,7 @@ import numpy as np
 import networkx as nx
 from scipy.spatial import cKDTree
 import matplotlib.pyplot as plt
-from collections import defaultdict
+from collections import defaultdict, deque
 
 from MakroLyzer import dictionaries
 
@@ -739,63 +739,200 @@ class GraphManager(nx.Graph):
         #else:
         #    raise ValueError("No new H atom can be added to the amide nitrogen.")
         
-    def functionalizePE(self, percentage, func_type, surfaceAtoms=None):
+    def functionalizePE(self, mode, func_type, percentage=None, neighbor_exclusion=None, distance=None, surface_atoms=None):
         """
         Functionalize polyethylene (PE) features.
 
         Args:
-            percentage (int): 0 <= percentage <= 100, percentage of PE units to be functionalized.
-            func_type (str): The type of functionalization (only 'CO' so far).
+            mode: random or periodically
+            func_type (str): The type of functionalization 
+            percentage (float): 0 <= percentage <= 100, percentage of PE units to be functionalized - (random mode)
+            neighbor_exclusion (int): Minimum C-C hop distance to avoid selecting adjacent nodes - (random mode)
+            distance (int): Distance between functional groups along the backbone - (periodic mode)
         """
-        if func_type not in ['CO']:
-            raise ValueError("func_type must be 'CO'.")
-        
-        if surfaceAtoms:
-            C_nodes = [node for node in surfaceAtoms.nodes if surfaceAtoms.nodes[node]['element'] == 'C']
+        # Check if everything is correctly given ------------------------------------------------------------------
+        if func_type not in ['CO', 'ester', 'amide']:
+            raise ValueError("func_type must be 'CO', 'ester' or 'amide'.")
+        if mode not in ['random', 'periodic']:
+            raise ValueError("mode must be 'random' or 'periodic'.")
+        if mode == 'random':
+            if percentage is None:
+                raise ValueError("percentage is required for random mode.")
+            if not (0 <= percentage <= 100):
+                raise ValueError("percentage must be between 0 and 100.")
+            if neighbor_exclusion is None:
+                neighbor_exclusion = 1
+            if neighbor_exclusion < 0:
+                raise ValueError("neighbor_exclusion must be >= 0.")
         else:
-            # Find all C atoms in the graph
+            if distance is None:
+                raise ValueError("distance is required for periodic mode.")
+            if distance < 1:
+                raise ValueError("distance must be >= 1.")
+
+        # Adjust parameters for functional groups consuming more than one atom of the backbone ---------------------
+        # These groups consume two carbons along the backbone.
+        func_types_consuming_two = ['ester', 'amide']
+        
+        if func_type in func_types_consuming_two:
+            if mode == 'random':
+                percentage = percentage / 2.0
+            elif mode == 'periodic':
+                distance += 1
+
+        # Find the C_nodes which are available for functionalization ------------------------------------------------
+        if surface_atoms:
+            C_nodes = [node for node in surface_atoms.nodes if surface_atoms.nodes[node]['element'] == 'C']
+        else:
             C_nodes = [node for node in self.nodes if self.nodes[node]['element'] == 'C']
         
-        # Remove those with only one C-neighbor (chain ends)
-        C_nodes = [node for node in C_nodes if sum(1 for neighbor in self.neighbors(node) if self.nodes[neighbor]['element'] == 'C') > 1]
+        # Remove those with only one C-neighbor (chain ends).
+        end_nodes = [
+            node for node in C_nodes
+            if sum(1 for neighbor in self.neighbors(node) if self.nodes[neighbor]['element'] == 'C') == 1
+        ]
+        C_nodes = [node for node in C_nodes if node not in end_nodes]
         
-        # Determine the number of C atoms to functionalize
-        num_to_functionalize = int(len(C_nodes) * (percentage / 100.0))
+        num_avail_atoms = len(C_nodes)
         
-        # Randomly select C atoms to functionalize
-        np.random.shuffle(C_nodes)
-        selected_C_nodes = C_nodes[:num_to_functionalize]
-        
-        # If two selected C nodes are adjecent, switch if possible
-        selected_set = set(selected_C_nodes)
-        remaining = [node for node in C_nodes if node not in selected_set]
+        # Exclude the carbon neighbors of chain ends for ester/amide for the random mode 
+        # since the functional groups consume two carbons along the backbone.
+        if func_type in func_types_consuming_two:
+            end_neighbors = set()
+            for end_node in end_nodes:
+                for neighbor in self.neighbors(end_node):
+                    if self.nodes[neighbor]['element'] == 'C':
+                        end_neighbors.add(neighbor)
+            if end_neighbors:
+                C_nodes = [node for node in C_nodes if node not in end_neighbors]
 
-        def has_selected_c_neighbor(node_id):
-            for neighbor in self.neighbors(node_id):
-                if self.nodes[neighbor]['element'] == 'C' and neighbor in selected_set:
-                    return True
-            return False
-
-        for idx, node in enumerate(selected_C_nodes):
-            if not has_selected_c_neighbor(node):
-                continue
-            replacement = None
-            for candidate in list(remaining):
-                if not has_selected_c_neighbor(candidate):
-                    replacement = candidate
-                    break
-            if replacement is None:
-                continue
-            selected_set.remove(node)
-            selected_set.add(replacement)
-            remaining.remove(replacement)
-            remaining.append(node)
-            selected_C_nodes[idx] = replacement
+        # --- MODE SELECTION --- # ----------------------------------------------------------------------------------
+        # The modes differ only by how carbons are selected for functionalization.
         
-        # For each selected C atom, add the functional group
+        selected_C_nodes = []
+        selected_neighbor_nodes = []
+        
+        # RANDOM -----------------------------------------------------------------------
+        if mode == 'random':
+            num_to_functionalize = int(len(C_nodes) * (percentage / 100.0))
+            if num_to_functionalize == 0:
+                return
+
+            # BFS
+            def exclusion_shell(start_node, max_hops): 
+                if max_hops < 1: 
+                    return {start_node} 
+                visited = {start_node}
+                queue = deque([(start_node, 0)])
+                while queue: 
+                    current, dist = queue.popleft()
+                    if dist >= max_hops:
+                        continue
+                    for neighbor in self.neighbors(current):
+                        if self.nodes[neighbor]['element'] != 'C':
+                            continue
+                        if neighbor not in visited:
+                            visited.add(neighbor)
+                            queue.append((neighbor, dist + 1))
+                return visited
+
+            # Greedy selection that enforces neighbor_exclusion.
+            available = set(C_nodes) 
+            while available and len(selected_C_nodes) < num_to_functionalize:
+                node = np.random.choice(list(available))
+                
+                if func_type in func_types_consuming_two:
+                    # For the functionalizations which consume multiple backbone C's, we need 
+                    # to select an additional neighbor C
+                    C_neighbors = [neighbor for neighbor in self.neighbors(node) if self.nodes[neighbor]['element'] == 'C']
+                    # check if one of them is in "available"
+                    if any (C_neighbor in available for C_neighbor in C_neighbors):
+                        # choose an available one
+                        if C_neighbors[0] in available:
+                            selected_neighbor_nodes.append(C_neighbors[0])
+                            available -= exclusion_shell(C_neighbors[0], neighbor_exclusion) 
+                        else:
+                            selected_neighbor_nodes.append(C_neighbors[1])  
+                            available -= exclusion_shell(C_neighbors[1], neighbor_exclusion)        
+                    # if not. We cannot choose this C
+                    else: 
+                        available.discard(node)
+                        continue    
+                    
+                selected_C_nodes.append(node)
+                available -= exclusion_shell(node, neighbor_exclusion)      
+                
+                
+            if len(selected_C_nodes) < num_to_functionalize:
+                actual_pct = 0.0
+                if C_nodes:
+                    actual_pct = (len(selected_C_nodes) / num_avail_atoms) * 100.0
+                if func_type in func_types_consuming_two:
+                    actual_pct *= 2
+                print("\nWARNING: Could not meet requested functionalization percentage due to neighbor_exclusion.")
+                print(f"         Actual functionalization: {actual_pct:.2f}%")
+                
+        # PERIODIC --------------------------------------------------------------------------
+        else:
+            subgraphs = self.get_subgraphs()
+            for subgraph in subgraphs:
+                # Get backbone
+                backbone = subgraph.find_longest_path()
+                backbone_c = [node for node in backbone if subgraph.nodes[node]['element'] == 'C']
+                backbone_c = [
+                    node for node in backbone_c
+                    if sum(1 for neighbor in self.neighbors(node) if self.nodes[neighbor]['element'] == 'C') > 1
+                ]
+                # Select atoms along the backbone
+                # Exclude the carbon neighbors of chain ends for ester/amide for the periodic mode
+                if func_type in func_types_consuming_two:
+                    start = 1
+                    end = len(backbone_c)-1
+                else:
+                    start = 0
+                    end = len(backbone_c)
+                    
+                for idx in range(start, end, distance+1):
+                    node = backbone_c[idx]
+                    if func_type in func_types_consuming_two:
+                        selected_neighbor_nodes.append(backbone_c[idx + 1])
+                    selected_C_nodes.append(node)
+        
+        # For each selected C atom, add the functional group ----------------------------------------------------------------------
+        i = 0
         for node in selected_C_nodes:
             if func_type == 'CO':
                 self.add_CO_to_PE(node)
+                
+            elif func_type == 'ester':
+                if selected_neighbor_nodes:
+                    C_neighbor = selected_neighbor_nodes[i]
+                else:
+                    # select carbon neighbor to be replaced with O
+                    # avoid selecting c atoms on the ends
+                    C_neighbors = [neighbor for neighbor in self.neighbors(node) if self.nodes[neighbor]['element'] == 'C']
+                    if sum(1 for neighbor in self.neighbors(C_neighbors[0]) if self.nodes[neighbor]['element'] == 'C') > 1:
+                        C_neighbor = C_neighbors[0]
+                    else:
+                        C_neighbor = C_neighbors[1]
+
+                self.add_ester_to_PE(node, C_neighbor)
+                
+            elif func_type == 'amide':
+                if selected_neighbor_nodes:
+                    C_neighbor = selected_neighbor_nodes[i]
+                else:
+                    # select carbon neighbor to be replaced with NH
+                    # avoid selecting c atoms on the ends
+                    C_neighbors = [neighbor for neighbor in self.neighbors(node) if self.nodes[neighbor]['element'] == 'C']
+                    if sum(1 for neighbor in self.neighbors(C_neighbors[0]) if self.nodes[neighbor]['element'] == 'C') > 1:
+                        C_neighbor = C_neighbors[0]
+                    else:
+                        C_neighbor = C_neighbors[1]
+
+                self.add_amide_to_PE(node, C_neighbor)
+                
+            i += 1
                            
     def add_CO_to_PE(self, node):
         """
@@ -828,6 +965,67 @@ class GraphManager(nx.Graph):
         new_index = max(self.nodes) + 1
         self.add_node(new_index, index=new_index, element='O', x=O_coords[0], y=O_coords[1], z=O_coords[2])
         self.add_edge(node, new_index)
+        
+    def add_ester_to_PE(self, node, C_neighbor):
+        """
+        Add ester functional group to a polyethylene (PE) carbon atom.
+
+        Args:
+            node (int): The index of the carbon atom to functionalize.
+        """
+        # add CO 
+        self.add_CO_to_PE(node)
+        
+        # get coords for new O
+        new_O_coords = self.get_coordinates(C_neighbor)
+        CC_neighbors = [neighbor for neighbor in self.neighbors(C_neighbor) if self.nodes[neighbor]['element'] == 'C']
+        
+        # delete CH2
+        CH_neighbors = [neighbor for neighbor in self.neighbors(C_neighbor) if self.nodes[neighbor]['element'] == 'H']
+        for H_node in CH_neighbors:
+            self.remove_node(H_node)
+        self.remove_node(C_neighbor)
+        
+        # add O
+        new_index = max(self.nodes) + 1
+        self.add_node(new_index, index=new_index, element='O', x=new_O_coords[0], y=new_O_coords[1], z=new_O_coords[2])
+        for neighbor in CC_neighbors:
+             self.add_edge(neighbor, new_index)        
+             
+    def add_amide_to_PE(self, node, C_neighbor):
+        """
+        Add ester functional group to a polyethylene (PE) carbon atom.
+
+        Args:
+            node (int): The index of the carbon atom to functionalize.
+        """
+        # add CO 
+        self.add_CO_to_PE(node)
+        
+        # get coords for new O
+        new_N_coords = self.get_coordinates(C_neighbor)
+        CC_neighbors = [neighbor for neighbor in self.neighbors(C_neighbor) if self.nodes[neighbor]['element'] == 'C']
+        
+        # delete CH2 and add NH
+        CH_neighbors = [neighbor for neighbor in self.neighbors(C_neighbor) if self.nodes[neighbor]['element'] == 'H']
+        H_coords = np.array([self.get_coordinates(neighbor) for neighbor in CH_neighbors])
+        midpoint = np.mean(H_coords, axis=0)
+        for H_node in CH_neighbors:
+            self.remove_node(H_node)
+        self.remove_node(C_neighbor)
+        
+        # add NH (bond length = 1.01)
+        NH_vector = midpoint - new_N_coords
+        NH_vector /= np.linalg.norm(NH_vector)
+        NH_vector *= 1.23 
+        H_coords = new_N_coords + NH_vector
+        
+        new_index = max(self.nodes) + 1
+        self.add_node(new_index, index=new_index, element='N', x=new_N_coords[0], y=new_N_coords[1], z=new_N_coords[2])
+        for neighbor in CC_neighbors:
+             self.add_edge(neighbor, new_index) 
+        self.add_node(new_index+1, index=new_index+1, element='H', x=H_coords[0], y=H_coords[1], z=H_coords[2])
+        self.add_edge(new_index, new_index+1)
 
     def get_chemicalFormulas(self):
         """

@@ -15,7 +15,7 @@ def main():
         # Call the structure analysis of the polymer structure
         if analyzer:
             structureAnalysisMain.main(args)
-        
+            
         # Call the modify modules 
         if modifier:
             structureModificationMain.main(args)

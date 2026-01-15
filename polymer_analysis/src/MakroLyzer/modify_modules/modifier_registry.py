@@ -11,6 +11,8 @@ from MakroLyzer.modify_modules.structureModifierBase import ModifyOutputHandler
 from MakroLyzer.modify_modules.AminoSaturation import AminoSaturationModifier
 from MakroLyzer.modify_modules.SubgraphPrint import SubgraphPrintModifier
 from MakroLyzer.modify_modules.WrapGraph import WrapGraphModifier
+from MakroLyzer.modify_modules.FunctionalizePE import FunctionalizePEModifier
+from MakroLyzer.modify_modules.FunctionalizePEsurface import FunctionalizePEsurfaceModifier
 
 
 def create_patterns(args, **context):
@@ -49,22 +51,32 @@ def create_functionalize_PE(args, **context):
     val = args.get('functionalizePE')
     if val is None:
         return None
-    percentage, func_type = val
+    mode = val['mode']
+    func_type = val['func_type']
+    percentage = val.get('percentage')
+    neighbor_exclusion = val.get('neighbor_exclusion')
+    distance = val.get('distance')
     out_file = args.get('functionalizePE_file') if args.get('functionalizePE_file') is not None else 'functionalizedPE.xyz'
     output_handler = ModifyOutputHandler(out_file)
-    from MakroLyzer.modify_modules.FunctionalizePE import FunctionalizePEModifier
-    return FunctionalizePEModifier(percentage, func_type, output_handler)
+    return FunctionalizePEModifier(mode, func_type, percentage, neighbor_exclusion, distance, output_handler)
 
 def create_functionalize_PEsurf(args, **context):
     val = args.get('functionalizePEsurface')
     if val is None:
         return None
-    percentage, func_type = val
+    percentage = val['percentage']
+    func_type = val['func_type']
+    neighbor_exclusion = val.get('neighbor_exclusion')
     out_file = args.get('functionalizePE_file') if args.get('functionalizePE_file') is not None else 'functionalizedPE.xyz'
     output_handler = ModifyOutputHandler(out_file)
     box_size = context.get('boxSize')
-    from MakroLyzer.modify_modules.FunctionalizePEsurface import FunctionalizePEsurfaceModifier
-    return FunctionalizePEsurfaceModifier(percentage, func_type, output_handler, box_size=box_size)
+    return FunctionalizePEsurfaceModifier(
+        percentage,
+        func_type,
+        output_handler,
+        box_size=box_size,
+        neighbor_exclusion=neighbor_exclusion,
+    )
 
 
 MODIFIERS_REGISTRATION = {

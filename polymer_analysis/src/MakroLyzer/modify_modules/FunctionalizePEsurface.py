@@ -3,35 +3,37 @@ import pytim
 import MDAnalysis as mda
 
 from MakroLyzer.modify_modules.structureModifierBase import StructureModifier
-from MakroLyzer import dictionaries
 
 class FunctionalizePEsurfaceModifier(StructureModifier):
     """
-    A class for functionalizing polyethylene (PE) features. 
+    A class for functionalizing polyethylene (PE) surface features. 
     1. Replacing CH2 by CO
-    2. Replacing CH2 by NH
+    2. Replacing C2H4 by COO
+    3. Replacing C2H4 by CONH
     A number between 0 and 100 indicating the percentage of functionalization.
     Inherits fron StructureModifier.
     """
     
-    def __init__(self, percentage, func_type, output_handler=None, box_size=None, alpha=5.0):
+    def __init__(self, percentage, func_type, output_handler=None, box_size=None, alpha=5.0, neighbor_exclusion=1):
         """
         Initializes the FunctionalizePE class with the given percentage and functionalization type.
 
         Args:
-            percentage (int): The percentage of functionalization (0-100).
-            func_type (str): The type of functionalization ('CO' or 'NH').
+            percentage (float): The percentage of functionalization (0-100).
+            func_type (str): The type of functionalization ('CO', 'ester' or 'amide').
+            neighbor_exclusion (int): Minimum C-C hop distance to avoid selecting adjacent nodes.
         """
         super().__init__(output_handler)
-        if func_type not in ['CO']:
-            raise ValueError("func_type must be 'CO'")
+        if func_type not in ['CO', 'ester', 'amide']:
+            raise ValueError("func_type must be 'CO', 'ester' or 'amide'")
         if not (0 <= percentage <= 100):
             raise ValueError("percentage must be between 0 and 100")
         
-        self.percentage = percentage
         self.func_type = func_type
+        self.percentage = percentage
         self.box_size = box_size
         self.alpha = alpha
+        self.neighbor_exclusion = neighbor_exclusion
         
     def _find_surface_atoms(self, graph):
         """
@@ -80,7 +82,6 @@ class FunctionalizePEsurfaceModifier(StructureModifier):
             group=u.atoms,
             alpha=self.alpha,
             molecular=False,
-            #radii_dict=dictionaries.dictVdW(),
         )
         if not interface.layers:
             return []
@@ -97,7 +98,13 @@ class FunctionalizePEsurfaceModifier(StructureModifier):
             return graph
 
         surface_graph = graph.subgraph(surface_nodes)
-        graph.functionalizePE(self.percentage, self.func_type, surfaceAtoms=surface_graph)
+        graph.functionalizePE(
+            mode="random",
+            func_type=self.func_type,
+            percentage=self.percentage,
+            neighbor_exclusion=self.neighbor_exclusion,
+            surface_atoms=surface_graph,
+        )
         return graph
 
     def render_output(self, graph, frame_idx):

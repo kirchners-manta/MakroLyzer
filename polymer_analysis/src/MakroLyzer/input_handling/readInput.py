@@ -1,4 +1,5 @@
 import argparse
+import re
 import sys
 
 ASCII_ART = (
@@ -52,7 +53,18 @@ ASCII_ART = (
 
 class ArtParser(argparse.ArgumentParser):
     def format_help(self):
-        return ASCII_ART + "\n" + super().format_help()
+        help_text = super().format_help()
+        help_text = re.sub(r'\n(?= {2}-)', '\n\n', help_text)
+        return ASCII_ART + "\n" + help_text
+
+def format_header(title, width=90):
+    core = f" {title} "
+    if len(core) >= width:
+        return f"\x1b[1m{core}\x1b[0m"
+    dash_total = width - len(core)
+    left = dash_total // 2
+    right = dash_total - left
+    return f"\x1b[1m{'-' * left}{core}{'-' * right}\x1b[0m"
 
 def readCommandLine() -> dict:
     
@@ -69,7 +81,9 @@ def readCommandLine() -> dict:
                        description='MakroLyzer - Makromolecule Analysis Tool')
     
     # Input Group # ----------------------------------------------------------------------------------------
-    input_group = parser.add_argument_group('----------------| Arguments for specifying input files and settings |----------------')
+    input_group = parser.add_argument_group(
+        format_header("Arguments for specifying input files and settings")
+    )
     file_group = input_group.add_mutually_exclusive_group(required=True)
     
     file_group.add_argument('-xyz', '--xyzFile', 
@@ -110,8 +124,8 @@ def readCommandLine() -> dict:
    
     
     # Structure Analyzers Group # -------------------------------------------------------------------------------
-    analyzer_group = parser.add_argument_group(title='----------------| Arguments for structure analyzers |----------------',
-                                               description='This module includes various analyzers to compute structural properties of macromolecules.')
+    analyzer_group = parser.add_argument_group(title=format_header("Arguments for structure analyzers"),
+                                                description='This module includes various analyzers to compute structural properties of macromolecules.')
     
     analyzer_group.add_argument(
                         '-d', '--dihedral',
@@ -179,7 +193,7 @@ def readCommandLine() -> dict:
                         'The order parameter S* can either be calculated for the entire graph, or the space can be divided into\n'
                         'smaller cells, and S* can be calculated for each cell individually.\n'
                         'The overall order parameter is then the average of the order parameters of all cells.\n'
-                        'Parameters that need to be specified:   BoxSize : NoCellsPerDim : MolecularVectorLength\n'
+                        'Parameters that need to be specified:  <BoxSize>:<NoCellsPerDim>:<MolecularVectorLength>\n'
                         '                    BoxSize : Size of the simulation box in x, y, z directions (float,float,float) or one value if symmetrical\n'
                         '                    NoCellsPerDim : Number of cells in each direction (int, int, int) or only one value if symmetrical\n'
                         '                    MolecularVectorLength : Number of atoms that are used to calculate a molecular vector from (int)\n'
@@ -217,23 +231,36 @@ def readCommandLine() -> dict:
     
     
     # Structure Modifiers Group # ------------------------------------------------------------------------------
-    modifier_group = parser.add_argument_group('----------------| Arguments for structure modifiers |----------------')
+    modifier_group = parser.add_argument_group(
+        format_header("Arguments for structure modifiers")
+    )
     
     modifier_group.add_argument(
                         '-funcPE', '--functionalizePE',
-                        nargs='?', const=(10, 'CO'), default=None,
-                        help='Functionalize Polyethylene (PE) by replacing CH2 groups with CO groups.\n'
-                        'Provide a percentage value (0-100) indicating the degree of functionalization.\n'
-                        'Usage example: -funcPE 15:CO to functionalize 15%% of CH2 groups to CO groups.',
-                        type=functionalize)
+                        default=None,
+                        help='Functionalize Polyethylene (PE) with CO/ester/amide groups.\n'
+                        'Modes:\n'
+                        '  random:<percentage>:<func_type>:<neighbor_exclusion>\n'
+                        '  periodic:<distance>:<func_type>\n'
+                        'The random mode ramdomly distibutes the functional groups <func_type> over the polymerstrands,\n'
+                        'with a minimum distance of <neighbor_exclusion>. The <percentage> value gives the percentage of\n'
+                        'adjusted carbon atoms in the backbone, excluding end group carbons (CH3).\n'
+                        'The periodic mode adds functional groups of type <func_type> in distances of <distance> along the\n'
+                        'backbones of the PE strands.\n'
+                        'Usage examples:\n'
+                        '  -funcPE random:15.8:CO:2\n'
+                        '  -funcPE periodic:6:ester',
+                        type=functionalize_pe)
     
     modifier_group.add_argument(
                         '-funcPEsurf', '--functionalizePEsurface',
-                        nargs='?', const=(10, 'CO'), default=None,
-                        help='Functionalize Polyethylene (PE) surface CH2 groups with CO groups using pytim.\n'
-                        'Provide a percentage value (0-100) indicating the degree of functionalization.\n'
-                        'Usage example: -funcPEsurf 15:CO to functionalize 15%% of surface CH2 groups to CO groups.',
-                        type=functionalize)
+                        default=None,
+                        help='Functionalize Polyethylene (PE) surface with CO/ester/amide groups (random only).\n'
+                        'Modes:\n'
+                            'random:<percentage>:<func_type>:<neighbor_exclusion>\n'
+                        'Usage example:\n'
+                            '-funcPEsurf random:15:CO:2',
+                        type=functionalize_pe_surface)
     
     modifier_group.add_argument(
                         '-funcPE-file', '--functionalizePE-file',
@@ -314,25 +341,82 @@ def OrderParam(value):
     unitSize = int(parts[2])
     return (boxSize, n, unitSize)
 
-def functionalize(value):
+def _parse_func_type(func_type, value):
+    if func_type not in ['CO', 'ester', 'amide']:
+        raise argparse.ArgumentTypeError(
+            f"Invalid func_type in '{value}'. Expected 'CO', 'ester' or 'amide'."
+        )
+    return func_type
+
+def functionalize_pe(value):
     parts = value.split(':')
-    if len(parts) != 2:
+    if len(parts) < 3:
         raise argparse.ArgumentTypeError(
-            f"Invalid format: '{value}'. Expected format: <percentage>:<func_type>"
+            "Invalid format. Expected random:<percentage>:<func_type>:<neighbor_exclusion> "
+            "or periodic:<distance>:<func_type>."
         )
-    try:
-        percentage = int(parts[0])
-    except ValueError:
+    mode = parts[0].lower()
+    if mode == 'random':
+        if len(parts) != 4:
+            raise argparse.ArgumentTypeError(
+                "Invalid random format. Expected random:<percentage>:<func_type>:<neighbor_exclusion>."
+            )
+        try:
+            percentage = float(parts[1])
+        except ValueError:
+            raise argparse.ArgumentTypeError(
+                f"Invalid percentage value in '{value}'. Expected a float between 0 and 100."
+            )
+        if not (0 <= percentage <= 100):
+            raise argparse.ArgumentTypeError(
+                f"Percentage must be between 0 and 100 in '{value}'."
+            )
+        func_type = _parse_func_type(parts[2], value)
+        try:
+            neighbor_exclusion = int(parts[3])
+        except ValueError:
+            raise argparse.ArgumentTypeError(
+                f"Invalid neighbor_exclusion in '{value}'. Expected an integer >= 0."
+            )
+        if neighbor_exclusion < 0:
+            raise argparse.ArgumentTypeError(
+                f"neighbor_exclusion must be >= 0 in '{value}'."
+            )
+        return {
+            'mode': 'random',
+            'percentage': percentage,
+            'func_type': func_type,
+            'neighbor_exclusion': neighbor_exclusion,
+        }
+    if mode == 'periodic':
+        if len(parts) != 3:
+            raise argparse.ArgumentTypeError(
+                "Invalid periodic format. Expected periodic:<distance>:<func_type>."
+            )
+        try:
+            distance = int(parts[1])
+        except ValueError:
+            raise argparse.ArgumentTypeError(
+                f"Invalid distance in '{value}'. Expected an integer >= 1."
+            )
+        if distance < 1:
+            raise argparse.ArgumentTypeError(
+                f"distance must be >= 1 in '{value}'."
+            )
+        func_type = _parse_func_type(parts[2], value)
+        return {
+            'mode': 'periodic',
+            'distance': distance,
+            'func_type': func_type,
+        }
+    raise argparse.ArgumentTypeError(
+        f"Invalid mode in '{value}'. Expected 'random' or 'periodic'."
+    )
+
+def functionalize_pe_surface(value):
+    data = functionalize_pe(value)
+    if data['mode'] != 'random':
         raise argparse.ArgumentTypeError(
-            f"Invalid percentage value in '{value}'. Expected an integer between 0 and 100."
+            "Surface functionalization only supports random mode."
         )
-    func_type = parts[1]
-    if func_type not in ['CO']:
-        raise argparse.ArgumentTypeError(
-            f"Invalid func_type in '{value}'. Expected 'CO'."
-        )
-    if not (0 <= percentage <= 100):
-        raise argparse.ArgumentTypeError(
-            f"Percentage must be between 0 and 100 in '{value}'."
-        )
-    return (percentage, func_type)
+    return data

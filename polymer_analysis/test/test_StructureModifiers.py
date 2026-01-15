@@ -288,22 +288,49 @@ class TestFunctionalizePEModifier:
     
     def test_FunctionalizePEModifier_init(self):
         handler = Mock()
-        mod = FunctionalizePEModifier(15, 'CO', output_handler=handler)
+        mod = FunctionalizePEModifier(
+            "random",
+            "CO",
+            percentage=15,
+            neighbor_exclusion=2,
+            output_handler=handler,
+        )
         assert mod.output_handler == handler
         assert mod.frame_number == 0
         assert mod.percentage == 15
         assert mod.func_type == 'CO'
+        assert mod.mode == "random"
+        assert mod.neighbor_exclusion == 2
         
     def test_FunctionalizePEModifier_compute(self):
         mock_graph = Mock()
-        mod = FunctionalizePEModifier(25, 'CO')
+        mod = FunctionalizePEModifier("random", "CO", percentage=25, neighbor_exclusion=1)
         res = mod.compute(mock_graph)
         assert res is mock_graph
-        mock_graph.functionalizePE.assert_called_once_with(25, 'CO')
+        mock_graph.functionalizePE.assert_called_once_with(
+            "random",
+            "CO",
+            percentage=25,
+            neighbor_exclusion=1,
+            distance=None,
+        )
+
+    def test_FunctionalizePEModifier_compute_ester(self):
+        mock_graph = Mock()
+        mod = FunctionalizePEModifier("random", "ester", percentage=40, neighbor_exclusion=1)
+        res = mod.compute(mock_graph)
+        assert res is mock_graph
+        mock_graph.functionalizePE.assert_called_once_with(
+            "random",
+            "ester",
+            percentage=40,
+            neighbor_exclusion=1,
+            distance=None,
+        )
 
     def test_FunctionalizePEModifier_render_output(self):
         mock_handler = Mock()
-        mod = FunctionalizePEModifier(10, 'CO', output_handler=mock_handler)
+        mod = FunctionalizePEModifier("random", "CO", percentage=10, output_handler=mock_handler)
 
         class G:
             def number_of_nodes(self):
@@ -369,7 +396,32 @@ class TestFunctionalizePEsurfaceModifier:
             res = mod.compute(mock_graph)
         assert res is mock_graph
         mock_graph.subgraph.assert_called_once_with([1, 2])
-        mock_graph.functionalizePE.assert_called_once_with(30, 'CO', surfaceAtoms=surface_graph)
+        mock_graph.functionalizePE.assert_called_once_with(
+            mode="random",
+            func_type="CO",
+            percentage=30,
+            neighbor_exclusion=1,
+            surface_atoms=surface_graph,
+        )
+
+    def test_FunctionalizePEsurfaceModifier_compute_ester(self):
+        pytest.importorskip("pytim")
+        pytest.importorskip("MDAnalysis")
+        mod = FunctionalizePEsurfaceModifier(35, 'ester')
+        mock_graph = Mock()
+        surface_graph = Mock()
+        mock_graph.subgraph.return_value = surface_graph
+        with patch.object(mod, "_find_surface_atoms", return_value=[3, 4]):
+            res = mod.compute(mock_graph)
+        assert res is mock_graph
+        mock_graph.subgraph.assert_called_once_with([3, 4])
+        mock_graph.functionalizePE.assert_called_once_with(
+            mode="random",
+            func_type="ester",
+            percentage=35,
+            neighbor_exclusion=1,
+            surface_atoms=surface_graph,
+        )
 
     def test_FunctionalizePEsurfaceModifier_find_surface_atoms(self):
         pytest.importorskip("pytim")
