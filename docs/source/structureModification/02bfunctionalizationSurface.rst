@@ -13,6 +13,7 @@ eligible backbone carbons is chosen. End-group carbons are excluded.
 Functionalization types
 -----------------------
 - ``CO`` replaces CH2 with a carbonyl group. 
+- ``COH``replaces CH2 with a hydroxy group.
 - ``ester`` replaces CH2-CH2 with COO.
 - ``amide`` replace CH2-CH2 with CONH.
 
@@ -26,7 +27,7 @@ Command line
   ``-funcPEsurf random:percentage:func_type:neighbor_exclusion``
   ``--functionalizePEsurface``
       Random functionalization of the PE surface by replacing CH2 groups with ``func_type``.
-      ``func_type`` is ``CO``, ``ester``, or ``amide``.
+      ``func_type`` is ``CO``, ``COH``, ``ester``, or ``amide``.
       ``percentage`` is a float from 0 to 100.
       ``neighbor_exclusion`` is the minimum C-C hop distance between functional groups.
 

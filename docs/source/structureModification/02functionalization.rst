@@ -12,6 +12,7 @@ or periodic (fixed spacing along the backbone). End-group carbons are excluded.
 Functionalization types
 -----------------------
 - ``CO`` replaces CH2 with a carbonyl group. 
+- ``COH``replaces CH2 with a hydroxy group.
 - ``ester`` replaces CH2-CH2 with COO.
 - ``amide`` replace CH2-CH2 with CONH.
 
@@ -19,7 +20,7 @@ Modes
 -----
 - ``Random`` mode selects a target number of CH2 sites based on the requested ``percentage`` and then chooses positions at random while respecting the ``neighbor_exclusion`` to keep functional groups separated. A neighbor_exclusion value of three means, that between two functional groups are at least three untouched CH2 units.
 
-- ``Periodic`` mode places functional groups at a fixed interval along the backbone using the provided ``distance`` (m). A distance of three means, that between two functional groups are three untouched CH2 units. For the three functionalization types available so far, a functionalized polymer stand can look like this:
+- ``Periodic`` mode places functional groups at a fixed interval along the backbone using the provided ``distance`` (m). A distance of three means, that between two functional groups are three untouched CH2 units. For the CO, ester and amide functionalization types, a functionalized polymer stand can look like this:
 
 .. figure:: ../figures/structureModification/02funcPE4.png
    :width: 500
@@ -39,7 +40,7 @@ Command line
   ``--functionalizePE``
       Periodic functionalization along the backbone.
       ``distance`` is the spacing between functional groups (integer >= 1).
-      ``func_type`` is ``CO``, ``ester``, or ``amide``.
+      ``func_type`` is ``CO``, ``COH``, ``ester``, or ``amide``.
 
   ``-funcPE-file``
   ``--functionalizePE-file``

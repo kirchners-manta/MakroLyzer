@@ -238,7 +238,7 @@ def readCommandLine() -> dict:
     modifier_group.add_argument(
                         '-funcPE', '--functionalizePE',
                         default=None,
-                        help='Functionalize Polyethylene (PE) with CO/ester/amide groups.\n'
+                        help='Functionalize Polyethylene (PE) with CO/COH/ester/amide groups.\n'
                         'Modes:\n'
                         '  random:<percentage>:<func_type>:<neighbor_exclusion>\n'
                         '  periodic:<distance>:<func_type>\n'
@@ -255,7 +255,7 @@ def readCommandLine() -> dict:
     modifier_group.add_argument(
                         '-funcPEsurf', '--functionalizePEsurface',
                         default=None,
-                        help='Functionalize Polyethylene (PE) surface with CO/ester/amide groups (random only).\n'
+                        help='Functionalize Polyethylene (PE) surface with CO/COH/ester/amide groups (random only).\n'
                         'Modes:\n'
                             'random:<percentage>:<func_type>:<neighbor_exclusion>\n'
                         'Usage example:\n'
@@ -342,9 +342,9 @@ def OrderParam(value):
     return (boxSize, n, unitSize)
 
 def _parse_func_type(func_type, value):
-    if func_type not in ['CO', 'ester', 'amide']:
+    if func_type not in ['CO', 'COH', 'ester', 'amide']:
         raise argparse.ArgumentTypeError(
-            f"Invalid func_type in '{value}'. Expected 'CO', 'ester' or 'amide'."
+            f"Invalid func_type in '{value}'. Expected 'CO', 'COH', 'ester' or 'amide'."
         )
     return func_type
 

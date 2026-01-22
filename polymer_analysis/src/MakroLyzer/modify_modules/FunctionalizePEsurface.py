@@ -20,12 +20,12 @@ class FunctionalizePEsurfaceModifier(StructureModifier):
 
         Args:
             percentage (float): The percentage of functionalization (0-100).
-            func_type (str): The type of functionalization ('CO', 'ester' or 'amide').
+            func_type (str): The type of functionalization ('CO', 'COH', 'ester' or 'amide').
             neighbor_exclusion (int): Minimum C-C hop distance to avoid selecting adjacent nodes.
         """
         super().__init__(output_handler)
-        if func_type not in ['CO', 'ester', 'amide']:
-            raise ValueError("func_type must be 'CO', 'ester' or 'amide'")
+        if func_type not in ['CO', 'COH', 'ester', 'amide']:
+            raise ValueError("func_type must be 'CO', 'COH','ester' or 'amide'")
         if not (0 <= percentage <= 100):
             raise ValueError("percentage must be between 0 and 100")
         

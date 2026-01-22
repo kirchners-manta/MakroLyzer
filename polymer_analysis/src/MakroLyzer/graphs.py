@@ -751,8 +751,8 @@ class GraphManager(nx.Graph):
             distance (int): Distance between functional groups along the backbone - (periodic mode)
         """
         # Check if everything is correctly given ------------------------------------------------------------------
-        if func_type not in ['CO', 'ester', 'amide']:
-            raise ValueError("func_type must be 'CO', 'ester' or 'amide'.")
+        if func_type not in ['CO', 'COH', 'ester', 'amide']:
+            raise ValueError("func_type must be 'CO', 'COH', 'ester' or 'amide'.")
         if mode not in ['random', 'periodic']:
             raise ValueError("mode must be 'random' or 'periodic'.")
         if mode == 'random':
@@ -904,6 +904,9 @@ class GraphManager(nx.Graph):
             if func_type == 'CO':
                 self.add_CO_to_PE(node)
                 
+            if func_type == 'COH':
+                self.add_OH_to_PE(node)
+                
             elif func_type == 'ester':
                 if selected_neighbor_nodes:
                     C_neighbor = selected_neighbor_nodes[i]
@@ -1017,7 +1020,7 @@ class GraphManager(nx.Graph):
         # add NH (bond length = 1.01)
         NH_vector = midpoint - new_N_coords
         NH_vector /= np.linalg.norm(NH_vector)
-        NH_vector *= 1.23 
+        NH_vector *= 1.01
         H_coords = new_N_coords + NH_vector
         
         new_index = max(self.nodes) + 1
@@ -1026,6 +1029,44 @@ class GraphManager(nx.Graph):
              self.add_edge(neighbor, new_index) 
         self.add_node(new_index+1, index=new_index+1, element='H', x=H_coords[0], y=H_coords[1], z=H_coords[2])
         self.add_edge(new_index, new_index+1)
+        
+    def add_OH_to_PE(self, node):
+        """
+        Add OH functional group to a polyethylene (PE) carbon atom.
+
+        Args:
+            node (int): The index of the carbon atom to functionalize.
+        """
+        # Get H neighbors
+        H_neighbors = [neighbor for neighbor in self.neighbors(node) if self.nodes[neighbor]['element'] == 'H']
+        if len(H_neighbors) < 1:
+            raise ValueError("PE carbon must have at least one H neighbor to functionalize.")
+        H_neighbor = H_neighbors[0]
+        H_neighbor2 = H_neighbors[1]
+        
+        # Replace one H by O (C-O : 1.43Å)
+        H_coords = self.get_coordinates(H_neighbor)
+        C_coords = self.get_coordinates(node)
+        CH_vector = H_coords - C_coords
+        CH_vector /= np.linalg.norm(CH_vector)
+        O_coords = C_coords + CH_vector * 1.43
+        
+        self.remove_node(H_neighbor)
+        
+        new_index = max(self.nodes) + 1
+        self.add_node(new_index, index=new_index, element='O', x=O_coords[0], y=O_coords[1], z=O_coords[2])
+        self.add_edge(node, new_index)
+        
+        # Add H to O (0.96Å)
+        H_coords = self.get_coordinates(H_neighbor2)
+        CH_vector = H_coords - C_coords
+        CH_vector /= np.linalg.norm(CH_vector)
+        H2_coords = O_coords - CH_vector * 0.96
+
+        self.add_node(new_index+1, index=new_index+1, element='H', x=H2_coords[0], y=H2_coords[1], z=H2_coords[2])
+        self.add_edge(new_index, new_index+1)
+        
+
 
     def get_chemicalFormulas(self):
         """
