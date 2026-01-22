@@ -12,7 +12,9 @@ dependencies = [
     "matplotlib",
     "networkx",
     "tqdm",
-    "IPython"
+    "IPython",
+    "MDAnalysis",
+    "pytim"
 ]
 
 requires-python = ">=3.8"
@@ -49,10 +51,7 @@ test = [
 dev = [
     "pre-commit"
 ]
-surface = [
-    "MDAnalysis",
-    "pytim"
-]
+surface = []
 
 [project.urls]
 

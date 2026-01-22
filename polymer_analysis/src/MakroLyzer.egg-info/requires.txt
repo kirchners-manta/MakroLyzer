@@ -5,13 +5,13 @@ matplotlib
 networkx
 tqdm
 IPython
+MDAnalysis
+pytim
 
 [dev]
 pre-commit
 
 [surface]
-MDAnalysis
-pytim
 
 [test]
 pytest
