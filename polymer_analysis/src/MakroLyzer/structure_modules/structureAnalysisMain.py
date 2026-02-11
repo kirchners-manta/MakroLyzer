@@ -5,6 +5,7 @@ from MakroLyzer.input_handling import subgraphSelection
 from MakroLyzer import graphs
 
 from MakroLyzer.structure_modules.analyzer_registry import ANALYZERS_REGISTRATION
+from MakroLyzer.structure_modules.backbone_cache import BackboneCache
 
 from tqdm import tqdm
 
@@ -55,9 +56,13 @@ def main(args):
     #################################################################################################
     analyzers = {}
     # prepare context for factories
-    context = {'boxSize': boxSize}
+    context = {'boxSize': boxSize, 'static_topology': static_topology}
     if args.get('orderParameter'):
         context.update({'BoxSize': BoxSize, 'NoCellsPerDim': NoCellsPerDim, 'MolecularVectorLength': MolecularVectorLength})
+    if static_topology and (
+        args.get('orderParameter') or args.get('dihedral') or args.get('endToEndDistance')
+    ):
+        context['backbone_cache'] = BackboneCache()
 
     for key, factory in ANALYZERS_REGISTRATION.items():
         try:

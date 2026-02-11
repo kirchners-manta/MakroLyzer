@@ -70,7 +70,9 @@ def create_end_to_end(args, **context):
         return None
     out_file = args.get('e2e_file') if args.get('e2e_file') is not None else (val if isinstance(val, str) else 'e2eDistances.csv')
     output_handler = OutputHandler(out_file, mode='streaming')
-    return EndToEndDistanceAnalyzer(output_handler)
+    static_topology = context.get('static_topology', False)
+    backbone_cache = context.get('backbone_cache')
+    return EndToEndDistanceAnalyzer(output_handler, static_topology=static_topology, backbone_cache=backbone_cache)
 
 
 def create_order_parameter(args, **context):
@@ -80,9 +82,11 @@ def create_order_parameter(args, **context):
     BoxSize = context.get('BoxSize')
     NoCellsPerDim = context.get('NoCellsPerDim')
     MolecularVectorLength = context.get('MolecularVectorLength')
+    static_topology = context.get('static_topology', False)
+    backbone_cache = context.get('backbone_cache')
     order_file = args.get('order_file') or 'orderParameter.csv'
     output_handler = OutputHandler(order_file, mode='streaming')
-    return OrderParameterAnalyzer(BoxSize, NoCellsPerDim, MolecularVectorLength, output_handler)
+    return OrderParameterAnalyzer(BoxSize, NoCellsPerDim, MolecularVectorLength, output_handler, static_topology=static_topology, backbone_cache=backbone_cache)
 
 
 def create_ramachandran(args, **context):
@@ -107,12 +111,16 @@ def create_dihedrals(args, **context):
         dihedral_list_handler = OutputHandler(dihedral_file.replace('.csv', '_list.csv'), mode='streaming')
         cistrans_file = 'CisTrans.csv'
         cistrans_handler = OutputHandler(cistrans_file, mode='streaming')
+    static_topology = context.get('static_topology', False)
+    backbone_cache = context.get('backbone_cache')
     return DihedralsAnalyzer(
         dihedral_output_handler=dihedral_handler,
         dihedral_list_output_handler=dihedral_list_handler,
         cistrans_output_handler=cistrans_handler,
         dihedral_range=args.get('dihedral_range'),
-        special_dihedral=args.get('special_dihedral')
+        special_dihedral=args.get('special_dihedral'),
+        static_topology=static_topology,
+        backbone_cache=backbone_cache
     )
 
 

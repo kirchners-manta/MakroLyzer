@@ -9,7 +9,7 @@ class EndToEndDistanceAnalyzer(StructureAnalyzer):
     Inherits from StructureAnalyzer. 
     """
     
-    def __init__(self, output_handler=None):
+    def __init__(self, output_handler=None, static_topology=False, backbone_cache=None):
         """
         Initialize EndToEndDistanceAnalyzer.
         
@@ -17,6 +17,30 @@ class EndToEndDistanceAnalyzer(StructureAnalyzer):
             output_handler (OutputHandler): Handler for writing output.
         """
         super().__init__(output_handler)
+        self.static_topology = static_topology
+        self._cached_endpoints = None
+        self.backbone_cache = backbone_cache
+
+    def _compute_endpoints(self, graph):
+        """
+        Compute end-to-end endpoints per subgraph on a reduced graph.
+        Returns a list of (startNode, endNode).
+        """
+        subgraphs = graph.get_subgraphs()
+        prepared = []
+        for subgraph in subgraphs:
+            sub = subgraph.remove_1order()
+            sub.update_degree()
+            prepared.append(sub)
+
+        endpoints = []
+        for subgraph in prepared:
+            backbone = subgraph.find_longest_path()
+            if len(backbone) < 2:
+                continue
+            endpoints.append((backbone[0], backbone[-1]))
+
+        return endpoints
         
     def initialize_output(self):
         """
@@ -35,23 +59,36 @@ class EndToEndDistanceAnalyzer(StructureAnalyzer):
             graph (GraphManager): Graph to analyze.
         """
         
-        subgraphs = graph.get_subgraphs()
-        prepared = []
-        for subgraph in subgraphs:
-            sub = subgraph.remove_1order()
-            sub.update_degree()
-            prepared.append(sub)
-        
         distances = []
-        for subgraph in prepared:
-            backbone = subgraph.find_longest_path()
-            if len(backbone) < 2:
-                continue
-            else:
-                startNode = backbone[0]
-                endNode = backbone[-1]
-                distance = subgraph.distance(startNode, endNode)
+        if self.backbone_cache is not None:
+            endpoints = self.backbone_cache.get_endpoints(graph)
+            for startNode, endNode in endpoints:
+                distance = graph.distance(startNode, endNode)
                 distances.append(distance)
+        elif self.static_topology:
+            if self._cached_endpoints is None:
+                self._cached_endpoints = self._compute_endpoints(graph)
+
+            for startNode, endNode in self._cached_endpoints:
+                distance = graph.distance(startNode, endNode)
+                distances.append(distance)
+        else:
+            subgraphs = graph.get_subgraphs()
+            prepared = []
+            for subgraph in subgraphs:
+                sub = subgraph.remove_1order()
+                sub.update_degree()
+                prepared.append(sub)
+
+            for subgraph in prepared:
+                backbone = subgraph.find_longest_path()
+                if len(backbone) < 2:
+                    continue
+                else:
+                    startNode = backbone[0]
+                    endNode = backbone[-1]
+                    distance = subgraph.distance(startNode, endNode)
+                    distances.append(distance)
                 
         return np.array(distances)
                 
