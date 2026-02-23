@@ -22,6 +22,7 @@ from MakroLyzer.structure_modules.Ramachandran import RamachandranAnalyzer
 from MakroLyzer.structure_modules.Dihedrals import DihedralsAnalyzer
 from MakroLyzer.structure_modules.ChemicalFormula import ChemicalFormulaAnalyzer
 from MakroLyzer.structure_modules.backbone_cache import BackboneCache
+from MakroLyzer.structure_modules.SurfaceAtoms import SurfaceAtomsAnalyzer
 
 # OutputHandler Tests # ------------------------------------------------------------------
 class TestOutputHandler:
@@ -2410,6 +2411,46 @@ class TestBackboneCache:
         subgraph_paths_again = cache.get_subgraph_paths(mock_graph)
         assert subgraph_paths_again == subgraph_paths
         mock_graph.remove_1order.assert_called_once()
+
+
+class TestSurfaceAtomsAnalyzer:
+    """Test the SurfaceAtomsAnalyzer class."""
+
+    def test_SurfaceAtomsAnalyzer_init_accepts_single_and_range(self):
+        analyzer_single = SurfaceAtomsAnalyzer(ring_size=6)
+        analyzer_range = SurfaceAtomsAnalyzer(ring_size=(4, 7))
+        assert analyzer_single.ring_size == 6
+        assert analyzer_range.ring_size == (4, 7)
+
+    def test_SurfaceAtomsAnalyzer_init_rejects_invalid_ring_size(self):
+        with pytest.raises(ValueError, match="Minimum ring size is 3."):
+            SurfaceAtomsAnalyzer(ring_size=2)
+        with pytest.raises(ValueError, match="Minimum ring size is 3."):
+            SurfaceAtomsAnalyzer(ring_size=(2, 7))
+        with pytest.raises(ValueError, match="Ring-size range must satisfy min <= max."):
+            SurfaceAtomsAnalyzer(ring_size=(7, 4))
+
+    def test_SurfaceAtomsAnalyzer_assign_atom_types_with_ring_range(self):
+        analyzer = SurfaceAtomsAnalyzer(ring_size=(4, 7))
+        mock_graph = Mock()
+        mock_graph.nodes = {
+            0: {"element": "C"},
+            1: {"element": "C"},
+            2: {"element": "O"},
+            3: {"element": "C"},
+            4: {"element": "N"},
+        }
+
+        # Only nodes 0 and 1 are treated as ring atoms for this test
+        mock_graph._filter_cycles_by_size.return_value = [[0, 1]]
+
+        surface_nodes = [0, 2, 3, 4]
+        with patch("MakroLyzer.structure_modules.SurfaceAtoms.nx.cycle_basis", return_value=[[0, 1], [3, 4, 5]]):
+            result = analyzer._assign_atom_types(mock_graph, surface_nodes)
+
+        assert result["ring"] == 0       # node 0 (C in cycle_nodes) - but cycle too small
+        assert result["nonpolar"] == 2   # node 3 (C not in cycle_nodes) and node 0
+        assert result["polar"] == 2      # node 2 (O), node 4 (N)
         
 # ChemicalFormulaAnalyzer tests # ---------------------------------------------------------
 

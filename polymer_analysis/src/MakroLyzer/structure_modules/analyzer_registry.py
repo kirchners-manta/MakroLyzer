@@ -16,6 +16,7 @@ from MakroLyzer.structure_modules.OrderParameter import OrderParameterAnalyzer
 from MakroLyzer.structure_modules.Ramachandran import RamachandranAnalyzer
 from MakroLyzer.structure_modules.Dihedrals import DihedralsAnalyzer
 from MakroLyzer.structure_modules.ChemicalFormula import ChemicalFormulaAnalyzer
+from MakroLyzer.structure_modules.SurfaceAtoms import SurfaceAtomsAnalyzer
 from MakroLyzer.structure_modules.structureBase import OutputHandler
 
 
@@ -83,7 +84,7 @@ def create_order_parameter(args, **context):
     NoCellsPerDim = context.get('NoCellsPerDim')
     MolecularVectorLength = context.get('MolecularVectorLength')
     op_vector_source = context.get('op_vector_source', 'atom')
-    op_ring_cycle_size = context.get('op_ring_cycle_size')
+    op_ring_cycle_size = context.get('op_ring_size')
     static_topology = context.get('static_topology', False)
     backbone_cache = context.get('backbone_cache')
     order_file = args.get('order_file') or 'orderParameter.csv'
@@ -143,6 +144,15 @@ def create_chemical_formula(args, **context):
     formula_handler = OutputHandler(out_file, mode='streaming')
     return ChemicalFormulaAnalyzer(formula_handler)
 
+def create_surface_atoms(args, **context):
+    val = args.get('surfaceAtoms')
+    if val is None:
+        return None
+    out_file = args.get('surfaceAtoms_file') if args.get('surfaceAtoms_file') is not None else (val if isinstance(val, str) else 'surfaceAtoms.csv')
+    surface_atoms_handler = OutputHandler(out_file, mode='streaming')
+    ring_size = args.get('sA_ring_size', 6)
+    return SurfaceAtomsAnalyzer(surface_atoms_handler, ring_size=ring_size)
+
 
 ANALYZERS_REGISTRATION = {
     'hbonds': create_hbonds,
@@ -155,4 +165,5 @@ ANALYZERS_REGISTRATION = {
     'AminoAcidRamachandran': create_ramachandran,
     'dihedrals': create_dihedrals,
     'chemicalFormula': create_chemical_formula,
+    'surfaceAtoms': create_surface_atoms,
 }

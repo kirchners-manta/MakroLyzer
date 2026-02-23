@@ -2,6 +2,7 @@ import pytest
 
 from MakroLyzer.input_handling import checkInput
 from MakroLyzer.input_handling import inputHandlingMain
+from MakroLyzer.input_handling import readInput
 
 
 def _base_args():
@@ -112,3 +113,15 @@ class TestInputHandlingMain:
         captured = capsys.readouterr()
         assert "XYZ file 'missing.xyz' not found." in captured.out
         assert exc.value.code == 1
+
+
+class TestReadInputParsers:
+    def test_ring_cycle_size_single_and_range(self):
+        assert readInput.RingCycleSize("6") == 6
+        assert readInput.RingCycleSize("[4,7]") == (4, 7)
+
+    def test_ring_cycle_size_minimum_three(self):
+        with pytest.raises(Exception, match="Minimum ring size is 3."):
+            readInput.RingCycleSize("2")
+        with pytest.raises(Exception, match="Minimum ring size is 3."):
+            readInput.RingCycleSize("[2,7]")

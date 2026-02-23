@@ -41,7 +41,7 @@ def main(args):
         op_vector_source = args.get('op_vector_source', 'atom')
         if op_vector_source == 'ring':
             op_vector_source = 'ring-center'
-        op_ring_cycle_size = args.get('op_ring_cycle_size')
+        op_ring_cycle_size = args.get('op_ring_size')
         if op_vector_source == 'ring-normal':
             MolecularVectorLength = None
     if not boxSize and args['orderParameter']:
@@ -70,7 +70,7 @@ def main(args):
                 'NoCellsPerDim': NoCellsPerDim,
                 'MolecularVectorLength': MolecularVectorLength,
                 'op_vector_source': op_vector_source,
-                'op_ring_cycle_size': op_ring_cycle_size,
+                'op_ring_size': op_ring_cycle_size,
             }
         )
     if static_topology and (

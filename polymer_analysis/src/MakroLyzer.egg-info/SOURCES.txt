@@ -40,6 +40,7 @@ src/MakroLyzer/structure_modules/MoleculeCount.py
 src/MakroLyzer/structure_modules/OrderParameter.py
 src/MakroLyzer/structure_modules/RadiusOfGyration.py
 src/MakroLyzer/structure_modules/Ramachandran.py
+src/MakroLyzer/structure_modules/SurfaceAtoms.py
 src/MakroLyzer/structure_modules/__init__.py
 src/MakroLyzer/structure_modules/analyzer_registry.py
 src/MakroLyzer/structure_modules/backbone_cache.py

@@ -28,7 +28,7 @@ def main(args):
     analyzer_args = [
         'hydrogenBonds', 'anisotropyFactor', 'asphericityParameter',
         'radiusOfGyration', 'NoSubgraphs', 'endToEndDistance', 'orderParameter',
-        'formula', 'Ramachandran', 'dihedral'
+        'formula', 'Ramachandran', 'dihedral', 'surfaceAtoms'
     ]
     if not any(arg in args and args[arg] is not None for arg in analyzer_args):
         analyzer = False

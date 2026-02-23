@@ -44,7 +44,8 @@ ASCII_ART = (
    Please cite:
    - J. Phys. Chem. B 2025, 129, 50, 12997-13008 (DOI: 10.1021/acs.jpcb.5c06175)
    
-   For the polyethylene surface functionalization module, please additionally cite:
+   For the polyethylene surface functionalization module as well as the surface atoms
+   analysis module, please additionally cite:
    - J. Comput. Chem. 2018, 39, 2118-2125 (DOI: 10.1002/jcc.25384)
    - J. Comput. Chem. 2011, 32, 2319-2327 (DOI: 10.1002/jcc.21787)
 --------------------------------------------------------------------------------------------------
@@ -218,7 +219,7 @@ def readCommandLine() -> dict:
                         'If "ring-normal" is chosen, molecular vectors are assigned via the normal vectors of all rings with matching size.')
     
     analyzer_group.add_argument(
-                        '--op-ring-cycle-size',
+                        '--op-ring-size',
                         type=RingCycleSize,
                         default=None,
                         help='Optional ring size filter for ring-based order-parameter vectors.\n'
@@ -249,6 +250,25 @@ def readCommandLine() -> dict:
                         help='Get chemical formulas of the polymer.\n'
                         'Optionally provide an output filename (default: chemicalFormulas.csv)')
     
+    analyzer_group.add_argument(
+                        '-sA', '--surfaceAtoms',
+                        nargs='?', const='surfaceAtoms.csv', default=None,
+                        help='Identify surface atoms of the polymer and classify them as nonpolar, polar, and ring atoms.\n'
+                        'Ring atoms are carbon atoms that are part of rings matching --sA-ring-size.\n'
+                        'Output columns: Frame, Nonpolar Surface Atoms, Polar Surface Atoms, Ring Surface Atoms.\n'
+                        'Optionally provide an output filename (default: surfaceAtoms.csv).\n'
+                        'Usage example: -sA surfaceAtoms.csv'
+    )
+    
+    analyzer_group.add_argument(
+                        '--sA-ring-size',
+                        dest='sA_ring_size',
+                        type=RingCycleSize,
+                        default=6,
+                        help='Ring size filter for ring atom assignment in surface-atom analysis.\n'
+                        'Accepts a single size (e.g. 6) or a range [min,max] (e.g. [4,7]).\n'
+                        'Minimum allowed ring size is 3. (default: 6).\n'
+                        'Usage examples: --sA-ring-size 6   or   --sA-ring-size [4,7]')
     
     # Structure Modifiers Group # ------------------------------------------------------------------------------
     modifier_group = parser.add_argument_group(
