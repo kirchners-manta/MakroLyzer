@@ -62,6 +62,8 @@ def main(args):
     if static_topology and (
         args.get('orderParameter') or args.get('dihedral') or args.get('endToEndDistance')
     ):
+        # We only need to cache the backbone if the user wants a static-topology analysis and at least one of the analyzers 
+        # that uses the backbone is selected
         context['backbone_cache'] = BackboneCache()
 
     for key, factory in ANALYZERS_REGISTRATION.items():

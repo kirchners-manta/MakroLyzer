@@ -80,8 +80,9 @@ class OrderParameterAnalyzer(StructureAnalyzer):
         self.NoCellsPerDim = NoCellsPerDim
         self.MolecularVectorLength = MolecularVectorLength
         self.static_topology = static_topology
-        self._cached_paths = None
         self.backbone_cache = backbone_cache
+        if self.static_topology and self.backbone_cache is None:
+            raise ValueError("Static topology requires a shared backbone_cache.")
         
     def initialize_output(self):
         """
@@ -92,24 +93,6 @@ class OrderParameterAnalyzer(StructureAnalyzer):
             if self.output_handler.mode == 'streaming':
                 self.output_handler.initialize_file(header)
                 
-    def _compute_backbone_paths(self, graph):
-        """
-        Compute longest backbone paths per subgraph on a reduced graph.
-        Returns a list of paths (lists of node indices).
-        """
-        newGraph = graph.remove_1order()
-        newGraph.update_degree()
-        subgraphs = newGraph.get_subgraphs()
-
-        paths = []
-        for subgraph in subgraphs:
-            longestPath = subgraph.find_longest_path()
-            if len(longestPath) < 2:
-                continue
-            paths.append(longestPath)
-
-        return paths
-
     def get_backbone_vectors(self, graph):
         """
         Calculate vectors with length 1 from the atoms with number of MolecularVectorLength
@@ -121,17 +104,9 @@ class OrderParameterAnalyzer(StructureAnalyzer):
         """
         vecAndPos = defaultdict(list)
         if self.backbone_cache is not None:
+            # If a backbone cache is provided, use it to get the paths and compute vectors along those paths
             paths = self.backbone_cache.get_paths(graph)
             for path in paths:
-                pathDict = graph.get_vectors_and_positions_along_path(path, self.MolecularVectorLength)
-                for midpoint, vector in pathDict.items():
-                    vecAndPos[midpoint].extend(vector)
-        elif self.static_topology:
-            if self._cached_paths is None:
-                self._cached_paths = self._compute_backbone_paths(graph)
-            paths = self._cached_paths
-            for path in paths:
-                # Use current graph coordinates for vectors
                 pathDict = graph.get_vectors_and_positions_along_path(path, self.MolecularVectorLength)
                 for midpoint, vector in pathDict.items():
                     vecAndPos[midpoint].extend(vector)

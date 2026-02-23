@@ -53,10 +53,11 @@ class DihedralsAnalyzer(StructureAnalyzer):
         # Cache for compiled dihedral counts across frames
         # Necessary since OutputHandler can only append rows, not columns
         self.all_dihedral_data = []
-        # Cache for backbone paths if topology is static
+        # Static topology mode expects a shared backbone cache from the main pipeline
         self.static_topology = static_topology
-        self._cached_paths = None
         self.backbone_cache = backbone_cache
+        if self.static_topology and self.backbone_cache is None:
+            raise ValueError("Static topology requires a shared backbone_cache.")
         
     def _get_special_dihedral(self, special_dihedral):
         """Get the four consecutive atoms for the special dihedral."""
@@ -147,48 +148,11 @@ class DihedralsAnalyzer(StructureAnalyzer):
         angle_counter = Counter()
 
         if self.backbone_cache is not None:
+            # If a backbone cache is provided, use it to get the paths and compute dihedrals along those paths
             paths = self.backbone_cache.get_paths(graph)
             for path in paths:
                 if len(path) < 4:
                     continue
-                sub_list = []
-                for i in range(len(path) - 3):
-                    node1 = path[i]
-                    node2 = path[i + 1]
-                    node3 = path[i + 2]
-                    node4 = path[i + 3]
-
-                    if self.special_dihedral is not None:
-                        if not (
-                            graph.nodes[node1]["element"] == self.special_dihedral[0]
-                            and graph.nodes[node2]["element"] == self.special_dihedral[1]
-                            and graph.nodes[node3]["element"] == self.special_dihedral[2]
-                            and graph.nodes[node4]["element"] == self.special_dihedral[3]
-                        ):
-                            continue
-
-                    d = round(graph.dihedral(node1, node2, node3, node4, self.sign))
-                    if d == -180:
-                        d = 180
-                    sub_list.append(d)
-                    angle_counter[d] += 1
-                dihedral_list.append(sub_list)
-        elif self.static_topology:
-            if self._cached_paths is None:
-                # Remove 1-order nodes, find subgraphs and surrounding atoms once
-                GraphWithout1order = graph.remove_1order()
-                GraphWithout1order.surrounding()
-                GraphWithout1order.update_degree()
-                subgraphs = GraphWithout1order.get_subgraphs()
-                self._cached_paths = []
-                for subgraph in subgraphs:
-                    longestPath = subgraph.find_longest_path()
-                    if len(longestPath) < 4:
-                        continue
-                    self._cached_paths.append(longestPath)
-
-            # For each cached path, calculate dihedrals using current graph coordinates
-            for path in self._cached_paths:
                 sub_list = []
                 for i in range(len(path) - 3):
                     node1 = path[i]

@@ -12,7 +12,6 @@ class BackboneCache:
             return self._paths
 
         reduced = graph.remove_1order()
-        # surrounding() is used in dihedrals; safe to apply here too
         reduced.surrounding()
         reduced.update_degree()
         subgraphs = reduced.get_subgraphs()

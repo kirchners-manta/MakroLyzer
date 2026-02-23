@@ -18,29 +18,9 @@ class EndToEndDistanceAnalyzer(StructureAnalyzer):
         """
         super().__init__(output_handler)
         self.static_topology = static_topology
-        self._cached_endpoints = None
         self.backbone_cache = backbone_cache
-
-    def _compute_endpoints(self, graph):
-        """
-        Compute end-to-end endpoints per subgraph on a reduced graph.
-        Returns a list of (startNode, endNode).
-        """
-        subgraphs = graph.get_subgraphs()
-        prepared = []
-        for subgraph in subgraphs:
-            sub = subgraph.remove_1order()
-            sub.update_degree()
-            prepared.append(sub)
-
-        endpoints = []
-        for subgraph in prepared:
-            backbone = subgraph.find_longest_path()
-            if len(backbone) < 2:
-                continue
-            endpoints.append((backbone[0], backbone[-1]))
-
-        return endpoints
+        if self.static_topology and self.backbone_cache is None:
+            raise ValueError("Static topology requires a shared backbone_cache.")
         
     def initialize_output(self):
         """
@@ -61,18 +41,13 @@ class EndToEndDistanceAnalyzer(StructureAnalyzer):
         
         distances = []
         if self.backbone_cache is not None:
+            # If a backbone cache is provided, use it to get endpoints and compute distances
             endpoints = self.backbone_cache.get_endpoints(graph)
             for startNode, endNode in endpoints:
                 distance = graph.distance(startNode, endNode)
                 distances.append(distance)
-        elif self.static_topology:
-            if self._cached_endpoints is None:
-                self._cached_endpoints = self._compute_endpoints(graph)
-
-            for startNode, endNode in self._cached_endpoints:
-                distance = graph.distance(startNode, endNode)
-                distances.append(distance)
         else:
+            # For non-static topology, we compute the endpoints for each frame without caching
             subgraphs = graph.get_subgraphs()
             prepared = []
             for subgraph in subgraphs:
