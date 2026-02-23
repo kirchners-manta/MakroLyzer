@@ -1069,6 +1069,10 @@ class TestOrderParameterAnalyzer:
     def sample_file2(self):
         return "test_structures/OrderParameter/02.xyz"
     
+    @pytest.fixture
+    def sample_file3(self):
+        return "test_structures/OrderParameter/03.xyz"
+    
     # ----------------------------------------------------------
     
     def test_OrderParameterAnalyzer_init(self, temp_file):
@@ -1189,6 +1193,90 @@ class TestOrderParameterAnalyzer:
         mock_graph.get_vectors_and_positions_along_path.assert_called_once_with(paths[0], MolecularVectorLength)
         assert (1.0, 2.0, 3.0) in result
         assert np.array_equal(result[(1.0, 2.0, 3.0)][0], np.array([1.0, 0.0, 0.0]))
+
+    def test_OrderParameterAnalyzer_get_backbone_vectors_ring_source_with_backbone_cache(self, temp_file):
+        """Ring vector source should use cached (subgraph, path) pairs."""
+        output_handler = OutputHandler(temp_file, mode='streaming')
+        BoxSize = (10.0, 10.0, 10.0)
+        NoCellsPerDim = (1, 1, 1)
+        MolecularVectorLength = 3
+        mock_backbone_cache = Mock()
+        mock_graph = Mock()
+        mock_subgraph = Mock()
+
+        cached = [(mock_subgraph, [0, 1, 2, 3])]
+        ring_vectors = {(1.0, 2.0, 3.0): [np.array([0.0, 1.0, 0.0])]}
+        mock_backbone_cache.get_subgraph_paths.return_value = cached
+        mock_graph.find_ring_vectors_and_positions_along_path.return_value = ring_vectors
+
+        analyzer = OrderParameterAnalyzer(
+            BoxSize,
+            NoCellsPerDim,
+            MolecularVectorLength,
+            output_handler=output_handler,
+            static_topology=True,
+            backbone_cache=mock_backbone_cache,
+            vector_source="ring",
+            ring_cycle_size=6,
+        )
+
+        result = analyzer.get_backbone_vectors(mock_graph)
+
+        mock_backbone_cache.get_subgraph_paths.assert_called_once_with(mock_graph)
+        mock_graph.find_ring_vectors_and_positions_along_path.assert_called_once_with(
+            mock_subgraph, [0, 1, 2, 3], unitSize=MolecularVectorLength, cycle_size=6
+        )
+        assert (1.0, 2.0, 3.0) in result
+        assert np.array_equal(result[(1.0, 2.0, 3.0)][0], np.array([0.0, 1.0, 0.0]))
+
+    def test_OrderParameterAnalyzer_get_backbone_vectors_ring_normal_with_backbone_cache(self, temp_file):
+        """Ring-normal source should use cached subgraphs and ring-normal vectors."""
+        output_handler = OutputHandler(temp_file, mode='streaming')
+        BoxSize = (10.0, 10.0, 10.0)
+        NoCellsPerDim = (1, 1, 1)
+        mock_backbone_cache = Mock()
+        mock_graph = Mock()
+        mock_subgraph = Mock()
+
+        cached = [(mock_subgraph, [0, 1, 2, 3])]
+        ring_normals = {(3.0, 2.0, 1.0): [np.array([0.0, 0.0, 1.0])]}
+        mock_backbone_cache.get_subgraph_paths.return_value = cached
+        mock_graph.find_ring_normal_vectors_and_positions.return_value = ring_normals
+
+        analyzer = OrderParameterAnalyzer(
+            BoxSize,
+            NoCellsPerDim,
+            MolecularVectorLength=None,
+            output_handler=output_handler,
+            static_topology=True,
+            backbone_cache=mock_backbone_cache,
+            vector_source="ring-normal",
+            ring_cycle_size=(4, 7),
+        )
+
+        result = analyzer.get_backbone_vectors(mock_graph)
+
+        mock_backbone_cache.get_subgraph_paths.assert_called_once_with(mock_graph)
+        mock_graph.find_ring_normal_vectors_and_positions.assert_called_once_with(
+            mock_subgraph, cycle_size=(4, 7)
+        )
+        assert (3.0, 2.0, 1.0) in result
+        assert np.array_equal(result[(3.0, 2.0, 1.0)][0], np.array([0.0, 0.0, 1.0]))
+
+    def test_OrderParameterAnalyzer_ring_cycle_size_min_validation(self, temp_file):
+        """ring_cycle_size must enforce minimum ring size 3."""
+        output_handler = OutputHandler(temp_file, mode='streaming')
+        BoxSize = (10.0, 10.0, 10.0)
+        NoCellsPerDim = (1, 1, 1)
+        with pytest.raises(ValueError, match="ring_cycle_size must be >= 3."):
+            OrderParameterAnalyzer(
+                BoxSize,
+                NoCellsPerDim,
+                MolecularVectorLength=None,
+                output_handler=output_handler,
+                vector_source="ring-normal",
+                ring_cycle_size=2,
+            )
     
     # ----------------------------------------------------------
     
@@ -1385,6 +1473,20 @@ class TestOrderParameterAnalyzer:
         S_star = analyzer.compute(mock_graph)
         
         assert np.isnan(S_star)
+        
+    def test4_OrderParameterAnalyzer_compute(self, sample_file3):
+        """Test compute function of OrderParameterAnalyzer."""
+        xyz = next(readXYZ.readXYZ(sample_file3))
+        testGraph = graphs.GraphManager(xyz, 3000)
+        
+        BoxSize = (3000, 3000, 3000)
+        NoCellsPerDim = (1, 1, 1)
+        MolecularVectorLength = None
+        vector_source = "ring-normal"
+        
+        analyzer = OrderParameterAnalyzer(BoxSize, NoCellsPerDim, MolecularVectorLength, vector_source=vector_source)
+        S_star = analyzer.compute(testGraph)
+        assert S_star == pytest.approx(1, abs=5e-3)
         
     # ----------------------------------------------------------
     
@@ -2285,6 +2387,29 @@ class TestBackboneCache:
         endpoints = cache.get_endpoints(mock_graph)
 
         assert endpoints == [(4, 6)]
+
+    def test_BackboneCache_get_subgraph_paths(self):
+        """get_subgraph_paths should return and cache (subgraph, path) pairs."""
+        cache = BackboneCache()
+        mock_graph = Mock()
+        reduced = Mock()
+        subgraph1 = Mock()
+        subgraph2 = Mock()
+
+        mock_graph.remove_1order.return_value = reduced
+        reduced.get_subgraphs.return_value = [subgraph1, subgraph2]
+        subgraph1.find_longest_path.return_value = [10, 11, 12]
+        subgraph2.find_longest_path.return_value = [3]
+
+        subgraph_paths = cache.get_subgraph_paths(mock_graph)
+
+        assert len(subgraph_paths) == 1
+        assert subgraph_paths[0][0] is subgraph1
+        assert subgraph_paths[0][1] == [10, 11, 12]
+        # ensure cached result is reused
+        subgraph_paths_again = cache.get_subgraph_paths(mock_graph)
+        assert subgraph_paths_again == subgraph_paths
+        mock_graph.remove_1order.assert_called_once()
         
 # ChemicalFormulaAnalyzer tests # ---------------------------------------------------------
 

@@ -506,6 +506,154 @@ class GraphManager(nx.Graph):
             
         return dict(vecToPos)
     
+    def find_ring_vectors_and_positions_along_path(self, subgraph, path, unitSize=None, cycle_size=None):
+        """
+        Find rings within a subgraph.
+
+        Args:
+            subgraph (GraphManager): The subgraph to search for rings.
+            path (list): The path along which to find rings.
+            cycle_size (int|tuple, optional): Ring size filter.
+                - int: only this size
+                - tuple(min_size, max_size): inclusive range
+                - None: default range 5 to 7
+
+        Returns:
+            Dict: A dictionary with keys 'vectors' and 'positions'.
+                  'vectors' is a list of vectors between the center of rings along the path (unit length).
+                  'positions' is a list of positions of the midpoints of the vectors.
+        """
+        if unitSize is None:
+            unitSize = 2
+        elif unitSize < 2:
+            raise ValueError("unitSize must be greater than or equal to 2.")
+        elif unitSize > len(path):
+            unitSize = len(path)
+            
+        # Adjust unitSize to be the number of atoms that correspond to a vector
+        unitSize = unitSize - 1          
+        
+        # Find and filter the cycles in the subgraph
+        cycles = self._filter_cycles_by_size(nx.cycle_basis(subgraph), cycle_size)
+            
+        # Dictionary with cycles and their centers
+        cycle_centers = {}
+        for cycle in cycles:
+            # Calculate the center of the cycle
+            center = np.mean([self.get_coordinates(node) for node in cycle], axis=0)
+            cycle_centers[tuple(cycle)] = tuple(center)
+            
+        # For each cycle_center, find the closest node on the path and add this node to the dictionary
+        closest_backbone_node = {}
+        for cycle, center in cycle_centers.items():
+            min_dist = float('inf')
+            closest_node = None
+            for node in path:
+                dist = np.linalg.norm(self.get_coordinates(node) - np.array(center))
+                if dist < min_dist:
+                    min_dist = dist
+                    closest_node = node
+            closest_backbone_node[cycle] = closest_node
+            
+        # Iterate over the path and sort the cycle centers according to their position on the path
+        sorted_cycle_centers = []
+        for node in path:
+            for cycle, closest_node in closest_backbone_node.items():
+                if closest_node == node:
+                    sorted_cycle_centers.append((cycle, cycle_centers[cycle]))
+                    
+        # Build midpoint -> [unitVector] mapping (same as get_vectors_and_positions_along_path)
+        vecToPos = defaultdict(list)
+        for i in range(0, len(sorted_cycle_centers) - unitSize, unitSize):
+            cycle1, center1 = sorted_cycle_centers[i]
+            cycle2, center2 = sorted_cycle_centers[i + 1]
+            center1 = np.asarray(center1, dtype=float)
+            center2 = np.asarray(center2, dtype=float)
+            vector = center2 - center1
+            norm = np.linalg.norm(vector)
+            if norm == 0:
+                continue
+
+            unitVector = vector / norm
+            midpoint = tuple(center1 + vector / 2.0)
+            vecToPos[midpoint].append(unitVector)
+
+        return dict(vecToPos)
+    
+    def find_ring_normal_vectors_and_positions(self, subgraph, cycle_size=None):
+        """
+        Find rings within a subgraph and get their normal vectors and positions.
+
+        Args:
+            subgraph (GraphManager): The subgraph to search for rings.
+            cycle_size (int|tuple, optional): Ring size filter.
+                - int: only this size
+                - tuple(min_size, max_size): inclusive range
+                - None: default range 5 to 7
+
+        Returns:
+            Dict: Dictionary with keys as positions of the centers of the rings and values as lists of normal 
+                  vectors of the rings at these positions.
+        """
+        # Find and filter the cycles in the subgraph
+        cycles = self._filter_cycles_by_size(nx.cycle_basis(subgraph), cycle_size)
+            
+        vecToPos = defaultdict(list)
+            
+        for cycle in cycles:
+            coords = np.array([self.get_coordinates(node) for node in cycle], dtype=float)
+            center = coords.mean(axis=0)
+            # Use SVD/PCA to find the normal vector of the cycle
+            X = coords - center
+            U, S, Vt = np.linalg.svd(X, full_matrices=False)
+            # U : left singular vectors (n_cycles, n_cycles)
+            # S : singular values (n_cycles,)
+            # Vt : right singular vectors (n_features, n_features)
+            #      -> ordered by the amount of variance they explain
+            #      -> the last one is the normal vector of the cycle, since in this direction the variance is smallest
+            normal_vector = Vt[-1]
+
+            norm = np.linalg.norm(normal_vector)
+            if norm == 0:
+                continue
+            normal_vector = normal_vector / norm
+
+            vecToPos[tuple(center)].append(normal_vector)
+
+        return dict(vecToPos)
+
+    def _filter_cycles_by_size(self, cycles, cycle_size=None):
+        """
+        Filter cycle lists by ring-size criterion.
+
+        Args:
+            cycles (list[list[int]]): Cycles to filter.
+            cycle_size (int|tuple|None): Ring-size criterion.
+
+        Returns:
+            list[list[int]]: Filtered cycles.
+        """
+        if cycle_size is None:
+            return [cycle for cycle in cycles if 5 <= len(cycle) <= 7]
+
+        if isinstance(cycle_size, int):
+            if cycle_size < 3:
+                raise ValueError("Minimum ring size is 3.")
+            return [cycle for cycle in cycles if len(cycle) == cycle_size]
+
+        if (
+            isinstance(cycle_size, tuple)
+            and len(cycle_size) == 2
+            and all(isinstance(v, int) for v in cycle_size)
+        ):
+            min_size, max_size = cycle_size
+            if min_size < 3:
+                raise ValueError("Minimum ring size is 3.")
+            if max_size < min_size:
+                raise ValueError("Ring-size range must satisfy min <= max.")
+            return [cycle for cycle in cycles if min_size <= len(cycle) <= max_size]
+
+        raise ValueError("cycle_size must be an integer, a tuple (min, max), or None.")
     
     def find_and_tag_patterns(self, patterns, startAtom=None):
         """

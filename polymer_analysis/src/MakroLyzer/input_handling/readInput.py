@@ -193,17 +193,37 @@ def readCommandLine() -> dict:
                         'The order parameter S* can either be calculated for the entire graph, or the space can be divided into\n'
                         'smaller cells, and S* can be calculated for each cell individually.\n'
                         'The overall order parameter is then the average of the order parameters of all cells.\n'
-                        'Parameters that need to be specified:  <BoxSize>:<NoCellsPerDim>:<MolecularVectorLength>\n'
+                        'Parameters to be specified:  <BoxSize>:<NoCellsPerDim>[:<MolecularVectorLength>]\n'
                         '                    BoxSize : Size of the simulation box in x, y, z directions (float,float,float) or one value if symmetrical\n'
                         '                    NoCellsPerDim : Number of cells in each direction (int, int, int) or only one value if symmetrical\n'
-                        '                    MolecularVectorLength : Number of atoms that are used to calculate a molecular vector from (int)\n'
-                        'Usage example: -op 100:1:3',
+                        '                    MolecularVectorLength : Number of atoms used to calculate a molecular vector (int)\n'
+                        '                                            A value of 2 means that the vector is calculated between two consecutive atoms / ring ceters along the backbone.\n'
+                        '                                            Required for --op-vector-source atom/ring-center.\n'
+                        '                                            Ignored for --op-vector-source ring-normal.\n'
+                        'Usage examples: -op 100:1:3   or   -op 100:1',
                         type=OrderParam)
     
     analyzer_group.add_argument(
                         '-op-file', '--order-file',
                         nargs='?', const='orderParameter.csv', default='orderParameter.csv',
                         help='Output filename for the nematic order parameter S* (default: orderParameter.csv)')
+    
+    analyzer_group.add_argument(
+                        '--op-vector-source',
+                        choices=['atom', 'ring-center', 'ring', 'ring-normal'],
+                        default='atom',
+                        help='Vector source for order parameter calculation: atom (default), ring-center, or ring-normal. "ring" is an alias for ring-center.\n'
+                        'If "atom" is chosen, molecular vectors are assigned via consecutive atoms along the polymer backbone.\n'
+                        'If "ring-center" is chosen, molecular vectors are assigned via the consecutive centers of rings along the polymer backbone.\n'
+                        'If "ring-normal" is chosen, molecular vectors are assigned via the normal vectors of all rings with matching size.')
+    
+    analyzer_group.add_argument(
+                        '--op-ring-cycle-size',
+                        type=RingCycleSize,
+                        default=None,
+                        help='Optional ring size filter for ring-based order-parameter vectors.\n'
+                        'Accepts a single size (e.g. 6) or a range [min,max] (e.g. [4,7]).\n'
+                        'Minimum allowed ring size is 3.')
     
     analyzer_group.add_argument(
                         '-e2e', '--endToEndDistance',
@@ -328,9 +348,9 @@ def element_distance_tuple(value):
 
 def OrderParam(value):
     parts = value.split(':')
-    if len(parts) != 3:
+    if len(parts) not in (2, 3):
         raise argparse.ArgumentTypeError(
-            f"Invalid format: '{value}'. Expected format: BoxSize(x, y, z):n(nx, ny, nz):unitSize"
+            f"Invalid format: '{value}'. Expected format: BoxSize(x, y, z):n(nx, ny, nz)[:unitSize]"
         )
     boxSize = tuple(map(float, parts[0].split(',')))
     if len(boxSize) != 3:
@@ -338,8 +358,43 @@ def OrderParam(value):
     n = tuple(map(int, parts[1].split(',')))
     if len(n) != 3:
         n = (n[0], n[0], n[0])
-    unitSize = int(parts[2])
+    unitSize = int(parts[2]) if len(parts) == 3 else None
     return (boxSize, n, unitSize)
+
+def RingCycleSize(value):
+    value = value.strip()
+
+    if value.startswith('[') and value.endswith(']'):
+        inner = value[1:-1].strip()
+        bounds = [item.strip() for item in inner.split(',')]
+        if len(bounds) != 2:
+            raise argparse.ArgumentTypeError(
+                f"Invalid range '{value}'. Expected format: [min,max] with integers and min ring size >= 3."
+            )
+        try:
+            min_size = int(bounds[0])
+            max_size = int(bounds[1])
+        except ValueError:
+            raise argparse.ArgumentTypeError(
+                f"Invalid range '{value}'. Expected integers in format [min,max]."
+            )
+        if min_size < 3:
+            raise argparse.ArgumentTypeError("Minimum ring size is 3.")
+        if max_size < min_size:
+            raise argparse.ArgumentTypeError(
+                f"Invalid range '{value}'. Expected max >= min."
+            )
+        return (min_size, max_size)
+
+    try:
+        size = int(value)
+    except ValueError:
+        raise argparse.ArgumentTypeError(
+            f"Invalid ring size '{value}'. Expected an integer (e.g. 6) or a range [min,max] (e.g. [4,7])."
+        )
+    if size < 3:
+        raise argparse.ArgumentTypeError("Minimum ring size is 3.")
+    return size
 
 def _parse_func_type(func_type, value):
     if func_type not in ['CO', 'COH', 'ester', 'amide']:

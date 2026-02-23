@@ -38,6 +38,12 @@ def main(args):
         # check if the order parameter is provided
     if args['orderParameter']:
         BoxSize, NoCellsPerDim, MolecularVectorLength = args['orderParameter']
+        op_vector_source = args.get('op_vector_source', 'atom')
+        if op_vector_source == 'ring':
+            op_vector_source = 'ring-center'
+        op_ring_cycle_size = args.get('op_ring_cycle_size')
+        if op_vector_source == 'ring-normal':
+            MolecularVectorLength = None
     if not boxSize and args['orderParameter']:
         boxSize = BoxSize[0]
         
@@ -58,7 +64,15 @@ def main(args):
     # prepare context for factories
     context = {'boxSize': boxSize, 'static_topology': static_topology}
     if args.get('orderParameter'):
-        context.update({'BoxSize': BoxSize, 'NoCellsPerDim': NoCellsPerDim, 'MolecularVectorLength': MolecularVectorLength})
+        context.update(
+            {
+                'BoxSize': BoxSize,
+                'NoCellsPerDim': NoCellsPerDim,
+                'MolecularVectorLength': MolecularVectorLength,
+                'op_vector_source': op_vector_source,
+                'op_ring_cycle_size': op_ring_cycle_size,
+            }
+        )
     if static_topology and (
         args.get('orderParameter') or args.get('dihedral') or args.get('endToEndDistance')
     ):

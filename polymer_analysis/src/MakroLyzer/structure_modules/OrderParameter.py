@@ -45,7 +45,17 @@ class OrderParameterAnalyzer(StructureAnalyzer):
     The overall order parameter is then the average of the order parameters of all cells.
     """
     
-    def __init__(self, BoxSize, NoCellsPerDim, MolecularVectorLength, output_handler=None, static_topology=False, backbone_cache=None):
+    def __init__(
+        self,
+        BoxSize,
+        NoCellsPerDim,
+        MolecularVectorLength,
+        output_handler=None,
+        static_topology=False,
+        backbone_cache=None,
+        vector_source="atom",
+        ring_cycle_size=None,
+    ):
         """
         Initialize the OrderParameterAnalyzer.
 
@@ -54,8 +64,10 @@ class OrderParameterAnalyzer(StructureAnalyzer):
                                          is asssumed in all directions.
             NoCellsPerDim (tuple of 3 int): Number of cells in each direction, to calculate the order parameter for.
                                             If only one is given, the same number of cells is assumed in all directions.
-            MolecularVectorLength (int): Number of atoms that are used to calculate a molecular vector from.
+            MolecularVectorLength (int|None): Number of atoms that are used to calculate a molecular vector from.
             output_handler (OutputHandler): Handler for writing output.
+            vector_source (str): Source used to build orientation vectors ("atom", "ring-center", or "ring-normal").
+            ring_cycle_size (int|tuple|None): Ring size filter for ring-based vectors.
         """
         # Check if the given parameters have the correct format
         if isinstance(BoxSize, (int, float)):
@@ -72,15 +84,38 @@ class OrderParameterAnalyzer(StructureAnalyzer):
         else:
             raise ValueError(ErrorOutputs.WRONG_INPUT_TYPE_OP_ERROR)
         
-        if not isinstance(MolecularVectorLength, int) or MolecularVectorLength < 2:
-            raise ValueError(ErrorOutputs.WRONG_INPUT_TYPE_OP_ERROR)
+        if vector_source == "ring":
+            vector_source = "ring-center"
+        if vector_source not in ("atom", "ring-center", "ring-normal"):
+            raise ValueError("vector_source must be one of: 'atom', 'ring-center', 'ring-normal'.")
+
+        if vector_source in ("atom", "ring-center"):
+            if not isinstance(MolecularVectorLength, int) or MolecularVectorLength < 2:
+                raise ValueError(ErrorOutputs.WRONG_INPUT_TYPE_OP_ERROR)
+
+        if ring_cycle_size is not None:
+            if isinstance(ring_cycle_size, int):
+                if ring_cycle_size < 3:
+                    raise ValueError("ring_cycle_size must be >= 3.")
+            elif (
+                isinstance(ring_cycle_size, tuple)
+                and len(ring_cycle_size) == 2
+                and all(isinstance(v, int) for v in ring_cycle_size)
+            ):
+                min_size, max_size = ring_cycle_size
+                if min_size < 3 or max_size < min_size:
+                    raise ValueError("ring_cycle_size range must satisfy 3 <= min <= max.")
+            else:
+                raise ValueError("ring_cycle_size must be an integer >= 3 or a tuple (min, max).")
         
         super().__init__(output_handler)
         self.BoxSize = BoxSize
         self.NoCellsPerDim = NoCellsPerDim
-        self.MolecularVectorLength = MolecularVectorLength
+        self.MolecularVectorLength = MolecularVectorLength if vector_source != "ring-normal" else None
         self.static_topology = static_topology
         self.backbone_cache = backbone_cache
+        self.vector_source = vector_source
+        self.ring_cycle_size = ring_cycle_size
         if self.static_topology and self.backbone_cache is None:
             raise ValueError("Static topology requires a shared backbone_cache.")
         
@@ -105,24 +140,55 @@ class OrderParameterAnalyzer(StructureAnalyzer):
         vecAndPos = defaultdict(list)
         if self.backbone_cache is not None:
             # If a backbone cache is provided, use it to get the paths and compute vectors along those paths
-            paths = self.backbone_cache.get_paths(graph)
-            for path in paths:
-                pathDict = graph.get_vectors_and_positions_along_path(path, self.MolecularVectorLength)
-                for midpoint, vector in pathDict.items():
-                    vecAndPos[midpoint].extend(vector)
+            if self.vector_source == "atom":
+                for path in self.backbone_cache.get_paths(graph):
+                    pathDict = graph.get_vectors_and_positions_along_path(path, self.MolecularVectorLength)
+                    for midpoint, vector in pathDict.items():
+                        vecAndPos[midpoint].extend(vector)
+            elif self.vector_source == "ring-center":
+                for subgraph, path in self.backbone_cache.get_subgraph_paths(graph):
+                    pathDict = graph.find_ring_vectors_and_positions_along_path(
+                        subgraph,
+                        path,
+                        unitSize=self.MolecularVectorLength,
+                        cycle_size=self.ring_cycle_size,
+                    )
+                    for midpoint, vector in pathDict.items():
+                        vecAndPos[midpoint].extend(vector)
+            else:
+                for subgraph, _ in self.backbone_cache.get_subgraph_paths(graph):
+                    pathDict = graph.find_ring_normal_vectors_and_positions(
+                        subgraph,
+                        cycle_size=self.ring_cycle_size,
+                    )
+                    for midpoint, vector in pathDict.items():
+                        vecAndPos[midpoint].extend(vector)
         else:
             # Prepare the graph (non-static topology)
             newGraph = graph.remove_1order()
             newGraph.update_degree()
             subgraphs = newGraph.get_subgraphs()
             for subgraph in subgraphs:
-                longestPath = subgraph.find_longest_path()
-                if len(longestPath) < 2:
-                    continue
-                pathDict = subgraph.get_vectors_and_positions_along_path(longestPath, self.MolecularVectorLength)
-
-                # append pathDict to vecAndPos
-                # pathDict is a dictionary with: keys = midpoints and values = vectors
+                if self.vector_source == "atom":
+                    longestPath = subgraph.find_longest_path()
+                    if len(longestPath) < 2:
+                        continue
+                    pathDict = subgraph.get_vectors_and_positions_along_path(longestPath, self.MolecularVectorLength)
+                elif self.vector_source == "ring-center":
+                    longestPath = subgraph.find_longest_path()
+                    if len(longestPath) < 2:
+                        continue
+                    pathDict = graph.find_ring_vectors_and_positions_along_path(
+                        subgraph,
+                        longestPath,
+                        unitSize=self.MolecularVectorLength,
+                        cycle_size=self.ring_cycle_size,
+                    )
+                else:
+                    pathDict = graph.find_ring_normal_vectors_and_positions(
+                        subgraph,
+                        cycle_size=self.ring_cycle_size,
+                    )
                 for midpoint, vector in pathDict.items():
                     vecAndPos[midpoint].extend(vector)
 
@@ -210,6 +276,9 @@ class OrderParameterAnalyzer(StructureAnalyzer):
         # Obtain dictionary of molecular vectors of length 1 along the backbone
         # together with their corresponding point in space.
         VecAndPos =  self.get_backbone_vectors(graph)
+        
+        if not VecAndPos:
+            return np.nan
         
         # Build a cKDtree from the midpoints of the vectors for fast spatial queries 
         midpoints = np.asarray(list(VecAndPos.keys()), dtype=float)

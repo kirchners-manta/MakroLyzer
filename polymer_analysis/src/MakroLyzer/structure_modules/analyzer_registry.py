@@ -82,11 +82,22 @@ def create_order_parameter(args, **context):
     BoxSize = context.get('BoxSize')
     NoCellsPerDim = context.get('NoCellsPerDim')
     MolecularVectorLength = context.get('MolecularVectorLength')
+    op_vector_source = context.get('op_vector_source', 'atom')
+    op_ring_cycle_size = context.get('op_ring_cycle_size')
     static_topology = context.get('static_topology', False)
     backbone_cache = context.get('backbone_cache')
     order_file = args.get('order_file') or 'orderParameter.csv'
     output_handler = OutputHandler(order_file, mode='streaming')
-    return OrderParameterAnalyzer(BoxSize, NoCellsPerDim, MolecularVectorLength, output_handler, static_topology=static_topology, backbone_cache=backbone_cache)
+    return OrderParameterAnalyzer(
+        BoxSize,
+        NoCellsPerDim,
+        MolecularVectorLength,
+        output_handler,
+        static_topology=static_topology,
+        backbone_cache=backbone_cache,
+        vector_source=op_vector_source,
+        ring_cycle_size=op_ring_cycle_size,
+    )
 
 
 def create_ramachandran(args, **context):
