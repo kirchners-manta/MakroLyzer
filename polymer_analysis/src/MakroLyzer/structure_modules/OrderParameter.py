@@ -45,7 +45,7 @@ class OrderParameterAnalyzer(StructureAnalyzer):
     The overall order parameter is then the average of the order parameters of all cells.
     """
     
-    def __init__(self, BoxSize, NoCellsPerDim, MolecularVectorLength, output_handler=None):
+    def __init__(self, BoxSize, NoCellsPerDim, MolecularVectorLength, output_handler=None, static_topology=False, backbone_cache=None):
         """
         Initialize the OrderParameterAnalyzer.
 
@@ -79,6 +79,10 @@ class OrderParameterAnalyzer(StructureAnalyzer):
         self.BoxSize = BoxSize
         self.NoCellsPerDim = NoCellsPerDim
         self.MolecularVectorLength = MolecularVectorLength
+        self.static_topology = static_topology
+        self.backbone_cache = backbone_cache
+        if self.static_topology and self.backbone_cache is None:
+            raise ValueError("Static topology requires a shared backbone_cache.")
         
     def initialize_output(self):
         """
@@ -98,24 +102,29 @@ class OrderParameterAnalyzer(StructureAnalyzer):
             graph (GraphManager): The graph to calculate the vectors for.
             MolecularVectorLength (int): The number of atoms/nodes that define the length of a unit.
         """
-        # Prepare the graph
-        newGraph = graph.remove_1order()
-        newGraph.update_degree()
-        subgraphs = newGraph.get_subgraphs()
-
         vecAndPos = defaultdict(list)
-        for subgraph in subgraphs:
-            longestPath = subgraph.find_longest_path()
-            if len(longestPath) < 2:
-                continue
-            
-            # Get dictionary for the longest path of the subgraph
-            pathDict = subgraph.get_vectors_and_positions_along_path(longestPath, self.MolecularVectorLength)
+        if self.backbone_cache is not None:
+            # If a backbone cache is provided, use it to get the paths and compute vectors along those paths
+            paths = self.backbone_cache.get_paths(graph)
+            for path in paths:
+                pathDict = graph.get_vectors_and_positions_along_path(path, self.MolecularVectorLength)
+                for midpoint, vector in pathDict.items():
+                    vecAndPos[midpoint].extend(vector)
+        else:
+            # Prepare the graph (non-static topology)
+            newGraph = graph.remove_1order()
+            newGraph.update_degree()
+            subgraphs = newGraph.get_subgraphs()
+            for subgraph in subgraphs:
+                longestPath = subgraph.find_longest_path()
+                if len(longestPath) < 2:
+                    continue
+                pathDict = subgraph.get_vectors_and_positions_along_path(longestPath, self.MolecularVectorLength)
 
-            # append pathDict to vecAndPos
-            # pathDict is a dictionary with: keys = midpoints and values = vectors
-            for midpoint, vector in pathDict.items():
-                vecAndPos[midpoint].extend(vector)
+                # append pathDict to vecAndPos
+                # pathDict is a dictionary with: keys = midpoints and values = vectors
+                for midpoint, vector in pathDict.items():
+                    vecAndPos[midpoint].extend(vector)
 
         return dict(vecAndPos)
     

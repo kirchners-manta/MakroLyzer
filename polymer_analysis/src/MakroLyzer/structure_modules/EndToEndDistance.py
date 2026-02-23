@@ -9,7 +9,7 @@ class EndToEndDistanceAnalyzer(StructureAnalyzer):
     Inherits from StructureAnalyzer. 
     """
     
-    def __init__(self, output_handler=None):
+    def __init__(self, output_handler=None, static_topology=False, backbone_cache=None):
         """
         Initialize EndToEndDistanceAnalyzer.
         
@@ -17,6 +17,10 @@ class EndToEndDistanceAnalyzer(StructureAnalyzer):
             output_handler (OutputHandler): Handler for writing output.
         """
         super().__init__(output_handler)
+        self.static_topology = static_topology
+        self.backbone_cache = backbone_cache
+        if self.static_topology and self.backbone_cache is None:
+            raise ValueError("Static topology requires a shared backbone_cache.")
         
     def initialize_output(self):
         """
@@ -35,23 +39,31 @@ class EndToEndDistanceAnalyzer(StructureAnalyzer):
             graph (GraphManager): Graph to analyze.
         """
         
-        subgraphs = graph.get_subgraphs()
-        prepared = []
-        for subgraph in subgraphs:
-            sub = subgraph.remove_1order()
-            sub.update_degree()
-            prepared.append(sub)
-        
         distances = []
-        for subgraph in prepared:
-            backbone = subgraph.find_longest_path()
-            if len(backbone) < 2:
-                continue
-            else:
-                startNode = backbone[0]
-                endNode = backbone[-1]
-                distance = subgraph.distance(startNode, endNode)
+        if self.backbone_cache is not None:
+            # If a backbone cache is provided, use it to get endpoints and compute distances
+            endpoints = self.backbone_cache.get_endpoints(graph)
+            for startNode, endNode in endpoints:
+                distance = graph.distance(startNode, endNode)
                 distances.append(distance)
+        else:
+            # For non-static topology, we compute the endpoints for each frame without caching
+            subgraphs = graph.get_subgraphs()
+            prepared = []
+            for subgraph in subgraphs:
+                sub = subgraph.remove_1order()
+                sub.update_degree()
+                prepared.append(sub)
+
+            for subgraph in prepared:
+                backbone = subgraph.find_longest_path()
+                if len(backbone) < 2:
+                    continue
+                else:
+                    startNode = backbone[0]
+                    endNode = backbone[-1]
+                    distance = subgraph.distance(startNode, endNode)
+                    distances.append(distance)
                 
         return np.array(distances)
                 

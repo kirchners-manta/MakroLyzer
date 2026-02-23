@@ -21,7 +21,8 @@ class DihedralsAnalyzer(StructureAnalyzer):
     """
     
     def __init__(self, dihedral_output_handler=None, dihedral_list_output_handler=None, 
-                 cistrans_output_handler=None, dihedral_range='abs', special_dihedral=None):
+                 cistrans_output_handler=None, dihedral_range='abs', special_dihedral=None,
+                 static_topology=False, backbone_cache=None):
         """
         Initialize the DihedralsAnalyzer.
 
@@ -52,6 +53,11 @@ class DihedralsAnalyzer(StructureAnalyzer):
         # Cache for compiled dihedral counts across frames
         # Necessary since OutputHandler can only append rows, not columns
         self.all_dihedral_data = []
+        # Static topology mode expects a shared backbone cache from the main pipeline
+        self.static_topology = static_topology
+        self.backbone_cache = backbone_cache
+        if self.static_topology and self.backbone_cache is None:
+            raise ValueError("Static topology requires a shared backbone_cache.")
         
     def _get_special_dihedral(self, special_dihedral):
         """Get the four consecutive atoms for the special dihedral."""
@@ -138,48 +144,77 @@ class DihedralsAnalyzer(StructureAnalyzer):
                 - dihedral_counts: List of (angle, count) tuples sorted by angle
         """
         
-        # Remove 1-order nodes, find subgraphs and surrounding atoms
-        GraphWithout1order = graph.remove_1order()
-        GraphWithout1order.surrounding()
-        GraphWithout1order.update_degree()
-        
-        # Get the subgraphs of the graph
-        subgraphs = GraphWithout1order.get_subgraphs()
         dihedral_list = []
         angle_counter = Counter()
-        
-        # For each subgraph, calculate dihedrals and count them in one pass
-        for subgraph in subgraphs:
-            sub_list = []
-            longestPath = subgraph.find_longest_path()
-            
-            # For each node in the longest path, calculate dihedral angles
-            for i in range(len(longestPath) - 3):
-                node1 = longestPath[i]
-                node2 = longestPath[i + 1]
-                node3 = longestPath[i + 2]
-                node4 = longestPath[i + 3]
-                
-                if self.special_dihedral is not None:
-                    # Check if the four consecutive atoms are the special ones
-                    if not (
-                        subgraph.nodes[node1]["element"] == self.special_dihedral[0]
-                        and subgraph.nodes[node2]["element"] == self.special_dihedral[1]
-                        and subgraph.nodes[node3]["element"] == self.special_dihedral[2]
-                        and subgraph.nodes[node4]["element"] == self.special_dihedral[3]
-                    ):
-                        continue
-                
-                
-                d = round(subgraph.dihedral(node1, node2, node3, node4, self.sign))
-                # 180 and -180 are equivalent, count them together
-                if d == -180:
-                    d = 180
-                    
-                sub_list.append(d)
-                angle_counter[d] += 1
-            
-            dihedral_list.append(sub_list)
+
+        if self.backbone_cache is not None:
+            # If a backbone cache is provided, use it to get the paths and compute dihedrals along those paths
+            paths = self.backbone_cache.get_paths(graph)
+            for path in paths:
+                if len(path) < 4:
+                    continue
+                sub_list = []
+                for i in range(len(path) - 3):
+                    node1 = path[i]
+                    node2 = path[i + 1]
+                    node3 = path[i + 2]
+                    node4 = path[i + 3]
+
+                    if self.special_dihedral is not None:
+                        if not (
+                            graph.nodes[node1]["element"] == self.special_dihedral[0]
+                            and graph.nodes[node2]["element"] == self.special_dihedral[1]
+                            and graph.nodes[node3]["element"] == self.special_dihedral[2]
+                            and graph.nodes[node4]["element"] == self.special_dihedral[3]
+                        ):
+                            continue
+
+                    d = round(graph.dihedral(node1, node2, node3, node4, self.sign))
+                    if d == -180:
+                        d = 180
+                    sub_list.append(d)
+                    angle_counter[d] += 1
+                dihedral_list.append(sub_list)
+        else:
+            # Remove 1-order nodes, find subgraphs and surrounding atoms
+            GraphWithout1order = graph.remove_1order()
+            GraphWithout1order.surrounding()
+            GraphWithout1order.update_degree()
+
+            # Get the subgraphs of the graph
+            subgraphs = GraphWithout1order.get_subgraphs()
+
+            # For each subgraph, calculate dihedrals and count them in one pass
+            for subgraph in subgraphs:
+                sub_list = []
+                longestPath = subgraph.find_longest_path()
+
+                # For each node in the longest path, calculate dihedral angles
+                for i in range(len(longestPath) - 3):
+                    node1 = longestPath[i]
+                    node2 = longestPath[i + 1]
+                    node3 = longestPath[i + 2]
+                    node4 = longestPath[i + 3]
+
+                    if self.special_dihedral is not None:
+                        # Check if the four consecutive atoms are the special ones
+                        if not (
+                            subgraph.nodes[node1]["element"] == self.special_dihedral[0]
+                            and subgraph.nodes[node2]["element"] == self.special_dihedral[1]
+                            and subgraph.nodes[node3]["element"] == self.special_dihedral[2]
+                            and subgraph.nodes[node4]["element"] == self.special_dihedral[3]
+                        ):
+                            continue
+
+                    d = round(subgraph.dihedral(node1, node2, node3, node4, self.sign))
+                    # 180 and -180 are equivalent, count them together
+                    if d == -180:
+                        d = 180
+
+                    sub_list.append(d)
+                    angle_counter[d] += 1
+
+                dihedral_list.append(sub_list)
         
         # Create result with all angles in range filled with 0 counts
         if self.sign is not None:

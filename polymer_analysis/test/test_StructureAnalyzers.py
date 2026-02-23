@@ -2,6 +2,7 @@ import pytest
 import tempfile
 from pathlib import Path
 import numpy as np
+import importlib.util
 
 from unittest.mock import Mock, patch
 
@@ -20,6 +21,7 @@ from MakroLyzer.structure_modules.OrderParameter import OrderParameterAnalyzer
 from MakroLyzer.structure_modules.Ramachandran import RamachandranAnalyzer
 from MakroLyzer.structure_modules.Dihedrals import DihedralsAnalyzer
 from MakroLyzer.structure_modules.ChemicalFormula import ChemicalFormulaAnalyzer
+from MakroLyzer.structure_modules.backbone_cache import BackboneCache
 
 # OutputHandler Tests # ------------------------------------------------------------------
 class TestOutputHandler:
@@ -939,6 +941,12 @@ class TestEndToEndDistanceAnalyzer:
         analyzer = EndToEndDistanceAnalyzer(output_handler)
         
         assert analyzer.output_handler == output_handler
+
+    def test_EndToEndDistanceAnalyzer_static_topology_requires_backbone_cache(self, temp_file):
+        """Static topology mode must be initialized with a backbone cache."""
+        output_handler = OutputHandler(temp_file, mode='streaming')
+        with pytest.raises(ValueError, match="Static topology requires a shared backbone_cache."):
+            EndToEndDistanceAnalyzer(output_handler, static_topology=True)
         
     # --------------------------------------------------------
         
@@ -993,6 +1001,25 @@ class TestEndToEndDistanceAnalyzer:
         analyzer = EndToEndDistanceAnalyzer()
         result = analyzer.compute(testGraph)
         assert result[0] == pytest.approx(5.595, abs=1e-3)
+
+    def test_EndToEndDistanceAnalyzer_compute_static_topology_with_backbone_cache(self, temp_file):
+        """Static topology should use shared backbone_cache endpoints."""
+        output_handler = OutputHandler(temp_file, mode='streaming')
+        mock_backbone_cache = Mock()
+        mock_graph = Mock()
+
+        mock_backbone_cache.get_endpoints.return_value = [(10, 20), (30, 40)]
+        mock_graph.distance.side_effect = [3.2, 7.5]
+
+        analyzer = EndToEndDistanceAnalyzer(
+            output_handler=output_handler,
+            static_topology=True,
+            backbone_cache=mock_backbone_cache,
+        )
+        result = analyzer.compute(mock_graph)
+
+        mock_backbone_cache.get_endpoints.assert_called_once_with(mock_graph)
+        assert np.allclose(result, np.array([3.2, 7.5]))
         
     # --------------------------------------------------------
     
@@ -1055,6 +1082,21 @@ class TestOrderParameterAnalyzer:
         assert analyzer.NoCellsPerDim == NoCellsPerDim
         assert analyzer.MolecularVectorLength == MolecularVectorLength
         assert analyzer.output_handler == output_handler
+
+    def test_OrderParameterAnalyzer_static_topology_requires_backbone_cache(self, temp_file):
+        """Static topology mode must be initialized with a backbone cache."""
+        output_handler = OutputHandler(temp_file, mode='streaming')
+        BoxSize = (12.0, 13.4, 2.0)
+        NoCellsPerDim = (1, 3, 4)
+        MolecularVectorLength = 4
+        with pytest.raises(ValueError, match="Static topology requires a shared backbone_cache."):
+            OrderParameterAnalyzer(
+                BoxSize,
+                NoCellsPerDim,
+                MolecularVectorLength,
+                output_handler=output_handler,
+                static_topology=True,
+            )
         
     def test2_OrderParameterAnalyzer_init(self, temp_file):
         output_handler = OutputHandler(temp_file, mode='streaming')
@@ -1116,6 +1158,36 @@ class TestOrderParameterAnalyzer:
         assert (1.0, 2.0, 3.0) in result
         assert (2.0, 3.0, 4.0) in result
         assert len(result[(1.0, 2.0, 3.0)]) == 1
+        assert np.array_equal(result[(1.0, 2.0, 3.0)][0], np.array([1.0, 0.0, 0.0]))
+
+    def test_OrderParameterAnalyzer_get_backbone_vectors_static_topology_with_backbone_cache(self, temp_file):
+        """Static topology should use shared backbone_cache paths for vector extraction."""
+        output_handler = OutputHandler(temp_file, mode='streaming')
+        BoxSize = (10.0, 10.0, 10.0)
+        NoCellsPerDim = (1, 1, 1)
+        MolecularVectorLength = 3
+        mock_backbone_cache = Mock()
+        mock_graph = Mock()
+
+        paths = [[0, 1, 2, 3]]
+        path_vectors = {(1.0, 2.0, 3.0): [np.array([1.0, 0.0, 0.0])]}
+        mock_backbone_cache.get_paths.return_value = paths
+        mock_graph.get_vectors_and_positions_along_path.return_value = path_vectors
+
+        analyzer = OrderParameterAnalyzer(
+            BoxSize,
+            NoCellsPerDim,
+            MolecularVectorLength,
+            output_handler=output_handler,
+            static_topology=True,
+            backbone_cache=mock_backbone_cache,
+        )
+
+        result = analyzer.get_backbone_vectors(mock_graph)
+
+        mock_backbone_cache.get_paths.assert_called_once_with(mock_graph)
+        mock_graph.get_vectors_and_positions_along_path.assert_called_once_with(paths[0], MolecularVectorLength)
+        assert (1.0, 2.0, 3.0) in result
         assert np.array_equal(result[(1.0, 2.0, 3.0)][0], np.array([1.0, 0.0, 0.0]))
     
     # ----------------------------------------------------------
@@ -1604,6 +1676,11 @@ class TestDihedralsAnalyzer:
         assert analyzer.cistrans_handler == cisTrans_output_handler
         assert analyzer.sign == True
         assert analyzer.special_dihedral == None
+
+    def test_DihedralsAnalyzer_static_topology_requires_backbone_cache(self):
+        """Static topology mode must be initialized with a backbone cache."""
+        with pytest.raises(ValueError, match="Static topology requires a shared backbone_cache."):
+            DihedralsAnalyzer(static_topology=True, dihedral_range='abs')
         
     # ---------------------------------------------------------
     
@@ -1672,7 +1749,31 @@ class TestDihedralsAnalyzer:
         assert angle_dict[65] == 1
         assert angle_dict[177] == 2
         assert angle_dict[180] == 1
-        
+
+    def test_DihedralsAnalyzer_get_all_dihedrals_static_topology_with_backbone_cache(self):
+        """Static topology should use shared backbone_cache paths for dihedrals."""
+        mock_backbone_cache = Mock()
+        mock_graph = Mock()
+        mock_graph.remove_1order = Mock()
+
+        mock_backbone_cache.get_paths.return_value = [[0, 1, 2, 3, 4]]
+        mock_graph.dihedral.side_effect = [64.8, -180.0]
+
+        analyzer = DihedralsAnalyzer(
+            static_topology=True,
+            backbone_cache=mock_backbone_cache,
+            dihedral_range='abs',
+        )
+        dihedrals, dihedral_list = analyzer._get_all_dihedrals(mock_graph)
+
+        mock_backbone_cache.get_paths.assert_called_once_with(mock_graph)
+        mock_graph.remove_1order.assert_not_called()
+        assert dihedral_list == [[65, 180]]
+        angle_dict = {angle: count for angle, count in dihedrals}
+        assert angle_dict[65] == 1
+        assert angle_dict[180] == 1
+
+
     def test_DihedralsAnalyzer_get_cistrans_from_dihedrals_mock(self):
         """Test _get_cistrans_from_dihedrals method of DihedralsAnalyzer with mock data."""
         analyzer = DihedralsAnalyzer(dihedral_range='abs')
@@ -2140,6 +2241,50 @@ class TestDihedralsAnalyzer:
         assert 'Angle' in lines[0]
         assert 'Frame 0' in lines[0]
         assert 'Frame 1' in lines[0]
+
+
+class TestBackboneCache:
+    """Test shared backbone cache behavior."""
+
+    def test_BackboneCache_get_paths_caches_result(self):
+        """get_paths should compute once and then reuse cached paths."""
+        cache = BackboneCache()
+        mock_graph = Mock()
+        reduced = Mock()
+        subgraph1 = Mock()
+        subgraph2 = Mock()
+
+        mock_graph.remove_1order.return_value = reduced
+        reduced.get_subgraphs.return_value = [subgraph1, subgraph2]
+        subgraph1.find_longest_path.return_value = [1, 2, 3, 4]
+        subgraph2.find_longest_path.return_value = [9]
+
+        first = cache.get_paths(mock_graph)
+        second = cache.get_paths(mock_graph)
+
+        assert first == [[1, 2, 3, 4]]
+        assert second == [[1, 2, 3, 4]]
+        mock_graph.remove_1order.assert_called_once()
+        reduced.surrounding.assert_called_once()
+        reduced.update_degree.assert_called_once()
+        reduced.get_subgraphs.assert_called_once()
+
+    def test_BackboneCache_get_endpoints(self):
+        """get_endpoints should convert cached paths to endpoint tuples."""
+        cache = BackboneCache()
+        mock_graph = Mock()
+        reduced = Mock()
+        subgraph1 = Mock()
+        subgraph2 = Mock()
+
+        mock_graph.remove_1order.return_value = reduced
+        reduced.get_subgraphs.return_value = [subgraph1, subgraph2]
+        subgraph1.find_longest_path.return_value = [4, 5, 6]
+        subgraph2.find_longest_path.return_value = [8]
+
+        endpoints = cache.get_endpoints(mock_graph)
+
+        assert endpoints == [(4, 6)]
         
 # ChemicalFormulaAnalyzer tests # ---------------------------------------------------------
 
