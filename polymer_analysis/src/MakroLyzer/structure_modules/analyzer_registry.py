@@ -10,6 +10,7 @@ from MakroLyzer.structure_modules.Hbonds import HBondsAnalyzer
 from MakroLyzer.structure_modules.Anisotropy import AnisotropyAnalyzer
 from MakroLyzer.structure_modules.Asphericity import AsphericityAnalyzer
 from MakroLyzer.structure_modules.RadiusOfGyration import RadiusOfGyrationAnalyzer
+from MakroLyzer.structure_modules.SpreadRadius import SpreadRadiusAnalyzer
 from MakroLyzer.structure_modules.MoleculeCount import MoleculeCountAnalyzer
 from MakroLyzer.structure_modules.EndToEndDistance import EndToEndDistanceAnalyzer
 from MakroLyzer.structure_modules.OrderParameter import OrderParameterAnalyzer
@@ -55,6 +56,13 @@ def create_radius_of_gyration(args, **context):
     output_handler = OutputHandler(out_file, mode='streaming')
     return RadiusOfGyrationAnalyzer(output_handler)
 
+def create_spread_radius(args, **context):
+    val = args.get('spreadRadius')
+    if val is None:
+        return None
+    out_file = args.get('Rs_file') if args.get('Rs_file') is not None else (val if isinstance(val, str) else 'Rs.csv')
+    output_handler = OutputHandler(out_file, mode='streaming')
+    return SpreadRadiusAnalyzer(output_handler)
 
 def create_molecule_count(args, **context):
     val = args.get('NoSubgraphs')
@@ -159,6 +167,7 @@ ANALYZERS_REGISTRATION = {
     'anisotropy': create_anisotropy,
     'asphericity': create_asphericity,
     'radiusOfGyration': create_radius_of_gyration,
+    'spreadRadius': create_spread_radius,
     'noSubgraphs': create_molecule_count,
     'endToEndDistance': create_end_to_end,
     'orderParameter': create_order_parameter,

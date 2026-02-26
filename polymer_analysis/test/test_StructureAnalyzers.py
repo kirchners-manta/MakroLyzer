@@ -15,6 +15,7 @@ from MakroLyzer.structure_modules.Hbonds import HBondsAnalyzer
 from MakroLyzer.structure_modules.Anisotropy import AnisotropyAnalyzer
 from MakroLyzer.structure_modules.Asphericity import AsphericityAnalyzer
 from MakroLyzer.structure_modules.RadiusOfGyration import RadiusOfGyrationAnalyzer
+from MakroLyzer.structure_modules.SpreadRadius import SpreadRadiusAnalyzer
 from MakroLyzer.structure_modules.MoleculeCount import MoleculeCountAnalyzer
 from MakroLyzer.structure_modules.EndToEndDistance import EndToEndDistanceAnalyzer
 from MakroLyzer.structure_modules.OrderParameter import OrderParameterAnalyzer
@@ -799,6 +800,78 @@ class TestRadiusOfGyrationAnalyzer:
         assert temp_file.exists()
         content = temp_file.read_text()
         assert content == "Frame, Rg / Å\n11,13.300\n"
+        
+# SpreadRadiusAnalyzer tests # ----------------------------------------------------------
+
+class TestSpreadRadiusAnalyzer:
+    """Test the SpreadRadiusAnalyzer class."""
+
+    # SetUp fixtures -----------------------------------------
+    @pytest.fixture
+    def temp_file(self):
+        """Fixture that creates a temporary file path."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            yield Path(tmpdir) / "output.csv"
+            
+    @pytest.fixture
+    def sample_file1(self):
+        return "test_structures/Rg/01.xyz"
+    
+    # ----------------------------------------------------------
+    
+    def test_SpreadRadiusAnalyzer_init(self, temp_file):
+        output_handler = OutputHandler(temp_file, mode='streaming')
+        analyzer = SpreadRadiusAnalyzer(output_handler)
+        
+        assert analyzer.output_handler == output_handler
+        
+    # ----------------------------------------------------------
+    
+    def test_SpreadRadiusAnalyzer_compute(self, temp_file):
+        """Test compute function of SpreadRadiusAnalyzer."""
+        output_handler = OutputHandler(temp_file)
+        analyzer = SpreadRadiusAnalyzer(output_handler)
+        
+        mock_graph = Mock()
+        mock_graph.get_all_coordinates.return_value = (
+            None,
+            np.array([(1.1, 22.0, 3.2), (1.4, 2.3, 19.0), (1.0, 2.0, 3.0)]),
+        )
+        mock_graph.get_com.return_value = (2.0, 4.2, 5.0)
+        
+        Rs = analyzer.compute(mock_graph)
+        assert Rs == pytest.approx(17.9134028, rel=1e-5) 
+        
+    def test2_SpreadRadiusAnalyzer_compute(self, sample_file1):
+        """Test compute function of SpreadRadiusAnalyzer."""
+        xyz = next(readXYZ.readXYZ(sample_file1))
+        testGraph = graphs.GraphManager(xyz)
+        
+        analyzer = SpreadRadiusAnalyzer()
+        Rs = analyzer.compute(testGraph)
+        assert Rs == pytest.approx(3.672, abs=1e-3)
+    
+    # ----------------------------------------------------------
+    
+    def test_SpreadRadiusAnalyzer_render_finalize_output(self, temp_file):
+        """Test render_output and render_output methods of SpreadRadiusAnalyzer."""
+        output_handler = OutputHandler(temp_file)
+        analyzer = SpreadRadiusAnalyzer(output_handler)
+        
+        mock_graph = Mock()
+        mock_graph.get_all_coordinates.return_value = (
+            None,
+            np.array([(1.1, 22.0, 3.2), (1.4, 2.3, 19.0), (1.0, 2.0, 3.0)]),
+        )
+        mock_graph.get_com.return_value = (2.0, 4.2, 5.0)
+        
+        Rs = analyzer.compute(mock_graph)
+        analyzer.render_output(Rs, frame_idx=11)
+        analyzer.finalize_output()
+        
+        assert temp_file.exists()
+        content = temp_file.read_text()
+        assert content == "Frame, Rs / Å\n11,17.913\n"
         
 # test MoleculeCountAnalyzer tests # ----------------------------------------------------------
 

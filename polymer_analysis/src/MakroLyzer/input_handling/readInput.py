@@ -159,6 +159,14 @@ def readCommandLine() -> dict:
                         nargs='?', const='Rg.csv', default=None,
                         help='Calculate radius of gyration for the whole polymer.\n'
                              'Optionally provide an output filename (default: Rg.csv)')
+        
+    analyzer_group.add_argument(
+                        '-Rs', '--spreadRadius',
+                        nargs='?', const='Rs.csv', default=None,
+                        help='Calculate spread radius for the whole polymer.\n'
+                             'The spread radius describes the distance of the most distant atom from and\n'
+                             'to the center of mass of the polymer.\n'
+                             'Optionally provide an output filename (default: Rs.csv)')
     
     analyzer_group.add_argument(
                         '-af', '--anisotropyFactor',
