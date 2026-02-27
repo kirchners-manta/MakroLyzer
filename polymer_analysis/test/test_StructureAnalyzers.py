@@ -12,6 +12,7 @@ from MakroLyzer.errorOutputs.ErrorOutputs import ErrorOutputs
 
 from MakroLyzer.structure_modules.structureBase import OutputHandler, StructureAnalyzer
 from MakroLyzer.structure_modules.Hbonds import HBondsAnalyzer
+from MakroLyzer.structure_modules.HBondCube import HBondCubeAnalyzer
 from MakroLyzer.structure_modules.Anisotropy import AnisotropyAnalyzer
 from MakroLyzer.structure_modules.Asphericity import AsphericityAnalyzer
 from MakroLyzer.structure_modules.RadiusOfGyration import RadiusOfGyrationAnalyzer
@@ -501,7 +502,42 @@ class TestHBondsAnalyzer:
         assert temp_file.exists()
         content = temp_file.read_text()
         assert content == "Frame, Element Type, H-Acceptor dist / Å, Donor-Acceptor dist / Å, Angle cutoff / °, Number of Hydrogen Bonds\n18,O,2.500,3.800,30.000,3\n21,O,2.500,3.800,30.000,3\n"
-        
+
+
+class TestHBondCubeAnalyzer:
+    @pytest.fixture
+    def temp_cube(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            yield Path(tmpdir) / "hbonds.cube"
+
+    def test_hbond_cube_compute_and_finalize(self, temp_cube):
+        output_handler = OutputHandler(temp_cube, mode='collect')
+        analyzer = HBondCubeAnalyzer(
+            cutoffs=[("O", 2.5, 3.5, 30)],
+            box_size=(10.0, 10.0, 10.0),
+            no_cells_per_dim=(5, 5, 5),
+            output_handler=output_handler,
+        )
+
+        mock_graph = Mock()
+        mock_graph.get_hbonds.return_value = [(0, 10), (1, 11)]
+        coords = {
+            0: np.array([1.0, 1.0, 1.0]),
+            1: np.array([9.9, 9.9, 9.9]),
+        }
+        mock_graph.get_coordinates.side_effect = lambda node: coords[node]
+
+        frame_hits = analyzer.compute(mock_graph)
+        assert frame_hits == 2
+        assert analyzer.grid[0, 0, 0] == 1.0
+        assert analyzer.grid[4, 4, 4] == 1.0
+
+        analyzer.finalize_output()
+        assert temp_cube.exists()
+        content = temp_cube.read_text()
+        assert "MakroLyzer HBond cube" in content
+        assert "H-bond counts deposited at hydrogen positions" in content
+
 # AnisotropyAnalyzer tests # ------------------------------------------------------------
 
 class TestAnisotropyAnalyzer:

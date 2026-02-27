@@ -26,7 +26,7 @@ def main(args):
         
     # Check if args from analyzer_group are called
     analyzer_args = [
-        'hydrogenBonds', 'anisotropyFactor', 'asphericityParameter',
+        'hydrogenBonds', 'hbondCube', 'anisotropyFactor', 'asphericityParameter',
         'radiusOfGyration', 'spreadRadius', 'NoSubgraphs', 'endToEndDistance', 
         'orderParameter', 'formula', 'Ramachandran', 'dihedral', 'surfaceAtoms'
     ]

@@ -190,11 +190,28 @@ def readCommandLine() -> dict:
                     '                        alpha : maximum angle between the D-H and H-A vectors (float)\n'
                     'Usage example: -hb O:2.4:3.4:30 N:2.8:3.9:25',
                     type=element_distance_tuple)
-    
+
+    analyzer_group.add_argument(
+                    '-hb-cube', '--hbondCube',
+                    type=HBondCubeParam,
+                    default=None,
+                    help='Create a 3D cube field with H-bond counts using H-node positions.\n'
+                    'Parameters to be specified: <BoxSize>:<NoCellsPerDim>\n'
+                    'BoxSize: size of the simulation box in x,y,z (float,float,float) or one value if symmetrical.\n'
+                    'NoCellsPerDim: number of cells in x,y,z (int,int,int) or one value if symmetrical.\n'
+                    'Requires --hydrogenBonds.\n'
+                    'Usage examples: -hb-cube 100:50   or   -hb-cube 100,120,140:50,60,70')
+
     analyzer_group.add_argument(
                         '-hb-file', '--hbonds-file',
                         nargs='?', const='hydrogenBonds.csv', default='hydrogenBonds.csv',
                         help='Output filename for hydrogen bonds (default: hydrogenBonds.csv)')
+
+    analyzer_group.add_argument(
+                        '--hbondCube-file',
+                        dest='hbondCube_file',
+                        nargs='?', const='hbondDensity.cube', default='hbondDensity.cube',
+                        help='Output filename for H-bond density cube (default: hbondDensity.cube)')
     
     analyzer_group.add_argument(
                         '-op', '--orderParameter',
@@ -388,6 +405,25 @@ def OrderParam(value):
         n = (n[0], n[0], n[0])
     unitSize = int(parts[2]) if len(parts) == 3 else None
     return (boxSize, n, unitSize)
+
+
+def HBondCubeParam(value):
+    parts = value.split(':')
+    if len(parts) != 2:
+        raise argparse.ArgumentTypeError(
+            f"Invalid format: '{value}'. Expected format: BoxSize(x, y, z):n(nx, ny, nz)"
+        )
+    boxSize = tuple(map(float, parts[0].split(',')))
+    if len(boxSize) != 3:
+        boxSize = (boxSize[0], boxSize[0], boxSize[0])
+    n = tuple(map(int, parts[1].split(',')))
+    if len(n) != 3:
+        n = (n[0], n[0], n[0])
+    if any(v <= 0 for v in n):
+        raise argparse.ArgumentTypeError("NoCellsPerDim must be positive integers.")
+    if any(v <= 0 for v in boxSize):
+        raise argparse.ArgumentTypeError("BoxSize entries must be positive.")
+    return (boxSize, n)
 
 def RingCycleSize(value):
     value = value.strip()

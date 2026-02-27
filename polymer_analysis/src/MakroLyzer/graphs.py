@@ -413,10 +413,6 @@ class GraphManager(nx.Graph):
                     # vector of H node to covalently bound atom
                     vector = np.asarray(self.vector(node, neighbor[0]), dtype=float)
                     H_vectors.append(vector / np.linalg.norm(vector))
-                elif len(neighbor) == 0:
-                    raise ValueError(f"H atom is not covalently bound.")
-                elif len(neighbor) > 1:
-                    raise ValueError(f"H atom is covalently bound to multiple atoms.")
             elif data['element'] == Acceptor:
                 type2_nodes.append(node)
                 type2_pos.append(pos)

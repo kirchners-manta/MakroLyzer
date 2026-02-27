@@ -7,6 +7,7 @@ import pytest
 from MakroLyzer.structure_modules import analyzer_registry
 from MakroLyzer.structure_modules import structureAnalysisMain
 from MakroLyzer.structure_modules.Anisotropy import AnisotropyAnalyzer
+from MakroLyzer.structure_modules.HBondCube import HBondCubeAnalyzer
 
 
 class TestAnalyzerRegistry:
@@ -24,6 +25,15 @@ class TestAnalyzerRegistry:
 		instance.initialize_output()
 		assert temp_file.exists()
 		assert temp_file.read_text() == "Frame, Anisotropy Factor (κ²)\n"
+
+	def test_create_hbond_cube(self, tmp_path):
+		args = {
+			"hydrogenBonds": [("O", 2.4, 3.4, 30.0)],
+			"hbondCube": ((10.0, 10.0, 10.0), (5, 5, 5)),
+			"hbondCube_file": tmp_path / "hbonds.cube",
+		}
+		instance = analyzer_registry.create_hbond_cube(args)
+		assert isinstance(instance, HBondCubeAnalyzer)
 
 
 class TestStructureAnalysisMain:

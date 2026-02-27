@@ -57,6 +57,7 @@ surface = []
 
 [project.scripts]
 MakroLyzer = "MakroLyzer.MakroLyzer:main"
+MakroLyzer-cube-view = "MakroLyzer.visualize_cube:main"
 
 [project.gui-scripts]
 

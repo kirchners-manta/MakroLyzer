@@ -68,6 +68,7 @@ class TestInputHandlingMain:
             'nthStep': 1,
             'BoxSize': None,
             'hydrogenBonds': None,
+            'hbondCube': None,
             'anisotropyFactor': None,
             'asphericityParameter': None,
             'radiusOfGyration': None,
@@ -125,3 +126,10 @@ class TestReadInputParsers:
             readInput.RingCycleSize("2")
         with pytest.raises(Exception, match="Minimum ring size is 3."):
             readInput.RingCycleSize("[2,7]")
+
+    def test_hbond_cube_param(self):
+        assert readInput.HBondCubeParam("100:20") == ((100.0, 100.0, 100.0), (20, 20, 20))
+        assert readInput.HBondCubeParam("100,120,140:20,24,28") == (
+            (100.0, 120.0, 140.0),
+            (20, 24, 28),
+        )

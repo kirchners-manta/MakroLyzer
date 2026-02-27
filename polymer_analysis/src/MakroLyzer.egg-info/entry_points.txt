@@ -1,2 +1,3 @@
 [console_scripts]
 MakroLyzer = MakroLyzer.MakroLyzer:main
+MakroLyzer-cube-view = MakroLyzer.visualize_cube:main

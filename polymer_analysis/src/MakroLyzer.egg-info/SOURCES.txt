@@ -4,6 +4,7 @@ src/MakroLyzer/MakroLyzer.py
 src/MakroLyzer/__init__.py
 src/MakroLyzer/dictionaries.py
 src/MakroLyzer/graphs.py
+src/MakroLyzer/visualize_cube.py
 src/MakroLyzer.egg-info/PKG-INFO
 src/MakroLyzer.egg-info/SOURCES.txt
 src/MakroLyzer.egg-info/dependency_links.txt
@@ -34,6 +35,7 @@ src/MakroLyzer/structure_modules/Asphericity.py
 src/MakroLyzer/structure_modules/ChemicalFormula.py
 src/MakroLyzer/structure_modules/Dihedrals.py
 src/MakroLyzer/structure_modules/EndToEndDistance.py
+src/MakroLyzer/structure_modules/HBondCube.py
 src/MakroLyzer/structure_modules/Hbonds.py
 src/MakroLyzer/structure_modules/Helper.py
 src/MakroLyzer/structure_modules/MoleculeCount.py
