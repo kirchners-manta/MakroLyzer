@@ -18,6 +18,7 @@ from MakroLyzer.structure_modules.Ramachandran import RamachandranAnalyzer
 from MakroLyzer.structure_modules.Dihedrals import DihedralsAnalyzer
 from MakroLyzer.structure_modules.ChemicalFormula import ChemicalFormulaAnalyzer
 from MakroLyzer.structure_modules.SurfaceAtoms import SurfaceAtomsAnalyzer
+from MakroLyzer.structure_modules.ConvexHullVolume import ConvexHullVolumeAnalyzer
 from MakroLyzer.structure_modules.structureBase import OutputHandler
 
 
@@ -161,6 +162,14 @@ def create_surface_atoms(args, **context):
     ring_size = args.get('sA_ring_size', 6)
     return SurfaceAtomsAnalyzer(surface_atoms_handler, ring_size=ring_size)
 
+def create_convex_hull_volume(args, **context):
+    val = args.get('convexHullVolume')
+    if val is None:
+        return None
+    out_file = val if isinstance(val, str) else 'ConvexHullVolume.csv'
+    output_handler = OutputHandler(out_file, mode='streaming')
+    return ConvexHullVolumeAnalyzer(output_handler)
+    
 
 ANALYZERS_REGISTRATION = {
     'hbonds': create_hbonds,
@@ -175,4 +184,5 @@ ANALYZERS_REGISTRATION = {
     'dihedrals': create_dihedrals,
     'chemicalFormula': create_chemical_formula,
     'surfaceAtoms': create_surface_atoms,
+    'ConvexHullVolume': create_convex_hull_volume,
 }

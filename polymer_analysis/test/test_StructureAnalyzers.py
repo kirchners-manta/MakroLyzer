@@ -24,6 +24,7 @@ from MakroLyzer.structure_modules.Dihedrals import DihedralsAnalyzer
 from MakroLyzer.structure_modules.ChemicalFormula import ChemicalFormulaAnalyzer
 from MakroLyzer.structure_modules.backbone_cache import BackboneCache
 from MakroLyzer.structure_modules.SurfaceAtoms import SurfaceAtomsAnalyzer
+from MakroLyzer.structure_modules.ConvexHullVolume import ConvexHullVolumeAnalyzer
 
 # OutputHandler Tests # ------------------------------------------------------------------
 class TestOutputHandler:
@@ -288,6 +289,72 @@ class TestStructureAnalyzer:
         
         results = analyzer.run(graph=None, frame_idx=2)
         assert results == {"test": "data"}
+
+
+class TestConvexHullVolumeAnalyzer:
+    """Test the ConvexHullVolumeAnalyzer class."""
+
+    @pytest.fixture
+    def temp_file(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            yield Path(tmpdir) / "convexHullVolume.csv"
+
+    class _MockGraph:
+        def __init__(self, coords):
+            self.coords = np.array(coords, dtype=float)
+
+        def get_all_coordinates(self):
+            nodes = list(range(len(self.coords)))
+            return nodes, self.coords
+
+    def test_compute_regular_tetrahedron(self):
+        graph = self._MockGraph(
+            [
+                [0.0, 0.0, 0.0],
+                [1.0, 0.0, 0.0],
+                [0.0, 1.0, 0.0],
+                [0.0, 0.0, 1.0],
+            ]
+        )
+        analyzer = ConvexHullVolumeAnalyzer()
+        volume = analyzer.compute(graph)
+        assert volume == pytest.approx(1.0 / 6.0, rel=1e-6)
+
+    def test_compute_returns_zero_for_too_few_points(self):
+        graph = self._MockGraph(
+            [
+                [0.0, 0.0, 0.0],
+                [1.0, 0.0, 0.0],
+                [0.0, 1.0, 0.0],
+            ]
+        )
+        analyzer = ConvexHullVolumeAnalyzer()
+        volume = analyzer.compute(graph)
+        assert volume == 0.0
+
+    def test_compute_returns_zero_for_coplanar_points(self):
+        graph = self._MockGraph(
+            [
+                [0.0, 0.0, 0.0],
+                [1.0, 0.0, 0.0],
+                [0.0, 1.0, 0.0],
+                [1.0, 1.0, 0.0],
+            ]
+        )
+        analyzer = ConvexHullVolumeAnalyzer()
+        volume = analyzer.compute(graph)
+        assert volume == 0.0
+
+    def test_render_finalize_output(self, temp_file):
+        output_handler = OutputHandler(temp_file, mode="collect")
+        analyzer = ConvexHullVolumeAnalyzer(output_handler)
+
+        analyzer.render_output(1.0 / 6.0, frame_idx=3)
+        analyzer.finalize_output()
+
+        assert temp_file.exists()
+        content = temp_file.read_text()
+        assert content == "Frame, Convex Hull - Volume / Å³\n3,0.167\n"
         
 # HBondsAnalyzer tests # ------------------------------------------------------------
 class TestHBondsAnalyzer:

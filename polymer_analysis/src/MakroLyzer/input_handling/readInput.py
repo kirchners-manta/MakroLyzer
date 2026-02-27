@@ -278,6 +278,12 @@ def readCommandLine() -> dict:
                         'Minimum allowed ring size is 3. (default: 6).\n'
                         'Usage examples: --sA-ring-size 6   or   --sA-ring-size [4,7]')
     
+    analyzer_group.add_argument(
+                        '-ConvHullVol', '--convexHullVolume',
+                        nargs='?', const='ConvexHullVolume.csv', default=None,
+                        help='Calculation of the volume of the Convex Hull spanned by a particle.\n'
+                        'Optionally provide an output filename (default: ConvexHullVolume.csv)')
+    
     # Structure Modifiers Group # ------------------------------------------------------------------------------
     modifier_group = parser.add_argument_group(
         format_header("Arguments for structure modifiers")

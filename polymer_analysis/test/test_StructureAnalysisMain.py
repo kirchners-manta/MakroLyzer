@@ -7,6 +7,7 @@ import pytest
 from MakroLyzer.structure_modules import analyzer_registry
 from MakroLyzer.structure_modules import structureAnalysisMain
 from MakroLyzer.structure_modules.Anisotropy import AnisotropyAnalyzer
+from MakroLyzer.structure_modules.ConvexHullVolume import ConvexHullVolumeAnalyzer
 
 
 class TestAnalyzerRegistry:
@@ -24,6 +25,19 @@ class TestAnalyzerRegistry:
 		instance.initialize_output()
 		assert temp_file.exists()
 		assert temp_file.read_text() == "Frame, Anisotropy Factor (κ²)\n"
+
+	def test_create_convex_hull_volume_none_and_instance(self, tmp_path):
+		args = {}
+		assert analyzer_registry.create_convex_hull_volume(args) is None
+
+		temp_file = tmp_path / "convhull.csv"
+		args = {"convexHullVolume": str(temp_file)}
+		instance = analyzer_registry.create_convex_hull_volume(args)
+
+		assert isinstance(instance, ConvexHullVolumeAnalyzer)
+		instance.initialize_output()
+		assert temp_file.exists()
+		assert temp_file.read_text() == "Frame, Convex Hull - Volume / Å³\n"
 
 
 class TestStructureAnalysisMain:
