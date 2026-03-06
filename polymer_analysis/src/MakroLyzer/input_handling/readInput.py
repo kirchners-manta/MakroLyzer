@@ -195,12 +195,19 @@ def readCommandLine() -> dict:
                     '-hb-cube', '--hbondCube',
                     type=HBondCubeParam,
                     default=None,
-                    help='Create a 3D cube field with H-bond counts using H-node positions.\n'
+                    help='Create a 3D cube field with H-bond counts using H-acceptor midpoints.\n'
                     'Parameters to be specified: <BoxSize>:<NoCellsPerDim>\n'
                     'BoxSize: size of the simulation box in x,y,z (float,float,float) or one value if symmetrical.\n'
                     'NoCellsPerDim: number of cells in x,y,z (int,int,int) or one value if symmetrical.\n'
                     'Requires --hydrogenBonds.\n'
                     'Usage examples: -hb-cube 100:50   or   -hb-cube 100,120,140:50,60,70')
+
+    analyzer_group.add_argument(
+                    '-hb-pos', '--hbondPositions',
+                    nargs='?', const='hbondPositions.xyz', default=None,
+                    help='Write one XYZ file per frame with H-bond midpoint positions.\n'
+                    'Requires --hydrogenBonds.\n'
+                    'Optionally provide a base output filename (default: hbondPositions.xyz)')
 
     analyzer_group.add_argument(
                         '-hb-file', '--hbonds-file',

@@ -8,6 +8,7 @@ from MakroLyzer.structure_modules import analyzer_registry
 from MakroLyzer.structure_modules import structureAnalysisMain
 from MakroLyzer.structure_modules.Anisotropy import AnisotropyAnalyzer
 from MakroLyzer.structure_modules.HBondCube import HBondCubeAnalyzer
+from MakroLyzer.structure_modules.HBondPositions import HBondPositionsAnalyzer
 
 
 class TestAnalyzerRegistry:
@@ -34,6 +35,18 @@ class TestAnalyzerRegistry:
 		}
 		instance = analyzer_registry.create_hbond_cube(args)
 		assert isinstance(instance, HBondCubeAnalyzer)
+
+	def test_create_hbond_positions(self, tmp_path):
+		args = {
+			"hydrogenBonds": [("O", 2.4, 3.4, 30.0)],
+			"hbondPositions": str(tmp_path / "hbond_positions.xyz"),
+		}
+		instance = analyzer_registry.create_hbond_positions(args)
+		assert isinstance(instance, HBondPositionsAnalyzer)
+
+	def test_create_hbond_positions_requires_hbonds(self):
+		with pytest.raises(ValueError, match="'--hbondPositions' requires '--hydrogenBonds'."):
+			analyzer_registry.create_hbond_positions({"hbondPositions": "hb.xyz"})
 
 
 class TestStructureAnalysisMain:

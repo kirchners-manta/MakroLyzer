@@ -7,6 +7,7 @@ callable that accepts `(args, **context)` and returns an analyzer
 instance or `None` if it should not be created for the given args.
 """
 from MakroLyzer.structure_modules.Hbonds import HBondsAnalyzer
+from MakroLyzer.structure_modules.HBondPositions import HBondPositionsAnalyzer
 from MakroLyzer.structure_modules.HBondCube import HBondCubeAnalyzer
 from MakroLyzer.structure_modules.Anisotropy import AnisotropyAnalyzer
 from MakroLyzer.structure_modules.Asphericity import AsphericityAnalyzer
@@ -45,6 +46,17 @@ def create_hbond_cube(args, **context):
     )
     output_handler = OutputHandler(out_file, mode='collect')
     return HBondCubeAnalyzer(cutoffs, box_size, no_cells_per_dim, output_handler)
+
+def create_hbond_positions(args, **context):
+    val = args.get('hbondPositions')
+    if val is None:
+        return None
+    cutoffs = args.get('hydrogenBonds')
+    if not cutoffs:
+        raise ValueError("'--hbondPositions' requires '--hydrogenBonds'.")
+    out_file = val if isinstance(val, str) else 'hbondPositions.xyz'
+    output_handler = OutputHandler(out_file, mode='collect')
+    return HBondPositionsAnalyzer(cutoffs, output_handler)
 
 
 def create_anisotropy(args, **context):
@@ -182,6 +194,7 @@ def create_surface_atoms(args, **context):
 ANALYZERS_REGISTRATION = {
     'hbonds': create_hbonds,
     'hbondCube': create_hbond_cube,
+    'hbondPositions': create_hbond_positions,
     'anisotropy': create_anisotropy,
     'asphericity': create_asphericity,
     'radiusOfGyration': create_radius_of_gyration,
