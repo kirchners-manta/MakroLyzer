@@ -94,6 +94,10 @@ def readCommandLine() -> dict:
                         help='Path to the LAMMPS-trajectory file',
                         default=None)
     
+    file_group.add_argument('-xtc', '--xtcFile',
+                        help='Path to the XTC trajectory file (requires topology file)',
+                        default=None)
+    
     input_group.add_argument('-nth', '--nthStep',
                         help='Analyze/Modify every nth step from the trajectory (default: 1)',
                         type=int,
@@ -122,7 +126,9 @@ def readCommandLine() -> dict:
                         'Element set only: no digits (e.g. CHO) -> any counts, only these elements.\n'
                         'Provide multiple selections separated by space or comma.\n'
                         'Example: -sel C2H6 C4H10 C1H4 CHO')
-   
+    input_group.add_argument('-top', '--topFile',
+                        help='Topology file (.gro/.pdb/.tpr). Required when using --xtcFile.',
+                        default=None)
     
     # Structure Analyzers Group # -------------------------------------------------------------------------------
     analyzer_group = parser.add_argument_group(title=format_header("Arguments for structure analyzers"),
@@ -290,6 +296,14 @@ def readCommandLine() -> dict:
                         nargs='?', const='ConvexHullVolume.csv', default=None,
                         help='Calculation of the volume of the Convex Hull spanned by a particle.\n'
                         'Optionally provide an output filename (default: ConvexHullVolume.csv)')
+    
+    analyzer_group.add_argument(
+                        '--dnaAxis',
+                        nargs='?',                  
+                        const='dna_axis',          
+                        default=None,                 
+                        help='Calculate the DNA helical axis.\n'
+                             'Optionally provide a base name for output files (default: dna_axis)')
     
     # Structure Modifiers Group # ------------------------------------------------------------------------------
     modifier_group = parser.add_argument_group(

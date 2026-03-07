@@ -7,7 +7,12 @@ from MakroLyzer import graphs
 from MakroLyzer.structure_modules.analyzer_registry import ANALYZERS_REGISTRATION
 from MakroLyzer.structure_modules.backbone_cache import BackboneCache
 
+from MakroLyzer.structure_modules.DnaAxisAnalyzer import DNAAxisCalculator
+
+
 from tqdm import tqdm
+
+context = {}
 
 def main(args):
     """
@@ -24,7 +29,21 @@ def main(args):
         trajectoryFilePath = args['lmpFile']
         n_frames = estimateFrames.EstimateFrames.estimateFramesLMP(trajectoryFilePath)
         read = readLMP.readLMP
-        
+    elif args['xtcFile']:
+        trajectoryFilePath = args['xtcFile']
+        topFilePath = args['topFile']
+
+        import MDAnalysis as mda
+        u = mda.Universe(topFilePath, trajectoryFilePath)
+        n_frames = len(u.trajectory)
+
+        # Make sure the read function returns NumPy arrays for each frame
+        def read_xtc(_trajectory_path=None):
+            for i, ts in enumerate(u.trajectory):
+                yield u.atoms.positions.copy()
+
+        read = read_xtc
+        context['universe'] = u        
         
     # Get the modulo for reading frames 
     #################################################################################################
@@ -62,7 +81,7 @@ def main(args):
     #################################################################################################
     analyzers = {}
     # prepare context for factories
-    context = {'boxSize': boxSize, 'static_topology': static_topology}
+    context.update({'boxSize': boxSize, 'static_topology': static_topology})
     if args.get('orderParameter'):
         context.update(
             {
@@ -91,11 +110,23 @@ def main(args):
             if hasattr(instance, 'initialize_output'):
                 instance.initialize_output()
 
+    dna_axis_active = any(isinstance(a, DNAAxisCalculator) for a in analyzers.values())
 
     # Main Loop
     ##########################################################################################################################################
     for i, xyz_frame in enumerate(tqdm(read(trajectoryFilePath), total=n_frames, desc="Creating something magical", unit="frame", ncols=100)):
         if i % nthStep != 0:
+            continue
+
+            # -------------------------------------------------
+        # If DNA axis analyzer is active → skip graphs
+        # -------------------------------------------------
+        if dna_axis_active:
+
+            for analyzer in analyzers.values():
+                if isinstance(analyzer, DNAAxisCalculator):
+                    analyzer.run(None, i)
+
             continue
          
         # The base_graph contains all atoms as nodes that we read from the specific file, 

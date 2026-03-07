@@ -21,6 +21,8 @@ from MakroLyzer.structure_modules.ChemicalFormula import ChemicalFormulaAnalyzer
 from MakroLyzer.structure_modules.SurfaceAtoms import SurfaceAtomsAnalyzer
 from MakroLyzer.structure_modules.ConvexHullVolume import ConvexHullVolumeAnalyzer
 from MakroLyzer.structure_modules.structureBase import OutputHandler
+from MakroLyzer.structure_modules.DnaAxisAnalyzer import DNAAxisCalculator
+
 
 
 def create_hbonds(args, **context):
@@ -181,6 +183,15 @@ def create_convex_hull_volume(args, **context):
     out_file = val if isinstance(val, str) else 'ConvexHullVolume.csv'
     output_handler = OutputHandler(out_file, mode='streaming')
     return ConvexHullVolumeAnalyzer(output_handler)
+
+def create_dna_axis(args, **context):
+    val = args.get("dnaAxis")
+    if val is None:
+        return None
+
+    base_name = val
+
+    return DNAAxisCalculator(args, universe=context.get('universe'))
     
 
 ANALYZERS_REGISTRATION = {
@@ -198,4 +209,5 @@ ANALYZERS_REGISTRATION = {
     'chemicalFormula': create_chemical_formula,
     'surfaceAtoms': create_surface_atoms,
     'ConvexHullVolume': create_convex_hull_volume,
+    'dnaAxis': create_dna_axis,
 }

@@ -29,7 +29,7 @@ def main(args):
         'hydrogenBonds', 'hbondPositions', 'anisotropyFactor', 'asphericityParameter',
         'radiusOfGyration', 'spreadRadius', 'NoSubgraphs', 'endToEndDistance', 
         'orderParameter', 'formula', 'Ramachandran', 'dihedral', 'surfaceAtoms',
-        'convexHullVolume'
+        'convexHullVolume', 'dnaAxis'
     ]
     if not any(arg in args and args[arg] is not None for arg in analyzer_args):
         analyzer = False
