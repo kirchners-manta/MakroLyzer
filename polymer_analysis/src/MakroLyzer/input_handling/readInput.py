@@ -195,6 +195,13 @@ def readCommandLine() -> dict:
                         '-hb-file', '--hbonds-file',
                         nargs='?', const='hydrogenBonds.csv', default='hydrogenBonds.csv',
                         help='Output filename for hydrogen bonds (default: hydrogenBonds.csv)')
+
+    analyzer_group.add_argument(
+                    '-hb-pos', '--hbondPositions',
+                    nargs='?', const='hbondPositions.xyz', default=None,
+                    help='Write one XYZ file per frame with H-bond midpoint positions.\n'
+                    'Requires --hydrogenBonds.\n'
+                    'Optionally provide a base output filename (default: hbondPositions.xyz)')
     
     analyzer_group.add_argument(
                         '-op', '--orderParameter',

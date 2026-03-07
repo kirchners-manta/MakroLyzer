@@ -12,6 +12,7 @@ from MakroLyzer.errorOutputs.ErrorOutputs import ErrorOutputs
 
 from MakroLyzer.structure_modules.structureBase import OutputHandler, StructureAnalyzer
 from MakroLyzer.structure_modules.Hbonds import HBondsAnalyzer
+from MakroLyzer.structure_modules.HBondPositions import HBondPositionsAnalyzer
 from MakroLyzer.structure_modules.Anisotropy import AnisotropyAnalyzer
 from MakroLyzer.structure_modules.Asphericity import AsphericityAnalyzer
 from MakroLyzer.structure_modules.RadiusOfGyration import RadiusOfGyrationAnalyzer
@@ -568,6 +569,56 @@ class TestHBondsAnalyzer:
         assert temp_file.exists()
         content = temp_file.read_text()
         assert content == "Frame, Element Type, H-Acceptor dist / Å, Donor-Acceptor dist / Å, Angle cutoff / °, Number of Hydrogen Bonds\n18,O,2.500,3.800,30.000,3\n21,O,2.500,3.800,30.000,3\n"
+        
+        
+class TestHBondPositionsAnalyzer:
+    @pytest.fixture
+    def temp_xyz(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            yield Path(tmpdir) / "hbond_positions.xyz"
+            
+    @pytest.fixture
+    def sample_file7(self):
+        return "test_structures/Hbonds/07.xyz"
+
+    def test_hbond_positions_writes_one_xyz_per_frame(self, temp_xyz):
+        output_handler = OutputHandler(temp_xyz, mode='collect')
+        analyzer = HBondPositionsAnalyzer(
+            cutoffs=[("O", 2.5, 3.5, 30)],
+            output_handler=output_handler,
+        )
+
+        mock_graph = Mock()
+        mock_graph.get_hbonds.return_value = [(0, 10), (1, 11)]
+        coords = {
+            0: np.array([0.0, 0.0, 0.0]),
+            10: np.array([2.0, 2.0, 2.0]),
+            1: np.array([2.0, 0.0, 0.0]),
+            11: np.array([4.0, 2.0, 2.0]),
+        }
+        mock_graph.get_coordinates.side_effect = lambda node: coords[node]
+
+        data = analyzer.compute(mock_graph)
+        analyzer.render_output(data, frame_idx=7)
+
+        frame_file = temp_xyz.with_name("hbond_positions_frame7.xyz")
+        assert frame_file.exists()
+        content = frame_file.read_text().splitlines()
+        assert content[0] == "2"
+        assert content[1] == "HBond midpoints frame 7"
+        assert content[2] == "Hb 1.000000 1.000000 1.000000"
+        assert content[3] == "Hb 3.000000 1.000000 1.000000"
+        
+    def test_HbondPositionsAnalyzer_compute(self, sample_file7):
+        xyz = next(readXYZ.readXYZ(sample_file7))
+        testGraph = graphs.GraphManager(xyz)
+        
+        cutoffs = [('O', 2.5, 3.8, 30)]
+        analyzer = HBondPositionsAnalyzer(cutoffs)
+        midpoints = analyzer.compute(testGraph)
+        
+        assert len(midpoints) == 1
+        assert midpoints[0] == pytest.approx(np.array([-2.502955, -0.118145, 0.007825]), rel=1e-3)
         
 # AnisotropyAnalyzer tests # ------------------------------------------------------------
 
