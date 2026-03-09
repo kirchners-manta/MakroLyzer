@@ -99,7 +99,7 @@ class DihedralsAnalyzer(StructureAnalyzer):
             self.dihedral_list_handler.initialize_file(header)
             
         if self.cistrans_handler and self.cistrans_handler.mode == 'streaming':
-            header = "Frame,Cis count,Trans count"
+            header = "Frame,Cis count,Trans count,Longest consecutive cis,Longest consecutive trans"
             self.cistrans_handler.initialize_file(header)
     
     def compute(self, graph):
@@ -115,17 +115,21 @@ class DihedralsAnalyzer(StructureAnalyzer):
                 - 'dihedrals': List of (angle, count) tuples
                 - 'dihedral_list': List of dihedral angles per subgraph
                 - 'cistrans': List of (label, count) tuples [('Cis', count), ('Trans', count)]
+                - 'cistrans_passages': List of (label, count) tuples
+                  [('LongestCis', count), ('LongestTrans', count)]
         """
         # Get all dihedrals and their list representation
         dihedrals, dihedral_list = self._get_all_dihedrals(graph)
         
         # Calculate cis-trans from the dihedral_list (reusing the same calculation)
         cistrans = self._get_cistrans_from_dihedrals(dihedral_list)
+        cistrans_passages = self._get_longest_cistrans_passages(dihedral_list)
         
         return {
             'dihedrals': dihedrals,
             'dihedral_list': dihedral_list,
-            'cistrans': cistrans
+            'cistrans': cistrans,
+            'cistrans_passages': cistrans_passages,
         }
         
     def _get_all_dihedrals(self, graph):
@@ -245,12 +249,46 @@ class DihedralsAnalyzer(StructureAnalyzer):
         
         return [('Cis', cis), ('Trans', trans)]
     
+    def _get_longest_cistrans_passages(self, dihedral_list):
+        """
+        Get longest consecutive cis and trans passages across all subgraphs.
+
+        Args:
+            dihedral_list: List of dihedral angles per subgraph.
+
+        Returns:
+            list: [('LongestCis', length), ('LongestTrans', length)]
+        """
+        longest_cis = 0
+        longest_trans = 0
+
+        for sublist in dihedral_list:
+            current_cis = 0
+            current_trans = 0
+            for d in sublist:
+                abs_d = np.abs(d)
+                if 0 <= abs_d <= 90:
+                    current_cis += 1
+                    current_trans = 0
+                elif 90 < abs_d <= 180:
+                    current_trans += 1
+                    current_cis = 0
+                else:
+                    current_cis = 0
+                    current_trans = 0
+
+                longest_cis = max(longest_cis, current_cis)
+                longest_trans = max(longest_trans, current_trans)
+
+        return [('LongestCis', longest_cis), ('LongestTrans', longest_trans)]
+    
     def render_output(self, data, frame_idx):
         """
         Write/Save data for this frame to all three output files.
         
         Args:
-            data (dict): Dictionary with 'dihedrals', 'dihedral_list', and 'cistrans' keys.
+            data (dict): Dictionary with 'dihedrals', 'dihedral_list', 'cistrans',
+                         and 'cistrans_passages' keys.
             frame_idx (int): Current frame number.
         """
         # Cache for collect mode
@@ -267,9 +305,12 @@ class DihedralsAnalyzer(StructureAnalyzer):
         # Write/Save cis-trans counts (streaming)
         if self.cistrans_handler:
             ct_dict = dict(data['cistrans'])
+            passage_dict = dict(data.get('cistrans_passages', []))
             cis_count = ct_dict.get('Cis', 0)
             trans_count = ct_dict.get('Trans', 0)
-            row = f"{frame_idx},{cis_count},{trans_count}"
+            longest_cis = passage_dict.get('LongestCis', 0)
+            longest_trans = passage_dict.get('LongestTrans', 0)
+            row = f"{frame_idx},{cis_count},{trans_count},{longest_cis},{longest_trans}"
             self.cistrans_handler.append_row(row)
     
     def finalize_output(self):
@@ -288,7 +329,7 @@ class DihedralsAnalyzer(StructureAnalyzer):
             
         # Finalize cis-trans counts file
         if self.cistrans_handler and self.cistrans_handler.mode == 'collect':
-            header = "Frame,Cis count,Trans count"
+            header = "Frame,Cis count,Trans count,Longest consecutive cis,Longest consecutive trans"
             self.cistrans_handler.finalize(header)
     
     def _finalize_dihedral_counts(self):

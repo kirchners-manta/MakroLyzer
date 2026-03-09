@@ -1966,6 +1966,10 @@ class TestDihedralsAnalyzer:
     def sample_file7(self):
         return "test_structures/Dihedrals/specialDihedral.xyz"
     
+    @pytest.fixture
+    def sample_file8(self):
+        return "test_structures/Dihedrals/paths.xyz"
+    
     # ---------------------------------------------------------
     
     def test_DihedralsAnalyzer_init(self, temp_file):
@@ -2129,6 +2133,31 @@ class TestDihedralsAnalyzer:
         # dihedral_list[0] = [180, 177, 65, 177] -> 1 cis (65), 3 trans (180, 177, 177)
         assert cistrans[0][1] == 1  # Cis count
         assert cistrans[1][1] == 3  # Trans count
+    
+    def test_DihedralsAnalyzer_get_longest_cistrans_passages_mock(self):
+        """Test longest consecutive cis/trans passages from dihedral lists."""
+        analyzer = DihedralsAnalyzer(dihedral_range='abs')
+        dihedral_list = [
+            [30, 45, 120, 130, 140],   # longest trans run 3
+            [60, 70, 80, 100],         # longest cis run 3
+            [170, 20, 30],             # mixed runs
+        ]
+
+        passages = analyzer._get_longest_cistrans_passages(dihedral_list)
+        assert passages[0] == ('LongestCis', 3)
+        assert passages[1] == ('LongestTrans', 3)
+        
+    def test_DihedralsAnalyzer_get_longest_cistrans_passages(self, sample_file8):
+        """Test longest consecutive cis/trans passages from dihedral lists."""
+        xyz = next(readXYZ.readXYZ(sample_file8))
+        testGraph = graphs.GraphManager(xyz)
+        
+        analyzer = DihedralsAnalyzer(dihedral_range='abs')
+        _, dihedral_list = analyzer._get_all_dihedrals(testGraph)
+        
+        passages = analyzer._get_longest_cistrans_passages(dihedral_list)
+        assert passages[0] == ('LongestCis', 1)
+        assert passages[1] == ('LongestTrans', 16)
         
     # ---------------------------------------------------------
     
@@ -2159,6 +2188,7 @@ class TestDihedralsAnalyzer:
         assert 'dihedrals' in result
         assert 'dihedral_list' in result
         assert 'cistrans' in result
+        assert 'cistrans_passages' in result
         
         # Verify dihedrals
         dihedrals = result['dihedrals']
@@ -2177,6 +2207,9 @@ class TestDihedralsAnalyzer:
         assert cistrans[0][1] == 1
         assert cistrans[1][0] == 'Trans'
         assert cistrans[1][1] == 1
+        passages = result['cistrans_passages']
+        assert passages[0] == ('LongestCis', 1)
+        assert passages[1] == ('LongestTrans', 1)
         
     def test_DihedralsAnalyzer_compute(self, sample_file1):
         """Test compute function of DihedralsAnalyzer with real data."""
@@ -2213,6 +2246,8 @@ class TestDihedralsAnalyzer:
         # test cis trans counts
         assert cis_trans[0][1] == 1
         assert cis_trans[1][1] == 3
+        assert result['cistrans_passages'][0][1] == 1
+        assert result['cistrans_passages'][1][1] == 2
         
         dihedral_range = "nonabs"
         analyzer = DihedralsAnalyzer(dihedral_range=dihedral_range)
@@ -2244,6 +2279,8 @@ class TestDihedralsAnalyzer:
         # test cis trans counts
         assert cis_trans[0][1] == 1
         assert cis_trans[1][1] == 3
+        assert result['cistrans_passages'][0][1] == 1
+        assert result['cistrans_passages'][1][1] == 2
         
     def test2_DihedralsAnalyzer_compute(self, sample_file4):
         """Test compute function of DihedralsAnalyzer."""
@@ -2273,6 +2310,8 @@ class TestDihedralsAnalyzer:
         # test cis trans counts
         assert cis_trans[0][1] == 1
         assert cis_trans[1][1] == 0
+        assert result['cistrans_passages'][0][1] == 1
+        assert result['cistrans_passages'][1][1] == 0
         
     def test3_DihedralsAnalyzer_compute(self, sample_file5):
         """Test compute function of DihedralsAnalyzer."""
@@ -2302,6 +2341,8 @@ class TestDihedralsAnalyzer:
         # test cis trans counts
         assert cis_trans[0][1] == 1
         assert cis_trans[1][1] == 0
+        assert result['cistrans_passages'][0][1] == 1
+        assert result['cistrans_passages'][1][1] == 0
         
     def test4_DihedralsAnalyzer_compute(self, sample_file6):
         """Test compute function of DihedralsAnalyzer."""
@@ -2331,6 +2372,8 @@ class TestDihedralsAnalyzer:
         # test cis trans counts
         assert cis_trans[0][1] == 0
         assert cis_trans[1][1] == 1
+        assert result['cistrans_passages'][0][1] == 0
+        assert result['cistrans_passages'][1][1] == 1
         
     def test5_DihedralsAnalyzer_compute(self, sample_file2):
         """Test compute function of DihedralsAnalyzer."""
@@ -2465,6 +2508,8 @@ class TestDihedralsAnalyzer:
         # test cis trans counts
         assert cis_trans[0][1] == 0
         assert cis_trans[1][1] == 3
+        assert result['cistrans_passages'][0][1] == 0
+        assert result['cistrans_passages'][1][1] == 3
 
     def test8_DihedralsAnalyzer_compute(self):
         """Test special dihedral parsing and compute path with a mock graph."""
@@ -2501,6 +2546,8 @@ class TestDihedralsAnalyzer:
         assert any(angle == 176 and count == 1 for angle, count in dihedrals)
         assert cis_trans[0][1] == 0
         assert cis_trans[1][1] == 1
+        assert result['cistrans_passages'][0][1] == 0
+        assert result['cistrans_passages'][1][1] == 1
 
     def test9_DihedralsAnalyzer_compute(self):
         """Test invalid special dihedral input."""
@@ -2552,6 +2599,12 @@ class TestDihedralsAnalyzer:
         assert 'Angle' in lines[0]
         assert 'Frame 0' in lines[0]
         assert 'Frame 1' in lines[0]
+        
+        cistrans_content = (temp_file.parent / "cistrans.csv").read_text()
+        cistrans_lines = cistrans_content.strip().split('\n')
+        assert cistrans_lines[0] == "Frame,Cis count,Trans count,Longest consecutive cis,Longest consecutive trans"
+        assert cistrans_lines[1] == "0,1,0,1,0"
+        assert cistrans_lines[2] == "1,1,0,1,0"
 
 
 class TestBackboneCache:

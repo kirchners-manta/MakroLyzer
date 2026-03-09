@@ -134,7 +134,7 @@ def readCommandLine() -> dict:
                         help='Calculate dihedral angles.\n'
                         '1. Dihedral angle counts (file: dihedrals.csv)\n'
                         '2. Dihedral angles per along each polymer strand (file: dihedrals_list.csv)\n'
-                        '3. Cis-trans counts (file: cisTrans.csv)\n'
+                        '3. Cis-trans counts, as well as longest consecutive cis and trans passages (file: cisTrans.csv)\n'
                         'Optionally provide a base-output filename (default: dihedrals.csv)')
     
     analyzer_group.add_argument(

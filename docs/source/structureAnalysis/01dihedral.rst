@@ -44,7 +44,8 @@ The dihedral analyzer writes three files:
 
 - ``dihedrals_list.csv``: One row per subgraph and frame with the angle list sorted along the backbone.
   
-- ``CisTrans.csv``: Cis/trans counts per frame.
+- ``CisTrans.csv``: Cis/trans counts per frame, plus longest consecutive cis and trans passages.
+  Column order: ``Frame, Cis count, Trans count, Longest consecutive cis, Longest consecutive trans``.
 
 Cis/trans classification uses :math:`|\theta| \le 90` degrees for cis and
 :math:`90 < |\theta| \le 180` degrees for trans.
