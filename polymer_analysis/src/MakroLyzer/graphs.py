@@ -214,7 +214,23 @@ class GraphManager(nx.Graph):
             raise ValueError("Total mass is zero, cannot compute center of mass.")
         
         com /= total_mass
-        return com           
+        return com        
+    
+    def get_mass(self):
+        """
+        Calculate the total mass of the graph.
+
+        Returns:
+            float: The total mass of the graph.
+        """
+        total_mass = 0.0
+        
+        for node in self.nodes:
+            element = self.nodes[node]['element']
+            mass = dictionaries.dictMass().get(element, 0.0)
+            total_mass += mass
+            
+        return total_mass   
     
     def surrounding(self):
         """

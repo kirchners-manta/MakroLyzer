@@ -23,7 +23,7 @@ class ConvexHullVolumeAnalyzer(StructureAnalyzer):
         Initialize output file with header. ('streaming' mode)
         """
         if self.output_handler:
-            header = "Frame, Convex Hull - Volume / Å³"
+            header = "Frame, Convex Hull - Volume / Å³, Mass / g/mol, Density / g/cm³"
             if self.output_handler.mode == 'streaming':
                 self.output_handler.initialize_file(header)
             
@@ -36,16 +36,27 @@ class ConvexHullVolumeAnalyzer(StructureAnalyzer):
         """        
         _, coords = graph.get_all_coordinates()
 
-        # Convex hull volume in 3D needs at least 4 non-coplanar points.
+        # Convex hull volume in 3D needs at least 4 non-coplanar points. Angstrom³ 
         if len(coords) < 4:
-            return 0.0
+            volume = 0.0
+        else:
+            try:
+                hull = ConvexHull(coords)
+                volume = float(hull.volume)
+            except QhullError:
+                volume = 0.0
+                
+        # Mass of the polymer. g/mol
+        mass = graph.get_mass()
+        
+        # Density in g/cm³ (convert from g/mol and Å³)
+        if volume > 0:
+            density = (mass / volume) * 1e24 / 6.022e23  # g/cm³
+        else:            
+            density = 0.0
 
-        try:
-            hull = ConvexHull(coords)
-            return float(hull.volume)
-        except QhullError:
-            return 0.0
-    
+        return volume, mass, density
+
     def render_output(self, data, frame_idx):
         """
         Write/Save data for this frame.
@@ -56,7 +67,9 @@ class ConvexHullVolumeAnalyzer(StructureAnalyzer):
         """
         row = (
             f"{frame_idx},"
-            f"{data:.3f}"
+            f"{data[0]:.3f},"
+            f"{data[1]:.3f},"
+            f"{data[2]:.3f}"
         )
         self.output_handler.append_row(row)
         
@@ -64,6 +77,6 @@ class ConvexHullVolumeAnalyzer(StructureAnalyzer):
         """
         Finalize output file (write header and rows - 'collect' mode)
         """
-        header = "Frame, Convex Hull - Volume / Å³"
+        header = "Frame, Convex Hull - Volume / Å³, Mass / g/mol, Density / g/cm³"
         super().finalize_output(header)
         

@@ -37,7 +37,9 @@ class TestAnalyzerRegistry:
 		assert isinstance(instance, ConvexHullVolumeAnalyzer)
 		instance.initialize_output()
 		assert temp_file.exists()
-		assert temp_file.read_text() == "Frame, Convex Hull - Volume / Å³\n"
+		assert temp_file.read_text() == (
+			"Frame, Convex Hull - Volume / Å³, Mass / g/mol, Density / g/cm³\n"
+		)
 
 
 class TestStructureAnalysisMain:

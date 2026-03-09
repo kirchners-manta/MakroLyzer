@@ -24,12 +24,20 @@ Command line
       Output filename.
       *Default: hydrogenBonds.csv*
 
+  ``-hb-pos``
+  ``--hbondPositions``
+      Write one XYZ file per frame with H-bond midpoint positions.
+      Requires ``--hydrogenBonds``.
+      Optionally provide a base output filename.
+      *Default: hbondPositions.xyz*
+
 Example
 ^^^^^^^
 
 .. code-block:: bash
 
    MakroLyzer -xyz polymer.xyz -hb O:2.4:3.4:30 -hb-file myHbondOutput.csv
+   MakroLyzer -xyz polymer.xyz -hb O:2.4:3.4:30 -hb-pos myHbondPositions.xyz
 
 Output
 ------

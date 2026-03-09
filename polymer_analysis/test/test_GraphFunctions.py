@@ -547,6 +547,15 @@ def test_parse_selection_list():
     assert selections[1]['mode'] == 'elements'
     assert selections[1]['elements'] == {'C', 'H', 'O'}
 
+def test_get_mass():
+    graph = graphs.GraphManager()
+    graph.add_node(0, element='C', x=0.0, y=0.0, z=0.0)
+    graph.add_node(1, element='H', x=1.0, y=0.0, z=0.0)
+    graph.add_node(2, element='O', x=0.0, y=1.0, z=0.0)
+
+    # C + H + O
+    assert graph.get_mass() == pytest.approx(12.011 + 1.008 + 15.999)
+
 
 def test_select_subgraph_nodes():
     graph = graphs.GraphManager()

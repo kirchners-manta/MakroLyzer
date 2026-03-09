@@ -289,6 +289,7 @@ def readCommandLine() -> dict:
                         '-ConvHullVol', '--convexHullVolume',
                         nargs='?', const='ConvexHullVolume.csv', default=None,
                         help='Calculation of the volume of the Convex Hull spanned by a particle.\n'
+                        'Additionally, the mass of the polymer as well as the density (mass/volume) are calculated.\n'
                         'Optionally provide an output filename (default: ConvexHullVolume.csv)')
     
     # Structure Modifiers Group # ------------------------------------------------------------------------------

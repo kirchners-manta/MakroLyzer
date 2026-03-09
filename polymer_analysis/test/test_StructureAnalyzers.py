@@ -301,12 +301,16 @@ class TestConvexHullVolumeAnalyzer:
             yield Path(tmpdir) / "convexHullVolume.csv"
 
     class _MockGraph:
-        def __init__(self, coords):
+        def __init__(self, coords, mass=0.0):
             self.coords = np.array(coords, dtype=float)
+            self.mass = mass
 
         def get_all_coordinates(self):
             nodes = list(range(len(self.coords)))
             return nodes, self.coords
+        
+        def get_mass(self):
+            return self.mass
 
     def test_compute_regular_tetrahedron(self):
         graph = self._MockGraph(
@@ -315,11 +319,15 @@ class TestConvexHullVolumeAnalyzer:
                 [1.0, 0.0, 0.0],
                 [0.0, 1.0, 0.0],
                 [0.0, 0.0, 1.0],
-            ]
+            ],
+            mass=30.0,
         )
         analyzer = ConvexHullVolumeAnalyzer()
-        volume = analyzer.compute(graph)
+        volume, mass, density = analyzer.compute(graph)
         assert volume == pytest.approx(1.0 / 6.0, rel=1e-6)
+        assert mass == pytest.approx(30.0)
+        expected_density = (30.0 / (1.0 / 6.0)) * 1e24 / 6.022e23
+        assert density == pytest.approx(expected_density, rel=1e-6)
 
     def test_compute_returns_zero_for_too_few_points(self):
         graph = self._MockGraph(
@@ -327,11 +335,14 @@ class TestConvexHullVolumeAnalyzer:
                 [0.0, 0.0, 0.0],
                 [1.0, 0.0, 0.0],
                 [0.0, 1.0, 0.0],
-            ]
+            ],
+            mass=16.0,
         )
         analyzer = ConvexHullVolumeAnalyzer()
-        volume = analyzer.compute(graph)
+        volume, mass, density = analyzer.compute(graph)
         assert volume == 0.0
+        assert mass == pytest.approx(16.0)
+        assert density == 0.0
 
     def test_compute_returns_zero_for_coplanar_points(self):
         graph = self._MockGraph(
@@ -340,22 +351,28 @@ class TestConvexHullVolumeAnalyzer:
                 [1.0, 0.0, 0.0],
                 [0.0, 1.0, 0.0],
                 [1.0, 1.0, 0.0],
-            ]
+            ],
+            mass=20.0,
         )
         analyzer = ConvexHullVolumeAnalyzer()
-        volume = analyzer.compute(graph)
+        volume, mass, density = analyzer.compute(graph)
         assert volume == 0.0
+        assert mass == pytest.approx(20.0)
+        assert density == 0.0
 
     def test_render_finalize_output(self, temp_file):
         output_handler = OutputHandler(temp_file, mode="collect")
         analyzer = ConvexHullVolumeAnalyzer(output_handler)
 
-        analyzer.render_output(1.0 / 6.0, frame_idx=3)
+        analyzer.render_output((1.0 / 6.0, 30.0, 29.890), frame_idx=3)
         analyzer.finalize_output()
 
         assert temp_file.exists()
         content = temp_file.read_text()
-        assert content == "Frame, Convex Hull - Volume / Å³\n3,0.167\n"
+        assert content == (
+            "Frame, Convex Hull - Volume / Å³, Mass / g/mol, Density / g/cm³\n"
+            "3,0.167,30.000,29.890\n"
+        )
         
 # HBondsAnalyzer tests # ------------------------------------------------------------
 class TestHBondsAnalyzer:

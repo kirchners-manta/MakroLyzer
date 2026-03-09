@@ -39,6 +39,8 @@ The program has two main functionalities:
    structureAnalysis/08ramachandran.rst
    structureAnalysis/09NoSub.rst
    structureAnalysis/10formula.rst
+   structureAnalysis/11surfaceAtoms.rst
+   structureAnalysis/12convexHull.rst
 
 .. toctree::
    :maxdepth: 1
