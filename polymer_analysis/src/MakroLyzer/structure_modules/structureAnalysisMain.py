@@ -9,6 +9,7 @@ from MakroLyzer.structure_modules.backbone_cache import BackboneCache
 
 from tqdm import tqdm
 
+
 def main(args):
     """
     Perfoms the main analysis of the polymer structure.
@@ -61,6 +62,7 @@ def main(args):
     # Build analyzers from registry
     #################################################################################################
     analyzers = {}
+    analyzer_graph_routes = []
     # prepare context for factories
     context = {'boxSize': boxSize, 'static_topology': static_topology}
     if args.get('orderParameter'):
@@ -88,6 +90,7 @@ def main(args):
             raise
         if instance is not None:
             analyzers[key] = instance
+            analyzer_graph_routes.append((instance, getattr(instance, 'requires_full_graph', False)))
             if hasattr(instance, 'initialize_output'):
                 instance.initialize_output()
 
@@ -140,9 +143,14 @@ def main(args):
             # We only analyze the selected subgraphs (They are all contained in boxGraph.subgraph(selected_nodes))
             graph_for_analysis = graphs.GraphManager(boxGraph.subgraph(selected_nodes))
         
-        # Run all registered analyzers for this frame with the graph_for_analyis
-        for analyzer in analyzers.values():
-            analyzer.run(graph_for_analysis, i)
+        # Run all registered analyzers for this frame. Full-graph analyses must
+        # not change the graph passed to analyzers that respect global -sel.
+        for analyzer, requires_full_graph in analyzer_graph_routes:
+            if requires_full_graph:
+                analyzer_graph = boxGraph
+            else:
+                analyzer_graph = graph_for_analysis
+            analyzer.run(analyzer_graph, i)
     ##########################################################################################################################################
     
     

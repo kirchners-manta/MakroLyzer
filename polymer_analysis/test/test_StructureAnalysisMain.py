@@ -155,3 +155,73 @@ class TestStructureAnalysisMain:
 		assert base_graph.update_calls == 1
 		assert base_graph.select_calls == 1
 		assert analyzer_mock.run.call_count == 2
+
+	def test_full_graph_analyzer_does_not_override_global_selection(self, monkeypatch, tmp_path):
+		xyz_path = str(tmp_path / "traj.xyz")
+		args = {
+			'xyzFile': xyz_path,
+			'lmpFile': None,
+			'nthStep': 1,
+			'BoxSize': None,
+			'vibFactor': 1.15,
+			'orderParameter': None,
+			'staticTopology': False,
+			'subgraphSelection': ['C2H6'],
+		}
+
+		class FakeAnalyzer:
+			requires_full_graph = False
+
+			def __init__(self):
+				self.graphs = []
+
+			def initialize_output(self):
+				pass
+
+			def run(self, graph, frame_idx):
+				self.graphs.append(graph)
+
+			def finalize_output(self):
+				pass
+
+		class FakeFullGraphAnalyzer(FakeAnalyzer):
+			requires_full_graph = True
+
+		selected_analyzer = FakeAnalyzer()
+		full_graph_analyzer = FakeFullGraphAnalyzer()
+		full_graph_analyzer.requires_full_graph = True
+
+		def selected_factory(a, **ctx):
+			return selected_analyzer
+
+		def full_graph_factory(a, **ctx):
+			return full_graph_analyzer
+
+		monkeypatch.setattr(
+			structureAnalysisMain,
+			'ANALYZERS_REGISTRATION',
+			{
+				'selected_analyzer': selected_factory,
+				'full_graph_analyzer': full_graph_factory,
+			},
+		)
+
+		monkeypatch.setattr('MakroLyzer.structure_modules.structureAnalysisMain.readXYZ.readXYZ', lambda p: iter(['frame1']))
+		monkeypatch.setattr('MakroLyzer.structure_modules.structureAnalysisMain.estimateFrames.EstimateFrames.estimateFramesXYZ', lambda p: 1)
+
+		class FakeGraphManager:
+			def __init__(self, data=None, boxSize=None, vib_factor=None):
+				self.data = data
+
+			def select_subgraph_nodes(self, selections):
+				return {0}
+
+			def subgraph(self, nodes):
+				return {'selected_nodes': nodes}
+
+		monkeypatch.setattr('MakroLyzer.structure_modules.structureAnalysisMain.graphs.GraphManager', FakeGraphManager)
+
+		structureAnalysisMain.main(args)
+
+		assert selected_analyzer.graphs[0].data == {'selected_nodes': {0}}
+		assert full_graph_analyzer.graphs[0].data == 'frame1'

@@ -12,6 +12,7 @@ from MakroLyzer.errorOutputs.ErrorOutputs import ErrorOutputs
 
 from MakroLyzer.structure_modules.structureBase import OutputHandler, StructureAnalyzer
 from MakroLyzer.structure_modules.Hbonds import HBondsAnalyzer
+from MakroLyzer.structure_modules.HbondsBetween import HbondsBetweenAnalyzer
 from MakroLyzer.structure_modules.HBondPositions import HBondPositionsAnalyzer
 from MakroLyzer.structure_modules.Anisotropy import AnisotropyAnalyzer
 from MakroLyzer.structure_modules.Asphericity import AsphericityAnalyzer
@@ -636,6 +637,155 @@ class TestHBondPositionsAnalyzer:
         
         assert len(midpoints) == 1
         assert midpoints[0] == pytest.approx(np.array([-2.502955, -0.118145, 0.007825]), rel=1e-3)
+        
+# HBondsBetweenAnalyzer tests # ------------------------------------------------------------
+class TestHBondsBetweenAnalyzer:
+    """Test the HBondsBetweenAnalyzer class."""
+
+    class _FakeHbondsBetweenGraph:
+        def __init__(self, selection_nodes, hbonds_by_cutoff=None):
+            self.selection_nodes = selection_nodes
+            self.hbonds_by_cutoff = hbonds_by_cutoff or {}
+            self.selection_calls = []
+            self.hbonds_between_calls = []
+
+        def select_subgraph_nodes(self, selection):
+            raw_selection = selection[0]["raw"]
+            self.selection_calls.append(raw_selection)
+            return self.selection_nodes[raw_selection]
+
+        def get_hbonds_between(
+            self,
+            element_type,
+            h_acceptor_dist,
+            donor_acceptor_dist,
+            angle_cut,
+            selection1_nodes,
+            selection2_nodes,
+        ):
+            self.hbonds_between_calls.append(
+                (
+                    element_type,
+                    h_acceptor_dist,
+                    donor_acceptor_dist,
+                    angle_cut,
+                    set(selection1_nodes),
+                    set(selection2_nodes),
+                )
+            )
+            return self.hbonds_by_cutoff.get(
+                (element_type, h_acceptor_dist, donor_acceptor_dist, angle_cut),
+                [],
+            )
+    
+    # SetUp fixtures -----------------------------------------
+    @pytest.fixture
+    def temp_file(self):
+        """Fixture that creates a temporary file path."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            yield Path(tmpdir) / "output.csv"
+            
+    @pytest.fixture
+    def sample_file1(self):
+        return "test_structures/Hbonds/09.xyz"
+    
+    # --------------------------------------------------------
+    def test_HbondBetweenAnalyzer_init(self, temp_file):
+        """Test initialization of HBondsBetweenAnalyzer."""
+        output_handler = OutputHandler(temp_file, mode='collect')
+        cutoffs = [("O", 2.5, 3.5, 30), ("N", 2.7, 3.7, 25)]
+        selection1 = "CO"
+        selection2 = "H2O"
+        analyzer = HbondsBetweenAnalyzer(cutoffs, selection1, selection2, output_handler)
+        
+        assert analyzer.output_handler == output_handler
+        assert analyzer.cutoffs == cutoffs
+        assert analyzer.selection1_label == selection1
+        assert analyzer.selection2_label == selection2
+        assert analyzer.selection1 == [{"mode": "elements", "elements": {"C", "O"}, "counts": None, "raw": "CO"}]
+        assert analyzer.selection2 == [{"mode": "exact", "elements": {"H", "O"}, "counts": {"O":1, "H":2}, "raw": "H2O"}]
+        assert analyzer.cutoffs == cutoffs
+        assert analyzer.static_topology == False
+        assert analyzer.selection1_nodes == None
+        assert analyzer.selection2_nodes == None
+        
+    # --------------------------------------------------------
+    def test_HbondsBetweenAnalyzer_compute(self, sample_file1):
+        """Test compute function of HBondsBetweenAnalyzer."""
+        xyz = next(readXYZ.readXYZ(sample_file1))
+        testGraph = graphs.GraphManager(xyz)
+        
+        cutoffs = [('O', 2.5, 3.8, 30)]
+        selection1 = "HNCO"
+        selection2 = "H2O"
+        analyzer = HbondsBetweenAnalyzer(cutoffs, selection1, selection2)
+        hbonds_between = analyzer.compute(testGraph)
+        
+        assert len(hbonds_between) == 1
+        assert hbonds_between[0][0] == 'HNCO'
+        assert hbonds_between[0][1] == 'H2O'
+        assert hbonds_between[0][6] == 3
+
+    def test_HbondsBetweenAnalyzer_compute_multiple_cutoffs(self):
+        cutoffs = [('O', 2.5, 3.8, 30), ('N', 2.7, 3.7, 25)]
+        graph = self._FakeHbondsBetweenGraph(
+            selection_nodes={
+                'HNCO': {1, 2, 3, 4},
+                'H2O': {10, 11, 12},
+            },
+            hbonds_by_cutoff={
+                ('O', 2.5, 3.8, 30): [(2, 10), (3, 11)],
+                ('N', 2.7, 3.7, 25): [],
+            },
+        )
+
+        analyzer = HbondsBetweenAnalyzer(cutoffs, 'HNCO', 'H2O')
+        hbonds_between = analyzer.compute(graph)
+
+        assert hbonds_between == [
+            ('HNCO', 'H2O', 'O', 2.5, 3.8, 30, 2),
+            ('HNCO', 'H2O', 'N', 2.7, 3.7, 25, 0),
+        ]
+        assert graph.selection_calls == ['HNCO', 'H2O']
+        assert graph.hbonds_between_calls == [
+            ('O', 2.5, 3.8, 30, {1, 2, 3, 4}, {10, 11, 12}),
+            ('N', 2.7, 3.7, 25, {1, 2, 3, 4}, {10, 11, 12}),
+        ]
+
+    def test_HbondsBetweenAnalyzer_compute_refreshes_nodes_for_dynamic_topology(self):
+        cutoffs = [('O', 2.5, 3.8, 30)]
+        graph = Mock()
+        graph.select_subgraph_nodes.side_effect = [
+            {1, 2},
+            {10, 11},
+            {3, 4},
+            {12, 13},
+        ]
+        graph.get_hbonds_between.return_value = [(1, 10)]
+
+        analyzer = HbondsBetweenAnalyzer(cutoffs, 'HNCO', 'H2O', static_topology=False)
+        analyzer.compute(graph)
+        analyzer.compute(graph)
+
+        assert graph.select_subgraph_nodes.call_count == 4
+        assert graph.get_hbonds_between.call_args_list[0].args[4:] == ({1, 2}, {10, 11})
+        assert graph.get_hbonds_between.call_args_list[1].args[4:] == ({3, 4}, {12, 13})
+
+    def test_HbondsBetweenAnalyzer_compute_reuses_nodes_for_static_topology(self):
+        cutoffs = [('O', 2.5, 3.8, 30)]
+        graph = Mock()
+        graph.select_subgraph_nodes.side_effect = [{1, 2}, {10, 11}]
+        graph.get_hbonds_between.side_effect = [[(1, 10)], [(2, 11), (1, 10)]]
+
+        analyzer = HbondsBetweenAnalyzer(cutoffs, 'HNCO', 'H2O', static_topology=True)
+        first_frame = analyzer.compute(graph)
+        second_frame = analyzer.compute(graph)
+
+        assert graph.select_subgraph_nodes.call_count == 2
+        assert graph.get_hbonds_between.call_args_list[0].args[4:] == ({1, 2}, {10, 11})
+        assert graph.get_hbonds_between.call_args_list[1].args[4:] == ({1, 2}, {10, 11})
+        assert first_frame[0][6] == 1
+        assert second_frame[0][6] == 2
         
 # AnisotropyAnalyzer tests # ------------------------------------------------------------
 

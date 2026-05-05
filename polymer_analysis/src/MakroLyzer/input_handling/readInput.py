@@ -197,6 +197,23 @@ def readCommandLine() -> dict:
                         help='Output filename for hydrogen bonds (default: hydrogenBonds.csv)')
 
     analyzer_group.add_argument(
+                    '-hb-between', '--hb-between',
+                    dest='hbBetween',
+                    nargs=2,
+                    default=None,
+                    metavar=('SEL1', 'SEL2'),
+                    help='Calculate hydrogen bonds between two subgraph selections.\n'
+                    'Requires --hydrogenBonds for the H-bond cutoffs.\n'
+                    'H-bonds within either selected species are ignored.\n'
+                    'Usage example: -hb O:2.4:3.4:30 -hb-between CHON H2O')
+
+    analyzer_group.add_argument(
+                        '-hb-between-file', '--hb-between-file',
+                        dest='hbonds_between_file',
+                        nargs='?', const='hydrogenBondsBetween.csv', default='hydrogenBondsBetween.csv',
+                        help='Output filename for hydrogen bonds between selections (default: hydrogenBondsBetween.csv)')
+
+    analyzer_group.add_argument(
                     '-hb-pos', '--hbondPositions',
                     nargs='?', const='hbondPositions.xyz', default=None,
                     help='Write one XYZ file per frame with H-bond midpoint positions.\n'

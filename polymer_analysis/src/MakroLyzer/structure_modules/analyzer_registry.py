@@ -7,6 +7,7 @@ callable that accepts `(args, **context)` and returns an analyzer
 instance or `None` if it should not be created for the given args.
 """
 from MakroLyzer.structure_modules.Hbonds import HBondsAnalyzer
+from MakroLyzer.structure_modules.HbondsBetween import HbondsBetweenAnalyzer
 from MakroLyzer.structure_modules.HBondPositions import HBondPositionsAnalyzer
 from MakroLyzer.structure_modules.Anisotropy import AnisotropyAnalyzer
 from MakroLyzer.structure_modules.Asphericity import AsphericityAnalyzer
@@ -41,6 +42,24 @@ def create_hbond_positions(args, **context):
     out_file = val if isinstance(val, str) else 'hbondPositions.xyz'
     output_handler = OutputHandler(out_file, mode='collect')
     return HBondPositionsAnalyzer(cutoffs, output_handler)
+
+def create_hbonds_between(args, **context):
+    hb_between = args.get('hbBetween')
+    if not hb_between:
+        return None
+    cutoffs = args.get('hydrogenBonds')
+    if not cutoffs:
+        raise ValueError("'--hb-between' requires '--hydrogenBonds'.")
+    hbonds_between_file = args.get('hbonds_between_file') or 'hydrogenBondsBetween.csv'
+    output_handler = OutputHandler(hbonds_between_file, mode='streaming')
+    static_topology = context.get('static_topology', False)
+    return HbondsBetweenAnalyzer(
+        cutoffs,
+        hb_between[0],
+        hb_between[1],
+        output_handler,
+        static_topology=static_topology,
+    )
 
 
 def create_anisotropy(args, **context):
@@ -186,6 +205,7 @@ def create_convex_hull_volume(args, **context):
 ANALYZERS_REGISTRATION = {
     'hbonds': create_hbonds,
     'hbondPositions': create_hbond_positions,
+    'hbondsBetween': create_hbonds_between,
     'anisotropy': create_anisotropy,
     'asphericity': create_asphericity,
     'radiusOfGyration': create_radius_of_gyration,

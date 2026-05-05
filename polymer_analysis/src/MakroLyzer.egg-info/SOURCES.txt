@@ -37,6 +37,7 @@ src/MakroLyzer/structure_modules/Dihedrals.py
 src/MakroLyzer/structure_modules/EndToEndDistance.py
 src/MakroLyzer/structure_modules/HBondPositions.py
 src/MakroLyzer/structure_modules/Hbonds.py
+src/MakroLyzer/structure_modules/HbondsBetween.py
 src/MakroLyzer/structure_modules/Helper.py
 src/MakroLyzer/structure_modules/MoleculeCount.py
 src/MakroLyzer/structure_modules/OrderParameter.py

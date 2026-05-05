@@ -479,6 +479,29 @@ class GraphManager(nx.Graph):
 
         return hbonds
     
+    def get_hbonds_between(self, Acceptor, HAcceptor_dist, DonorAcceptor_dist, Angle_cut, selection1_nodes, selection2_nodes):
+        selection1_nodes = set(selection1_nodes)
+        selection2_nodes = set(selection2_nodes)
+    
+        hbonds_between = []
+        for nodeH, node_acceptor in self.get_hbonds(Acceptor, HAcceptor_dist, DonorAcceptor_dist, Angle_cut):
+            donor_neighbors = list(self.neighbors(nodeH))
+            if len(donor_neighbors) != 1:
+                continue
+            
+            node_donor = donor_neighbors[0]
+    
+            donor_in_1 = nodeH in selection1_nodes and node_donor in selection1_nodes
+            donor_in_2 = nodeH in selection2_nodes and node_donor in selection2_nodes
+            acceptor_in_1 = node_acceptor in selection1_nodes
+            acceptor_in_2 = node_acceptor in selection2_nodes
+    
+            if (donor_in_1 and acceptor_in_2) or (donor_in_2 and acceptor_in_1):
+                hbonds_between.append((nodeH, node_acceptor))
+    
+        return hbonds_between
+
+    
     def get_vectors_and_positions_along_path(self, path, unitSize=None):
         """
         Get vectors between nodes in a path. The number of atoms that correspond to a 
