@@ -21,6 +21,7 @@ from MakroLyzer.structure_modules.Dihedrals import DihedralsAnalyzer
 from MakroLyzer.structure_modules.ChemicalFormula import ChemicalFormulaAnalyzer
 from MakroLyzer.structure_modules.SurfaceAtoms import SurfaceAtomsAnalyzer
 from MakroLyzer.structure_modules.ConvexHullVolume import ConvexHullVolumeAnalyzer
+from MakroLyzer.structure_modules.ConvexHullSolvent import ConvexHullSolventAnalyzer
 from MakroLyzer.structure_modules.structureBase import OutputHandler
 
 
@@ -200,6 +201,21 @@ def create_convex_hull_volume(args, **context):
     out_file = val if isinstance(val, str) else 'ConvexHullVolume.csv'
     output_handler = OutputHandler(out_file, mode='streaming')
     return ConvexHullVolumeAnalyzer(output_handler)
+
+
+def create_convex_hull_solvent(args, **context):
+    selections = args.get('convexHullSolvent')
+    if not selections:
+        return None
+    out_file = args.get('convexHullSolvent_file') or 'ConvexHullSolvent.csv'
+    output_handler = OutputHandler(out_file, mode='streaming')
+    static_topology = context.get('static_topology', False)
+    return ConvexHullSolventAnalyzer(
+        selections[0],
+        selections[1],
+        output_handler,
+        static_topology=static_topology,
+    )
     
 
 ANALYZERS_REGISTRATION = {
@@ -218,4 +234,5 @@ ANALYZERS_REGISTRATION = {
     'chemicalFormula': create_chemical_formula,
     'surfaceAtoms': create_surface_atoms,
     'ConvexHullVolume': create_convex_hull_volume,
+    'ConvexHullSolvent': create_convex_hull_solvent,
 }

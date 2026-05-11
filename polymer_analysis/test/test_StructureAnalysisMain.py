@@ -8,6 +8,7 @@ from MakroLyzer.structure_modules import analyzer_registry
 from MakroLyzer.structure_modules import structureAnalysisMain
 from MakroLyzer.structure_modules.Anisotropy import AnisotropyAnalyzer
 from MakroLyzer.structure_modules.ConvexHullVolume import ConvexHullVolumeAnalyzer
+from MakroLyzer.structure_modules.ConvexHullSolvent import ConvexHullSolventAnalyzer
 
 
 class TestAnalyzerRegistry:
@@ -39,6 +40,22 @@ class TestAnalyzerRegistry:
 		assert temp_file.exists()
 		assert temp_file.read_text() == (
 			"Frame, Convex Hull - Volume / Å³, Mass / g/mol, Density / g/cm³\n"
+		)
+
+	def test_create_convex_hull_solvent_none_and_instance(self, tmp_path):
+		args = {}
+		assert analyzer_registry.create_convex_hull_solvent(args) is None
+
+		temp_file = tmp_path / "convhullsolvent.csv"
+		args = {"convexHullSolvent": ["C", "H2O"], "convexHullSolvent_file": str(temp_file)}
+		instance = analyzer_registry.create_convex_hull_solvent(args, static_topology=True)
+
+		assert isinstance(instance, ConvexHullSolventAnalyzer)
+		assert instance.static_topology is True
+		instance.initialize_output()
+		assert temp_file.exists()
+		assert temp_file.read_text() == (
+			"Frame, Particle Selection, Solvent Selection, Convex Hull - Volume / Å³, Number of Solvent Molecules Inside\n"
 		)
 
 

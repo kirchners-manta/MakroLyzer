@@ -27,6 +27,7 @@ from MakroLyzer.structure_modules.ChemicalFormula import ChemicalFormulaAnalyzer
 from MakroLyzer.structure_modules.backbone_cache import BackboneCache
 from MakroLyzer.structure_modules.SurfaceAtoms import SurfaceAtomsAnalyzer
 from MakroLyzer.structure_modules.ConvexHullVolume import ConvexHullVolumeAnalyzer
+from MakroLyzer.structure_modules.ConvexHullSolvent import ConvexHullSolventAnalyzer
 
 # OutputHandler Tests # ------------------------------------------------------------------
 class TestOutputHandler:
@@ -373,6 +374,89 @@ class TestConvexHullVolumeAnalyzer:
         assert content == (
             "Frame, Convex Hull - Volume / Å³, Mass / g/mol, Density / g/cm³\n"
             "3,0.167,30.000,29.890\n"
+        )
+
+
+class TestConvexHullSolventAnalyzer:
+    """Test the ConvexHullSolventAnalyzer class."""
+
+    @pytest.fixture
+    def temp_file(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            yield Path(tmpdir) / "convexHullSolvent.csv"
+
+    class _SelectionGraph(graphs.GraphManager):
+        def __init__(self):
+            super().__init__()
+            self.selection_calls = []
+            self.selection_nodes = {
+                "C": {0, 1, 2, 3},
+                "H2O": {4, 5, 6, 7, 8, 9},
+            }
+            self.add_nodes_from(
+                [
+                    (0, {"element": "C", "x": 0.0, "y": 0.0, "z": 0.0}),
+                    (1, {"element": "C", "x": 2.0, "y": 0.0, "z": 0.0}),
+                    (2, {"element": "C", "x": 0.0, "y": 2.0, "z": 0.0}),
+                    (3, {"element": "C", "x": 0.0, "y": 0.0, "z": 2.0}),
+                    (4, {"element": "O", "x": 0.30, "y": 0.30, "z": 0.30}),
+                    (5, {"element": "H", "x": 0.35, "y": 0.30, "z": 0.30}),
+                    (6, {"element": "H", "x": 0.30, "y": 0.35, "z": 0.30}),
+                    (7, {"element": "O", "x": 3.00, "y": 3.00, "z": 3.00}),
+                    (8, {"element": "H", "x": 3.05, "y": 3.00, "z": 3.00}),
+                    (9, {"element": "H", "x": 3.00, "y": 3.05, "z": 3.00}),
+                ]
+            )
+            self.add_edges_from([(4, 5), (4, 6), (7, 8), (7, 9)])
+
+        def select_subgraph_nodes(self, selection):
+            raw_selection = selection[0]["raw"]
+            self.selection_calls.append(raw_selection)
+            return self.selection_nodes[raw_selection]
+
+    def test_init(self, temp_file):
+        output_handler = OutputHandler(temp_file, mode="streaming")
+        analyzer = ConvexHullSolventAnalyzer("C", "H2O", output_handler, static_topology=True)
+
+        assert analyzer.particle_selection_label == "C"
+        assert analyzer.solvent_selection_label == "H2O"
+        assert analyzer.particle_nodes is None
+        assert analyzer.solvent_nodes is None
+        assert analyzer.static_topology is True
+
+    def test_compute_counts_solvent_coms_inside_hull(self):
+        graph = self._SelectionGraph()
+        analyzer = ConvexHullSolventAnalyzer("C", "H2O")
+
+        particle_selection, solvent_selection, volume, count = analyzer.compute(graph)
+
+        assert particle_selection == "C"
+        assert solvent_selection == "H2O"
+        assert volume == pytest.approx(8.0 / 6.0, rel=1e-6)
+        assert count == 1
+        assert graph.selection_calls == ["C", "H2O"]
+
+    def test_compute_reuses_nodes_for_static_topology(self):
+        graph = self._SelectionGraph()
+        analyzer = ConvexHullSolventAnalyzer("C", "H2O", static_topology=True)
+
+        analyzer.compute(graph)
+        analyzer.compute(graph)
+
+        assert graph.selection_calls == ["C", "H2O"]
+
+    def test_render_finalize_output(self, temp_file):
+        output_handler = OutputHandler(temp_file, mode="collect")
+        analyzer = ConvexHullSolventAnalyzer("C", "H2O", output_handler)
+
+        analyzer.render_output(("C", "H2O", 8.0 / 6.0, 1), frame_idx=3)
+        analyzer.finalize_output()
+
+        assert temp_file.exists()
+        content = temp_file.read_text()
+        assert content == (
+            "Frame, Particle Selection, Solvent Selection, Convex Hull - Volume / Å³, Number of Solvent Molecules Inside\n"
+            "3,C,H2O,1.333,1\n"
         )
         
 # HBondsAnalyzer tests # ------------------------------------------------------------

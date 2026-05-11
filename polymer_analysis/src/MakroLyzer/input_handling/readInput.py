@@ -308,6 +308,21 @@ def readCommandLine() -> dict:
                         help='Calculation of the volume of the Convex Hull spanned by a particle.\n'
                         'Additionally, the mass of the polymer as well as the density (mass/volume) are calculated.\n'
                         'Optionally provide an output filename (default: ConvexHullVolume.csv)')
+
+    analyzer_group.add_argument(
+                        '-ConvHullSol', '--convexHullSolvent',
+                        nargs=2,
+                        default=None,
+                        metavar=('PARTICLE_SEL', 'SOLVENT_SEL'),
+                        help='Calculate the convex hull of selected particle molecules and count how many selected\n'
+                        'solvent molecules have their center of mass inside that hull.\n'
+                        'Usage example: -ConvHullSol CHON H2O')
+
+    analyzer_group.add_argument(
+                        '-ConvHullSol-file', '--convexHullSolvent-file',
+                        dest='convexHullSolvent_file',
+                        nargs='?', const='ConvexHullSolvent.csv', default='ConvexHullSolvent.csv',
+                        help='Output filename for convex-hull solvent counting (default: ConvexHullSolvent.csv)')
     
     # Structure Modifiers Group # ------------------------------------------------------------------------------
     modifier_group = parser.add_argument_group(

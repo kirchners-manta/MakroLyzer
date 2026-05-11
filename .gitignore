@@ -2,3 +2,6 @@ MakroLyzer.egg-info/
 __pycache__/
 build/
 examplePolymers/
+HBpolymer.xyz
+HBsolvent.xyz
+HBwrappedGraph.xyz
