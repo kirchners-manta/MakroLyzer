@@ -1536,13 +1536,13 @@ def shift_coordinates(coords: np.ndarray, box_size):
     shifted = coords.copy()                
     lower   = 0.05 * box_size              # 5 % threshold
     upper   = 0.95 * box_size              # 95 % threshold
-    step    = 0.10 * box_size              # 10 % shift step
+    step    = 0.05 * box_size              # 10 % shift step
 
     # Iterate over the three Cartesian axes
     for ax in range(3):
         # Do that until the minimum is >5 % and the maximum is <95 % of the box size,
         # or we try 9 times (shift of 90%)
-        for i in range(10):
+        for i in range(20):
             min_i, max_i = shifted[:, ax].min(), shifted[:, ax].max()
             if not (min_i < lower[ax] and max_i > upper[ax]):
                 break
