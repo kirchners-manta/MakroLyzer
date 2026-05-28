@@ -69,7 +69,7 @@ def main(args):
             
         if selection_sorted:
             selected_nodes = boxGraph.select_subgraph_nodes(selection_sorted)
-            graph_for_analysis = graphs.GraphManager(boxGraph.subgraph(selected_nodes))
+            graph_for_analysis = graphs.GraphManager(boxGraph.subgraph(selected_nodes), boxSize=boxSize, vib_factor=vib_factor)
             boxGraph = graph_for_analysis
         
         # Run all registered analyzers for this frame with the graph_for_analyis

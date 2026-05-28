@@ -25,10 +25,16 @@ class GraphManager(nx.Graph):
             # Copy constructor from another GraphManager instance
             self.add_nodes_from(data.nodes(data=True))
             self.add_edges_from(data.edges(data=True))
+            # shift coordinates if boxSize is given
+            if boxSize is not None:
+                shift_coordinates_graph(self, boxSize)  
         elif isinstance(data, nx.Graph):
             # Initialize from a NetworkX graph object
             self.add_nodes_from(data.nodes(data=True))
             self.add_edges_from(data.edges(data=True))
+            # use shift_coordinates to handle periodic boundary conditions if boxSize is given
+            if boxSize is not None:
+                shift_coordinates_graph(self, boxSize)
         else:
             # Handle other types of data, such as initialization from raw data
             create_kwargs = {}
@@ -37,8 +43,8 @@ class GraphManager(nx.Graph):
             if vib_factor is not None:
                 create_kwargs['vib_factor'] = vib_factor
             self.create_graph(data, **create_kwargs)
-
-    
+            
+                
     def create_graph(self, atomData, boxSize=None, vib_factor=1.15):
         exception = False
         
@@ -1551,3 +1557,19 @@ def shift_coordinates(coords: np.ndarray, box_size):
             shifted[:, ax] = np.mod(shifted[:, ax] + step[ax], box_size[ax])
 
     return shifted
+
+def shift_coordinates_graph(graph, boxsize):
+    """
+    Shift the coordinates of the graph to be within the periodic box.
+
+    Args:
+        graph (GraphManager): The graph whose coordinates to shift.
+        boxsize (float or np.ndarray): Box length (scalar) or per-axis lengths.
+    """
+    coords = np.array([[graph.nodes[node]['x'], graph.nodes[node]['y'], graph.nodes[node]['z']] for node in graph.nodes])
+    shifted_coords = shift_coordinates(coords, boxsize)
+    
+    for i, node in enumerate(graph.nodes):
+        graph.nodes[node]['x'] = shifted_coords[i, 0]
+        graph.nodes[node]['y'] = shifted_coords[i, 1]
+        graph.nodes[node]['z'] = shifted_coords[i, 2]

@@ -141,7 +141,7 @@ def main(args):
 
             # -> We need to update the graph_for_analyis 
             # We only analyze the selected subgraphs (They are all contained in boxGraph.subgraph(selected_nodes))
-            graph_for_analysis = graphs.GraphManager(boxGraph.subgraph(selected_nodes))
+            graph_for_analysis = graphs.GraphManager(boxGraph.subgraph(selected_nodes), boxSize=boxSize, vib_factor=vib_factor)
         
         # Run all registered analyzers for this frame. Full-graph analyses must
         # not change the graph passed to analyzers that respect global -sel.
