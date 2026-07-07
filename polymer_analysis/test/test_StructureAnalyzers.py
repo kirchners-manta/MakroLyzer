@@ -416,17 +416,24 @@ class TestConvexHullSolventAnalyzer:
 
     def test_init(self, temp_file):
         output_handler = OutputHandler(temp_file, mode="streaming")
-        analyzer = ConvexHullSolventAnalyzer("C", "H2O", output_handler, static_topology=True)
+        analyzer = ConvexHullSolventAnalyzer(
+            "C",
+            "H2O",
+            box_size=None,
+            output_handler=output_handler,
+            static_topology=True,
+        )
 
         assert analyzer.particle_selection_label == "C"
         assert analyzer.solvent_selection_label == "H2O"
+        assert analyzer.box_size is None
         assert analyzer.particle_nodes is None
         assert analyzer.solvent_nodes is None
         assert analyzer.static_topology is True
 
     def test_compute_counts_solvent_coms_inside_hull(self):
         graph = self._SelectionGraph()
-        analyzer = ConvexHullSolventAnalyzer("C", "H2O")
+        analyzer = ConvexHullSolventAnalyzer("C", "H2O", box_size=None)
 
         particle_selection, solvent_selection, volume, count = analyzer.compute(graph)
 
@@ -436,9 +443,77 @@ class TestConvexHullSolventAnalyzer:
         assert count == 1
         assert graph.selection_calls == ["C", "H2O"]
 
+    def test_compute_without_box_size_does_not_shift_coordinates(self, monkeypatch):
+        graph = self._SelectionGraph()
+        analyzer = ConvexHullSolventAnalyzer("C", "H2O", box_size=None)
+
+        def fail_if_shifted(*args, **kwargs):
+            raise AssertionError("coordinates should not be shifted without a box size")
+
+        monkeypatch.setattr(analyzer, "_shift_particle_coordinates", fail_if_shifted)
+        monkeypatch.setattr(analyzer, "_shift_solvent_coordinates", fail_if_shifted)
+
+        _, _, volume, count = analyzer.compute(graph)
+
+        assert volume == pytest.approx(8.0 / 6.0, rel=1e-6)
+        assert count == 1
+
+    def test_compute_with_box_size_shifts_solvent_coms_without_mutating_graph(self):
+        graph = self._SelectionGraph()
+        graph.selection_nodes = {
+            "C": {0, 1, 2, 3},
+            "H2O": {4, 5, 6, 7, 8, 9},
+        }
+        boundary_coords = {
+            0: (9.8, 0.0, 0.0),
+            1: (0.2, 0.0, 0.0),
+            2: (9.8, 2.0, 0.0),
+            3: (9.8, 0.0, 2.0),
+            4: (9.90, 0.30, 0.30),
+            5: (9.95, 0.30, 0.30),
+            6: (9.90, 0.35, 0.30),
+            7: (5.00, 5.00, 5.00),
+            8: (5.05, 5.00, 5.00),
+            9: (5.00, 5.05, 5.00),
+        }
+        for node, coords in boundary_coords.items():
+            graph.nodes[node]["x"], graph.nodes[node]["y"], graph.nodes[node]["z"] = coords
+
+        original_coords = {node: graph.get_coordinates(node).copy() for node in graph.nodes}
+        analyzer = ConvexHullSolventAnalyzer("C", "H2O", box_size=10.0)
+
+        _, _, volume, count = analyzer.compute(graph)
+
+        assert volume == pytest.approx((0.4 * 2.0 * 2.0) / 6.0, rel=1e-6)
+        assert count == 1
+        for node, coords in original_coords.items():
+            assert graph.get_coordinates(node) == pytest.approx(coords)
+
+    def test_compute_fixture_01_without_box_size_uses_unshifted_coordinates(self):
+        fixture = Path(__file__).resolve().parents[1] / "test_structures" / "ConvHullSolvent" / "01.xyz"
+        xyz = next(readXYZ.readXYZ(fixture))
+        graph = graphs.GraphManager(xyz)
+        analyzer = ConvexHullSolventAnalyzer("C", "OH", box_size=None)
+
+        _, _, volume, count = analyzer.compute(graph)
+
+        assert volume == pytest.approx(41.625, rel=1e-6)
+        assert count == 1
+
+    def test_compute_fixture_01_with_box_size_counts_no_solvent_inside_periodic_hull(self):
+        fixture = Path(__file__).resolve().parents[1] / "test_structures" / "ConvHullSolvent" / "01.xyz"
+        xyz = next(readXYZ.readXYZ(fixture))
+        graph = graphs.GraphManager(xyz, boxSize=20.0)
+        analyzer = ConvexHullSolventAnalyzer("C", "OH", box_size=20.0)
+
+        _, _, volume, count = analyzer.compute(graph)
+
+        assert volume == pytest.approx((1.5 * 1.5 * 1.5), rel=1e-6)
+        assert count == 0
+
     def test_compute_reuses_nodes_for_static_topology(self):
         graph = self._SelectionGraph()
-        analyzer = ConvexHullSolventAnalyzer("C", "H2O", static_topology=True)
+        analyzer = ConvexHullSolventAnalyzer("C", "H2O", box_size=None, static_topology=True)
 
         analyzer.compute(graph)
         analyzer.compute(graph)
@@ -447,7 +522,7 @@ class TestConvexHullSolventAnalyzer:
 
     def test_render_finalize_output(self, temp_file):
         output_handler = OutputHandler(temp_file, mode="collect")
-        analyzer = ConvexHullSolventAnalyzer("C", "H2O", output_handler)
+        analyzer = ConvexHullSolventAnalyzer("C", "H2O", box_size=None, output_handler=output_handler)
 
         analyzer.render_output(("C", "H2O", 8.0 / 6.0, 1), frame_idx=3)
         analyzer.finalize_output()

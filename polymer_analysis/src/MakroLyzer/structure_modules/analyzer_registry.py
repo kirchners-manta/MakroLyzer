@@ -192,7 +192,8 @@ def create_surface_atoms(args, **context):
     out_file = args.get('surfaceAtoms_file') if args.get('surfaceAtoms_file') is not None else (val if isinstance(val, str) else 'surfaceAtoms.csv')
     surface_atoms_handler = OutputHandler(out_file, mode='streaming')
     ring_size = args.get('sA_ring_size', 6)
-    return SurfaceAtomsAnalyzer(surface_atoms_handler, ring_size=ring_size)
+    box_size = context.get('boxSize')
+    return SurfaceAtomsAnalyzer(surface_atoms_handler, box_size=box_size, ring_size=ring_size)
 
 def create_convex_hull_volume(args, **context):
     val = args.get('convexHullVolume')
@@ -208,11 +209,13 @@ def create_convex_hull_solvent(args, **context):
     if not selections:
         return None
     out_file = args.get('convexHullSolvent_file') or 'ConvexHullSolvent.csv'
+    box_size = context.get('boxSize')
     output_handler = OutputHandler(out_file, mode='streaming')
     static_topology = context.get('static_topology', False)
     return ConvexHullSolventAnalyzer(
         selections[0],
         selections[1],
+        box_size,
         output_handler,
         static_topology=static_topology,
     )

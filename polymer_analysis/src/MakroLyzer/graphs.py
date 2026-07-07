@@ -1530,8 +1530,6 @@ def shift_coordinates(coords: np.ndarray, box_size):
     Returns:
         np.ndarray: A copy of the coordinates with (hopefully) no particles split across the periodic boundary.
     """
-    # Ensure that the particle is not split across the periodic boundary
-    # For each direction (x,y,z), get the minimum and maximum coordinates
     coords   = np.asarray(coords, dtype=float)
     box_size = np.asarray(box_size, dtype=float)
 
@@ -1539,24 +1537,44 @@ def shift_coordinates(coords: np.ndarray, box_size):
     if box_size.ndim == 0:
         box_size = np.repeat(box_size, 3)
 
-    shifted = coords.copy()                
-    lower   = 0.05 * box_size              # 5 % threshold
-    upper   = 0.95 * box_size              # 95 % threshold
-    step    = 0.05 * box_size              # 10 % shift step
+    shifts = periodic_compacting_shifts(coords, box_size)
+    return np.mod(coords + shifts, box_size)
 
-    # Iterate over the three Cartesian axes
+
+def periodic_compacting_shifts(coords: np.ndarray, box_size):
+    """
+    Find per-axis periodic shifts that place the largest empty gap at the box boundary.
+
+    This keeps boundary-straddling clusters compact without relying on a fixed
+    5/95 percent threshold.
+    """
+    coords = np.asarray(coords, dtype=float)
+    box_size = np.asarray(box_size, dtype=float)
+    if box_size.ndim == 0:
+        box_size = np.repeat(box_size, 3)
+
+    if coords.size == 0:
+        return np.zeros(3)
+
+    wrapped = np.mod(coords, box_size)
+    shifts = np.zeros(3)
     for ax in range(3):
-        # Do that until the minimum is >5 % and the maximum is <95 % of the box size,
-        # or we try 9 times (shift of 90%)
-        for i in range(20):
-            min_i, max_i = shifted[:, ax].min(), shifted[:, ax].max()
-            if not (min_i < lower[ax] and max_i > upper[ax]):
-                break
-            # Shift the coordinates up by 10 % of the box size in this direction
-            # and put them back into the box using modulo
-            shifted[:, ax] = np.mod(shifted[:, ax] + step[ax], box_size[ax])
+        values = np.sort(wrapped[:, ax])
+        if len(values) <= 1 or box_size[ax] == 0:
+            continue
 
-    return shifted
+        # calculate the gaps between consecutive values, including the wrap-around gap
+        gaps = np.diff(values)
+        wrap_gap = values[0] + box_size[ax] - values[-1]
+        all_gaps = np.append(gaps, wrap_gap)
+        largest_gap_idx = int(np.argmax(all_gaps))
+        if largest_gap_idx == len(values) - 1:
+            start = values[0]
+        else:
+            start = values[largest_gap_idx + 1]
+        shifts[ax] = -start
+
+    return shifts
 
 def shift_coordinates_graph(graph, boxsize):
     """

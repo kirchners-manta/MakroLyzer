@@ -112,6 +112,27 @@ def test_update_coordinates(sample_data1):
     bad_data.loc[0, 'atom'] = 'O' if bad_data.loc[0, 'atom'] != 'O' else 'C'
     with pytest.raises(ValueError):
         testGraph.update_coordinates(bad_data)
+
+
+def test_shift_coordinates_compacts_boundary_split_cluster():
+    coords = np.array(
+        [
+            [0.0, 0.0, 0.0],
+            [1.5, 0.0, 0.0],
+            [0.0, 1.5, 0.0],
+            [1.5, 1.5, 0.0],
+            [0.0, 0.0, 18.5],
+            [1.5, 0.0, 18.5],
+            [0.0, 1.5, 18.5],
+            [1.5, 1.5, 18.5],
+        ],
+        dtype=float,
+    )
+
+    shifted = graphs.shift_coordinates(coords, 20.0)
+
+    assert shifted[:, 2].max() - shifted[:, 2].min() == pytest.approx(1.5)
+    assert set(np.round(np.unique(shifted[:, 2]), 6)) == {0.0, 1.5}
         
 def test_longest_path(sample_data1):
     xyz = next(readXYZ.readXYZ(sample_data1))
