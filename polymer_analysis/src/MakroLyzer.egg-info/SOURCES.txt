@@ -15,6 +15,7 @@ src/MakroLyzer/input_handling/__init__.py
 src/MakroLyzer/input_handling/checkInput.py
 src/MakroLyzer/input_handling/estimateFrames.py
 src/MakroLyzer/input_handling/inputHandlingMain.py
+src/MakroLyzer/input_handling/readGROMACS.py
 src/MakroLyzer/input_handling/readInput.py
 src/MakroLyzer/input_handling/readLMP.py
 src/MakroLyzer/input_handling/readXYZ.py
@@ -53,6 +54,7 @@ src/MakroLyzer/structure_modules/structureAnalysisMain.py
 src/MakroLyzer/structure_modules/structureBase.py
 test/test_GraphFunctions.py
 test/test_InputHandling.py
+test/test_ReadGROMACS.py
 test/test_StructureAnalysisMain.py
 test/test_StructureAnalyzers.py
 test/test_StructureModificationMain.py

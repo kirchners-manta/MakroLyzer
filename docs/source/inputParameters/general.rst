@@ -1,7 +1,7 @@
 General Input Parameters [1]_
 ===========================
 
-To run MakroLyzer, a structure file either in **XYZ** or **LAMMPS** format is required. 
+To run MakroLyzer, a structure or trajectory in **XYZ**, **LAMMPS**, or a supported **GROMACS** format is required.
 The structure can be provided via the command line using the ``-xyz`` or ``-lmp`` flag, respectively.
 
 .. code-block:: bash
@@ -9,6 +9,23 @@ The structure can be provided via the command line using the ``-xyz`` or ``-lmp`
    MakroLyzer -xyz <trajectory.xyz>
    MakroLyzer -lmp <trajectory.lmp>
 
+
+GROMACS input (MDAnalysis)
+-------------------------
+
+GRO structures, PDB structures (including multiple models), and TRR/XTC trajectories are read with MDAnalysis >= 2.8. TRR/XTC files require a TPR,
+GRO, or PDB topology with the same atom count and ordering:
+
+.. code-block:: bash
+
+   MakroLyzer -gro structure.gro 
+   MakroLyzer -pdb structure.pdb 
+   MakroLyzer -trr trajectory.trr -tpr topol.tpr 
+   MakroLyzer -xtc trajectory.xtc --topology structure.gro 
+
+.. note::
+  MakroLyzer still constructs bonds from distances, so TPR bonds are not imported.
+  Periodic box dimensions are not automatically used: supply ``-bs`` in Ångström for the existing cubic-box handling.
 
 MakroLyzer then reads in the structure file and creates a graph representation of the macromolecular structure.
 Covalent bonds are identified using a distance criterion defined as the sum of the covalent radii of the two atoms multiplied by a factor of 1.15 to account for lattice vibrations. 

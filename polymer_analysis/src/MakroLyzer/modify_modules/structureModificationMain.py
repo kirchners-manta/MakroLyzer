@@ -1,5 +1,6 @@
 from MakroLyzer.input_handling import readXYZ
 from MakroLyzer.input_handling import readLMP
+from MakroLyzer.input_handling import readGROMACS
 from MakroLyzer.input_handling import estimateFrames
 from MakroLyzer.input_handling import subgraphSelection
 from MakroLyzer import graphs
@@ -15,14 +16,17 @@ def main(args):
     
     # Get the trajectory file path
     #################################################################################################
-    if args['xyzFile']:
+    if args.get('xyzFile'):
         trajectoryFilePath = args['xyzFile']
         n_frames = estimateFrames.EstimateFrames.estimateFramesXYZ(trajectoryFilePath)
         read = readXYZ.readXYZ
-    elif args['lmpFile']:
+    elif args.get('lmpFile'):
         trajectoryFilePath = args['lmpFile']
         n_frames = estimateFrames.EstimateFrames.estimateFramesLMP(trajectoryFilePath)
         read = readLMP.readLMP
+    else:
+        trajectoryFilePath, read = readGROMACS.input_reader(args)
+        n_frames = estimateFrames.EstimateFrames.estimateFramesGROMACS(trajectoryFilePath)
         
         
     # Get the modulo for reading frames 

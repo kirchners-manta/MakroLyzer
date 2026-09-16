@@ -54,6 +54,29 @@ def checkInput(args):
             raise EmptyFileError(f"File '{lmpFilePath}' is empty.")
         
     
+    # GROMACS trajectories need atom identities from a separate topology.
+    binary_trajectory = args.get('trrFile') or args.get('xtcFile')
+    if binary_trajectory and not args.get('topologyFile'):
+        raise ValueError('TRR/XTC input requires -tpr/--topology (TPR, GRO, or PDB).')
+    if args.get('topologyFile') and not binary_trajectory:
+        raise ValueError('-tpr/--topology requires a TRR or XTC trajectory.')
+    for key, extensions in (
+        ('groFile', ('.gro',)), ('pdbFile', ('.pdb',)),
+        ('trrFile', ('.trr',)), ('xtcFile', ('.xtc',)),
+        ('topologyFile', ('.tpr', '.gro', '.pdb')),
+    ):
+        path = args.get(key)
+        if path is None:
+            continue
+        if not os.path.isfile(path):
+            raise FileNotFoundError(f"Input file '{path}' not found.")
+        if not str(path).lower().endswith(extensions):
+            raise InvalidFileFormatError(
+                f"Invalid file format for '{path}'. Expected {' or '.join(extensions)} file."
+            )
+        if os.path.getsize(path) == 0:
+            raise EmptyFileError(f"File '{path}' is empty.")
+
     #---Repeating Units---#
     if args['patternFile'] is not None:
         # Check if the pattern file exists

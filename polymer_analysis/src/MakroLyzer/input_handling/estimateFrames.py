@@ -1,4 +1,17 @@
 class EstimateFrames:
+
+    @staticmethod
+    def estimateFramesGROMACS(trajectory_path: str):
+        """Return the MDAnalysis frame count for GRO, PDB, TRR, or XTC.
+
+        Counting coordinates does not require a topology. GRO contributes one
+        frame; PDB contributes one per model. TRR/XTC readers may build a frame
+        offset index on first access, but do not load all coordinates into memory.
+        """
+        from MDAnalysis.coordinates.core import reader
+
+        with reader(str(trajectory_path)) as trajectory:
+            return trajectory.n_frames
     
     @staticmethod
     def estimateFramesXYZ(xyz_path: str):

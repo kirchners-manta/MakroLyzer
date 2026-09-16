@@ -15,6 +15,7 @@ authors = [
 
 dependencies = [
     "numpy",
+    "MDAnalysis>=2.8",
     "pandas",
     "scipy",
     "matplotlib",

@@ -94,6 +94,17 @@ def readCommandLine() -> dict:
                         help='Path to the LAMMPS-trajectory file',
                         default=None)
     
+    for flag, key, description in (
+        ('gro', 'groFile', 'GROMACS GRO structure'),
+        ('pdb', 'pdbFile', 'PDB structure or multi-model trajectory'),
+        ('trr', 'trrFile', 'GROMACS TRR trajectory (requires --topology)'),
+        ('xtc', 'xtcFile', 'GROMACS XTC trajectory (requires --topology)'),
+    ):
+        file_group.add_argument(f'-{flag}', f'--{key}',
+                                help=f'Path to the {description}', default=None)
+    input_group.add_argument('-tpr', '--topology', dest='topologyFile', default=None,
+                            help='TPR, GRO, or PDB topology for a TRR/XTC trajectory')
+
     input_group.add_argument('-nth', '--nthStep',
                         help='Analyze/Modify every nth step from the trajectory (default: 1)',
                         type=int,

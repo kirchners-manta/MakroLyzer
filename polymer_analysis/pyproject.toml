@@ -13,7 +13,7 @@ dependencies = [
     "networkx",
     "tqdm",
     "IPython",
-    "MDAnalysis",
+    "MDAnalysis>=2.8",
     "pytim"
 ]
 
