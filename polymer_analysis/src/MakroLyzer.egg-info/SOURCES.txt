@@ -10,6 +10,9 @@ src/MakroLyzer.egg-info/dependency_links.txt
 src/MakroLyzer.egg-info/entry_points.txt
 src/MakroLyzer.egg-info/requires.txt
 src/MakroLyzer.egg-info/top_level.txt
+src/MakroLyzer/dynamic_modules/dynamicAnalysisMain.py
+src/MakroLyzer/dynamic_modules/dynamicBase.py
+src/MakroLyzer/dynamic_modules/dynamics_registry.py
 src/MakroLyzer/errorOutputs/ErrorOutputs.py
 src/MakroLyzer/input_handling/__init__.py
 src/MakroLyzer/input_handling/checkInput.py
@@ -43,6 +46,7 @@ src/MakroLyzer/structure_modules/HbondsBetween.py
 src/MakroLyzer/structure_modules/Helper.py
 src/MakroLyzer/structure_modules/MoleculeCount.py
 src/MakroLyzer/structure_modules/OrderParameter.py
+src/MakroLyzer/structure_modules/RMSD.py
 src/MakroLyzer/structure_modules/RadiusOfGyration.py
 src/MakroLyzer/structure_modules/Ramachandran.py
 src/MakroLyzer/structure_modules/SpreadRadius.py
@@ -59,3 +63,4 @@ test/test_StructureAnalysisMain.py
 test/test_StructureAnalyzers.py
 test/test_StructureModificationMain.py
 test/test_StructureModifiers.py
+test/test_TrajectoryUnwrapping.py

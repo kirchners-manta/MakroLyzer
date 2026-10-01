@@ -7,12 +7,16 @@ from collections import defaultdict, deque
 from MakroLyzer import dictionaries
 
 class GraphManager(nx.Graph):
-    def __init__(self, data=None, boxSize=None, vib_factor=None, **kwargs):
+    def __init__(self, data=None, boxSize=None, vib_factor=None, preserve_coords=False, **kwargs):
         """
         Args:
             data : elements together with their coordinates.
             boxSize : optional, size of the box for periodic boundary conditions.
             vib_factor : optional, factor to scale bond distance cutoff.
+            preserve_coords : retain incoming node coordinates, including when
+                copying graphs or selected subgraphs. Box size still controls
+                periodic bond detection when building from atom data.
+                Pass this option explicitly for each construction that needs it.
             **kwargs : additional keyword arguments for graph initialization.
         """
         
@@ -25,32 +29,33 @@ class GraphManager(nx.Graph):
             # Copy constructor from another GraphManager instance
             self.add_nodes_from(data.nodes(data=True))
             self.add_edges_from(data.edges(data=True))
-            # shift coordinates if boxSize is given
-            if boxSize is not None:
+            # Keep absolute positions when copying a graph for dynamics.
+            if boxSize is not None and not preserve_coords:
                 shift_coordinates_graph(self, boxSize)  
         elif isinstance(data, nx.Graph):
             # Initialize from a NetworkX graph object
             self.add_nodes_from(data.nodes(data=True))
             self.add_edges_from(data.edges(data=True))
-            # use shift_coordinates to handle periodic boundary conditions if boxSize is given
-            if boxSize is not None:
+            # Selected subgraphs must also retain their absolute positions.
+            if boxSize is not None and not preserve_coords:
                 shift_coordinates_graph(self, boxSize)
         else:
             # Handle other types of data, such as initialization from raw data
-            create_kwargs = {}
+            create_kwargs = {'preserve_coords': preserve_coords}
             if boxSize is not None:
                 create_kwargs['boxSize'] = boxSize
             if vib_factor is not None:
                 create_kwargs['vib_factor'] = vib_factor
             self.create_graph(data, **create_kwargs)
             
-                
-    def create_graph(self, atomData, boxSize=None, vib_factor=1.15):
+    def create_graph(self, atomData, boxSize=None, vib_factor=1.15, preserve_coords=False):
         exception = False
         
         covalentRadii = dictionaries.dictCovalent()
         elements = atomData['atom'].values
         coords = atomData[['x','y','z']].values
+        if preserve_coords:
+            preserved_coords = coords.copy()
         
         # Delete elements X, Q and Z from the list of elements
         if exception:
@@ -92,13 +97,22 @@ class GraphManager(nx.Graph):
             tree = cKDTree(coords)
 
         # Add all nodes 
-        nodes = [
-           (idx, {"index": idx, "element": elements[idx],
-                  "x": coords[idx,0],
-                  "y": coords[idx,1],
-                  "z": coords[idx,2]})
-           for idx in range(len(coords))
-        ]
+        if not preserve_coords:
+            nodes = [
+               (idx, {"index": idx, "element": elements[idx],
+                      "x": coords[idx,0],
+                      "y": coords[idx,1],
+                      "z": coords[idx,2]})
+               for idx in range(len(coords))
+            ]
+        else:
+            nodes = [
+               (idx, {"index": idx, "element": elements[idx],
+                      "x": preserved_coords[idx,0],
+                      "y": preserved_coords[idx,1],
+                      "z": preserved_coords[idx,2]})
+               for idx in range(len(coords))
+            ]
         self.add_nodes_from(nodes)
 
         # Find all candidate pairs up to the global max radius

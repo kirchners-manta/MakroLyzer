@@ -2,25 +2,28 @@
 
 from functools import partial
 import warnings
+import MDAnalysis as mda
+from MDAnalysis.transformations.nojump import NoJump
+from MDAnalysis.exceptions import NoDataError
 
 import pandas as pd
 
 
-def readGROMACS(topology_path: str, trajectory_path: str = None):
+def readGROMACS(topology_path: str, trajectory_path: str = None, unwrap: bool = False):
     """Yield independent frames with element labels and coordinates in Ångström.
 
     GRO/PDB files can be read alone; TRR/XTC files require a topology with
     matching atom order. Missing elements are guessed from atom names by
     MDAnalysis. Bonds and periodic boxes are still handled by MakroLyzer.
     """
-    import MDAnalysis as mda
-    from MDAnalysis.exceptions import NoDataError
 
     paths = (str(topology_path),) if trajectory_path is None else (
         str(topology_path), str(trajectory_path)
     )
     universe = mda.Universe(*paths, convert_units=True)
     try:
+        if unwrap:
+            universe.trajectory.add_transformations(NoJump())
         try:
             elements = universe.atoms.elements
             needs_guess = any(not str(element).strip() for element in elements)
