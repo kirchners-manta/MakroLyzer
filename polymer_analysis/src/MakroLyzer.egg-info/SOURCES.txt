@@ -10,9 +10,10 @@ src/MakroLyzer.egg-info/dependency_links.txt
 src/MakroLyzer.egg-info/entry_points.txt
 src/MakroLyzer.egg-info/requires.txt
 src/MakroLyzer.egg-info/top_level.txt
+src/MakroLyzer/dynamic_modules/MSD.py
+src/MakroLyzer/dynamic_modules/analyzer_registry.py
 src/MakroLyzer/dynamic_modules/dynamicAnalysisMain.py
 src/MakroLyzer/dynamic_modules/dynamicBase.py
-src/MakroLyzer/dynamic_modules/dynamics_registry.py
 src/MakroLyzer/errorOutputs/ErrorOutputs.py
 src/MakroLyzer/input_handling/__init__.py
 src/MakroLyzer/input_handling/checkInput.py
@@ -56,8 +57,11 @@ src/MakroLyzer/structure_modules/analyzer_registry.py
 src/MakroLyzer/structure_modules/backbone_cache.py
 src/MakroLyzer/structure_modules/structureAnalysisMain.py
 src/MakroLyzer/structure_modules/structureBase.py
+test/test_DynamicBase.py
+test/test_GraphCoordinatePreservation.py
 test/test_GraphFunctions.py
 test/test_InputHandling.py
+test/test_MSD.py
 test/test_ReadGROMACS.py
 test/test_StructureAnalysisMain.py
 test/test_StructureAnalyzers.py

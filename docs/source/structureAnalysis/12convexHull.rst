@@ -41,7 +41,7 @@ Output
 Each row starts with the frame index followed by the volume of the convex hull, the mass of the particle and the density (mass/volume) in CSV format.
 For solvent counting, each row starts with the frame index followed by the particle selection, solvent selection, convex hull volume and the number of solvent molecules inside the convex hull.
 
-.. [1]  Drysch, K.; Dawer, Y.; Zaby, P.; Buchmüller, K.; Dick, L.; Mutzel, P.; Hollóczki, O.; Kirchner, B. MakroLyzer: A Graph-Based Software to Comb through Molecular Hairballs Using the Example of Nanoplastics. J. Phys. Chem. B 2025
+.. [1]  Jonas, K.; Dawer, Y.; Zaby, P.; Buchmüller, K.; Dick, L.; Mutzel, P.; Hollóczki, O.; Kirchner, B. MakroLyzer: A Graph-Based Software to Comb through Molecular Hairballs Using the Example of Nanoplastics. J. Phys. Chem. B 2025
        DOI: 10.1021/acs.jpcb.5c06175
 .. [2]  Virtanen, P.; Gommers, R.; Oliphant, T. E.; Haberland, M.; Reddy, T.; Cournapeau, D.; et al. SciPy 1.0: Fundamental Algorithms for Scientific Computing in Python. Nat. Methods 2020, 17, 261-272.
        DOI: 10.1038/s41592-019-0686-2

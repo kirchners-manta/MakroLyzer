@@ -116,5 +116,5 @@ For hydrogen bonds between two selections, the output file contains the same cut
    * - Number of Hydrogen Bonds
      - Count of hydrogen bonds between the two selections for this cutoff
 
-.. [1]  Drysch, K.; Dawer, Y.; Zaby, P.; Buchmüller, K.; Dick, L.; Mutzel, P.; Hollóczki, O.; Kirchner, B. MakroLyzer: A Graph-Based Software to Comb through Molecular Hairballs Using the Example of Nanoplastics. J. Phys. Chem. B 2025
+.. [1]  Jonas, K.; Dawer, Y.; Zaby, P.; Buchmüller, K.; Dick, L.; Mutzel, P.; Hollóczki, O.; Kirchner, B. MakroLyzer: A Graph-Based Software to Comb through Molecular Hairballs Using the Example of Nanoplastics. J. Phys. Chem. B 2025
        DOI: 10.1021/acs.jpcb.5c06175

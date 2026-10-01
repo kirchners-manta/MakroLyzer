@@ -7,9 +7,10 @@ MakroLyzer - User Manual
 =============================
 Welcome to the user manual of the MakroLyzer program!
 **MakroLyzer** is a graph based python tool for analyzing and modifying macromolecular structures of natural or synthetic origin, such as peptides or nanoplastics. 
-The program has two main functionalities:
+The program has three main functionalities:
 
 * Structure analysis of macromolecular structures
+* Dynamic analysis of molecular trajectories
 * Structure modification of macromolecular structures
 
 
@@ -41,6 +42,12 @@ The program has two main functionalities:
    structureAnalysis/10formula.rst
    structureAnalysis/11surfaceAtoms.rst
    structureAnalysis/12convexHull.rst
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Dynamic Analyzers
+
+   dynamicAnalysis/01MSD.rst
 
 .. toctree::
    :maxdepth: 1

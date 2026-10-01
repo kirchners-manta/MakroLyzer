@@ -2,8 +2,8 @@ Metadata-Version: 2.4
 Name: MakroLyzer
 Version: 0.0.1
 Summary: MakroLyzer is a tool for obtaining structural insights into polymer networks.
-Author-email: Katrin Drysch <drysch@thch.uni-bonn.de>
-Maintainer-email: Katrin Drysch <drysch@thch.uni-bonn.de>
+Author-email: Katrin Jonas <drysch@thch.uni-bonn.de>
+Maintainer-email: Katrin Jonas <drysch@thch.uni-bonn.de>
 Keywords: polymers,chemistry,network analysis
 Classifier: Development Status :: 3 - Alpha
 Classifier: Intended Audience :: Scientists

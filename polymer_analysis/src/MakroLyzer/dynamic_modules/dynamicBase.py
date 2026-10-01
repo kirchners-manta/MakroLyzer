@@ -1,8 +1,8 @@
 """
-This is the base class for all structure analysis modules.
-Each structure analyzer handles computation and its own output formatting.
+This is the base class for all dynamic analysis modules.
+Each dynamic analyzer handles computation and its own output formatting.
 
--> All structure modules inherit from this class. 
+-> All dynamic modules inherit from this class. 
    Thus, they implement the methods defined here.
 """
 
@@ -16,7 +16,7 @@ import os
 
 class OutputHandler:
     """
-    Base class for handling the output of a structure analyzer.
+    Base class for handling the output of a dynamic analyzer.
     """
     
     def __init__(self, file_path, mode='collect'):
@@ -168,36 +168,42 @@ class OutputHandler:
                     for row in matrix:
                         f.write(','.join(map(str, row)) + '\n')
                     
-class StructureAnalyzer(ABC):
+class DynamicAnalyzer(ABC):
     """
-    Base class for all structure analyzers.
-    Inherits from ABC to enforce implementation of abstract methods.
-    Subclasses must implement compute() and render_output() methods.
+    Base interface for per-frame and accumulated dynamic analyses.
+
+    Main calls initialize_output(), run() for each analyzed frame, then
+    finalize() and finalize_output(), in that order. Concrete analyzers own
+    their timing parameters, reference coordinates, and history buffers.
     """
-    
-    def __init__(self, output_handler = None):
+
+    def __init__(self, output_handler=None):
         """
-        Initialize structure analyzer.
+        Initialize dynamic analyzer.
 
         Args:
             output_handler (OutputHandler): Handler for writing output. 
         """
         self.output_handler = output_handler
-        self.frame_number = 0
-        
+        self.frame_number = 0  # Number of analyzed frames processed successfully.
+
     @abstractmethod
     def compute(self, graph):
         """
         Perform some crazy calculations to obtain the results. 
+        (Optionally return a result)
 
         Args:
             graph : The molecular graph to analyze.
             
         Returns; 
             Analysis results (format depends on the analyzer.)
+            Per-frame analyzers such as RMSD return the current value. Accumulating
+            analyzers such as MSD may update internal state and return None.
+            Copy retained coordinates because main may update the graph in place.
         """
         pass
-    
+
     @abstractmethod
     def render_output(self, data, frame_idx):
         """
@@ -211,14 +217,14 @@ class StructureAnalyzer(ABC):
             Formatted output.
         """
         pass
-    
+
     def initialize_output(self):
         """
         Initialize output file with header.
         Called once before first frame.
         """
         pass
-    
+
     def finalize_output(self, header=None):
         """
         Finalize output after all frames are processed ('collect' mode)
@@ -238,6 +244,13 @@ class StructureAnalyzer(ABC):
             Analysis Result.
         """
         result = self.compute(graph)
-        if self.output_handler:
+        if self.output_handler is not None and result is not None:
             self.render_output(result, frame_idx)
+        self.frame_number += 1
         return result
+
+    def finalize(self):
+        """
+        Finish accumulated calculations; per-frame analyzers need no action.
+        """
+        return None

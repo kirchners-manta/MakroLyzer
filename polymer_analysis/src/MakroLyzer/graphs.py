@@ -191,6 +191,27 @@ class GraphManager(nx.Graph):
             self.nodes[idx]['z'] = coords[idx, 2]
         return self
     
+    def update_coordinates_preserved(self, atomData):
+        """
+        Update node coordinates without rebuilding topology and without shifting coordinates for periodic boundary conditions.
+
+        Args:
+            atomData: DataFrame with columns ['atom','x','y','z'] and same ordering.
+        """
+        elements = atomData['atom'].values
+        coords = atomData[['x', 'y', 'z']].values
+        
+        if len(coords) != self.number_of_nodes():
+            raise ValueError("Number of atoms does not match graph topology.")
+        
+        for idx in range(len(coords)):
+            if self.nodes[idx]['element'] != elements[idx]:
+                raise ValueError("Element ordering does not match graph topology.")
+            self.nodes[idx]['x'] = coords[idx, 0]
+            self.nodes[idx]['y'] = coords[idx, 1]
+            self.nodes[idx]['z'] = coords[idx, 2]
+        return self        
+    
     def remove_1order(self):
         """
         Remove 1-order nodes from the graph.

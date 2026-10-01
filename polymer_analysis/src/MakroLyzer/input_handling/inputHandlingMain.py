@@ -10,6 +10,7 @@ def main(args):
     
     args = readInput.readCommandLine()
     analyzer = True
+    dynamic_analyzer = True
     modifier = True
     
     try:
@@ -34,6 +35,13 @@ def main(args):
     if not any(arg in args and args[arg] is not None for arg in analyzer_args):
         analyzer = False
         
+    # Check if args from dynamic_analyzer_group are called
+    dynamic_analyzer_args = [
+        'MSD'
+    ]
+    if not any(arg in args and args[arg] is not None for arg in dynamic_analyzer_args):
+        dynamic_analyzer = False
+        
     # Check if args from modifier_group are called
     modifier_args = [
         'functionalizePE', 'functionalizePEsurface', 'patternFile', 'saturation', 'subgraph_coords',
@@ -42,4 +50,4 @@ def main(args):
     if not any(arg in args and args[arg] is not None for arg in modifier_args):
         modifier = False
 
-    return analyzer, modifier, args
+    return analyzer, dynamic_analyzer, modifier, args

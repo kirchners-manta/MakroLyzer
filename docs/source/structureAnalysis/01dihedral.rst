@@ -51,5 +51,5 @@ Cis/trans classification uses :math:`|\theta| \le 90` degrees for cis and
 :math:`90 < |\theta| \le 180` degrees for trans.
 
 
-.. [1] Drysch, K.; Dawer, Y.; Zaby, P.; Buchmüller, K.; Dick, L.; Mutzel, P.; Hollóczki, O.; Kirchner, B. MakroLyzer: A Graph-Based Software to Comb through Molecular Hairballs Using the Example of Nanoplastics. J. Phys. Chem. B 2025
+.. [1] Jonas, K.; Dawer, Y.; Zaby, P.; Buchmüller, K.; Dick, L.; Mutzel, P.; Hollóczki, O.; Kirchner, B. MakroLyzer: A Graph-Based Software to Comb through Molecular Hairballs Using the Example of Nanoplastics. J. Phys. Chem. B 2025
        DOI: 10.1021/acs.jpcb.5c06175
