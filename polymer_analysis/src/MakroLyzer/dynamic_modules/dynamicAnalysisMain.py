@@ -64,7 +64,7 @@ def main(args):
     # prepare context for factories
     context = {'boxSize': boxSize, 'static_topology': static_topology, 'timestep': timestep}
     if static_topology and (
-        args.get('MSD')
+        args.get('MSD') or args.get('RMSD')
     ):
         # We only need to cache the backbone if the user wants a static-topology analysis and at least one of the analyzers 
         # that uses the backbone is selected

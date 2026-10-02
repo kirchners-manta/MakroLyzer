@@ -37,7 +37,7 @@ def main(args):
         
     # Check if args from dynamic_analyzer_group are called
     dynamic_analyzer_args = [
-        'MSD'
+        'MSD', 'RMSD'
     ]
     if not any(arg in args and args[arg] is not None for arg in dynamic_analyzer_args):
         dynamic_analyzer = False

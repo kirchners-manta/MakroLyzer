@@ -39,7 +39,7 @@ ASCII_ART = (
     r"""                                                                
 --------------------------------------------------------------------------------------------------
    Group of Prof. Dr. Barbara Kirchner
-   Maintainer: Katrin Drysch
+   Maintainer: Katrin Jonas
    
    Please cite:
    - J. Phys. Chem. B 2025, 129, 50, 12997-13008 (DOI: 10.1021/acs.jpcb.5c06175)
@@ -342,15 +342,25 @@ def readCommandLine() -> dict:
     )
     
     dynamic_analyzer_group.add_argument(
-        '-MSD', '--MSD',
-        type=float, default=None,
-        metavar='TIME',
-        help='Maximum MSD correlation time, in the same units as timestep.',)
+                        '-RMSD', '--RMSD',
+                        nargs='?', const='RMSD.csv', default=None,
+                        help='Calculate Root Mean Square Deviation.\n'
+                        'Optionally provide an output filename (default: RMSD.csv)')
+
     dynamic_analyzer_group.add_argument(
-        '--MSD-file', dest='MSD_file', default='MSD.csv',)
+                        '-MSD', '--MSD',
+                        type=float, default=None,
+                        metavar='TIME',
+                        help='Calculate Mean Squared Displacement.\n'
+                        'Maximum MSD correlation time, in the same units as timestep.',)
+
     dynamic_analyzer_group.add_argument(
-        '--timestep', type=float, default=None,
-        help='Time between saved trajectory frames, before applying nthStep. Required with --MSD.',)
+                        '--MSD-file', dest='MSD_file', default='MSD.csv',)
+
+    dynamic_analyzer_group.add_argument(
+                        '--timestep', type=float, default=None,
+                        help='Time between saved trajectory frames, before applying nthStep. Required with --MSD.',)
+
     
     # Structure Modifiers Group # ------------------------------------------------------------------------------
     modifier_group = parser.add_argument_group(
