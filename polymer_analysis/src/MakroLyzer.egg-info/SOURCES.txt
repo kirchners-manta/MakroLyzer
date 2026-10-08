@@ -48,6 +48,7 @@ src/MakroLyzer/structure_modules/HbondsBetween.py
 src/MakroLyzer/structure_modules/Helper.py
 src/MakroLyzer/structure_modules/MoleculeCount.py
 src/MakroLyzer/structure_modules/OrderParameter.py
+src/MakroLyzer/structure_modules/RMSD.py
 src/MakroLyzer/structure_modules/RadiusOfGyration.py
 src/MakroLyzer/structure_modules/Ramachandran.py
 src/MakroLyzer/structure_modules/SpreadRadius.py
@@ -62,6 +63,7 @@ test/test_GraphCoordinatePreservation.py
 test/test_GraphFunctions.py
 test/test_InputHandling.py
 test/test_MSD.py
+test/test_RMSD.py
 test/test_ReadGROMACS.py
 test/test_StructureAnalysisMain.py
 test/test_StructureAnalyzers.py

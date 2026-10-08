@@ -358,7 +358,7 @@ def readCommandLine() -> dict:
                         '--MSD-file', dest='MSD_file', default='MSD.csv',)
 
     dynamic_analyzer_group.add_argument(
-                        '--timestep', type=float, default=1,
+                        '--timestep', type=float, default=None,
                         help='Time between saved trajectory frames, before applying nthStep. Required with --MSD.',)
 
     

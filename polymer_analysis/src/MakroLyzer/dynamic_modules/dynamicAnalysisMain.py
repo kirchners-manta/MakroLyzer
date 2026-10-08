@@ -43,7 +43,9 @@ def main(args):
     # Time specific information 
     #################################################################################################
     nthStep = args.get('nthStep', 1)
-    timestep = args.get('timestep', 1)
+    timestep = args.get('timestep')
+    if timestep is None:
+        timestep = 1
     timestep = timestep * nthStep
     time = 0
             
