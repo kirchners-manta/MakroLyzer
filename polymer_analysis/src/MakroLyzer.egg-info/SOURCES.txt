@@ -56,6 +56,7 @@ src/MakroLyzer/structure_modules/SurfaceAtoms.py
 src/MakroLyzer/structure_modules/__init__.py
 src/MakroLyzer/structure_modules/analyzer_registry.py
 src/MakroLyzer/structure_modules/backbone_cache.py
+src/MakroLyzer/structure_modules/memory_monitor.py
 src/MakroLyzer/structure_modules/structureAnalysisMain.py
 src/MakroLyzer/structure_modules/structureBase.py
 test/test_DynamicBase.py
@@ -63,6 +64,7 @@ test/test_GraphCoordinatePreservation.py
 test/test_GraphFunctions.py
 test/test_InputHandling.py
 test/test_MSD.py
+test/test_MemoryMonitor.py
 test/test_RMSD.py
 test/test_ReadGROMACS.py
 test/test_StructureAnalysisMain.py

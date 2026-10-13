@@ -7,11 +7,17 @@ from MakroLyzer import graphs
 
 from MakroLyzer.structure_modules.analyzer_registry import ANALYZERS_REGISTRATION
 from MakroLyzer.structure_modules.backbone_cache import BackboneCache
+from MakroLyzer.structure_modules.memory_monitor import MemoryMonitor
 
 from tqdm import tqdm
 
 
 def main(args):
+    with MemoryMonitor(args.get('memory_log'), args.get('memory_gc', False)) as memory:
+        _run_analysis(args, memory)
+
+
+def _run_analysis(args, memory):
     """
     Perfoms the main analysis of the polymer structure.
     """
@@ -104,6 +110,7 @@ def main(args):
     for i, xyz_frame in enumerate(tqdm(read(trajectoryFilePath), total=n_frames, desc="Creating something magical", unit="frame", ncols=100)):
         if i % nthStep != 0:
             continue
+        memory.record(i, 'frame_loaded')
          
         # The base_graph contains all atoms as nodes that we read from the specific file, 
         # not only the user selection.
@@ -147,6 +154,7 @@ def main(args):
             # We only analyze the selected subgraphs (They are all contained in boxGraph.subgraph(selected_nodes))
             graph_for_analysis = graphs.GraphManager(boxGraph.subgraph(selected_nodes), boxSize=boxSize, vib_factor=vib_factor)
         
+        memory.record(i, 'graph_ready')
         # Run all registered analyzers for this frame. Full-graph analyses must
         # not change the graph passed to analyzers that respect global -sel.
         for analyzer, requires_full_graph in analyzer_graph_routes:
@@ -154,7 +162,9 @@ def main(args):
                 analyzer_graph = boxGraph
             else:
                 analyzer_graph = graph_for_analysis
-            analyzer.run(analyzer_graph, i)
+            with memory.stage(i, type(analyzer).__name__):
+                analyzer.run(analyzer_graph, i)
+        memory.end_frame(i)
     ##########################################################################################################################################
     
     
