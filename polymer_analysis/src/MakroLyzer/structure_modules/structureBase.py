@@ -188,7 +188,7 @@ class StructureAnalyzer(ABC):
     @abstractmethod
     def compute(self, graph):
         """
-        Perform some creazy calculations to obtain the results. 
+        Perform some crazy calculations to obtain the results. 
 
         Args:
             graph : The molecular graph to analyze.

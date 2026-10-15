@@ -133,3 +133,21 @@ def test_gromacs_reaches_processing_pipeline(gro, tmp_path, monkeypatch, pipelin
     graph = processor.run.call_args.args[0]
     assert len(graph) == 3
     assert graph.number_of_edges() == 2
+
+
+@pytest.mark.parametrize('extension', ['trr', 'xtc'])
+@pytest.mark.parametrize('unwrap', [False, True])
+def test_nojump_boundary_crossings(gro, tmp_path, extension, unwrap):
+    universe = mda.Universe(str(gro), dt=1.0)
+    path = tmp_path / f'crossings.{extension}'
+    positions = [19., 1., 3., 9., 15., 1.]
+    with mda.Writer(str(path), n_atoms=3) as writer:
+        for step, x in enumerate(positions):
+            universe.atoms.positions = [[x, 2., 3.]] * 3
+            universe.trajectory.ts.time = float(step)
+            writer.write(universe.atoms)
+    universe.trajectory.close()
+    with pytest.warns(UserWarning, match='guessing elements'):
+        frames = list(readGROMACS(gro, path, unwrap=unwrap))
+    expected = [19., 21., 23., 29., 35., 41.] if unwrap else positions
+    np.testing.assert_allclose([frame.x.iloc[0] for frame in frames], expected, atol=1e-4)

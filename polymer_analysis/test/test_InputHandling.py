@@ -84,16 +84,18 @@ class TestInputHandlingMain:
         monkeypatch.setattr(inputHandlingMain.readInput, 'readCommandLine', lambda: args)
         monkeypatch.setattr(inputHandlingMain.checkInput, 'checkInput', lambda a: None)
 
-        analyzer, modifier, returned = inputHandlingMain.main(None)
+        analyzer, dynamic_analyzer, modifier, returned = inputHandlingMain.main(None)
         assert analyzer is False
+        assert dynamic_analyzer is False
         assert modifier is False
         assert returned == args
 
         args['anisotropyFactor'] = True
         args['patternFile'] = "patterns.txt"
 
-        analyzer, modifier, returned = inputHandlingMain.main(None)
+        analyzer, dynamic_analyzer, modifier, returned = inputHandlingMain.main(None)
         assert analyzer is True
+        assert dynamic_analyzer is False
         assert modifier is True
         assert returned == args
 
@@ -125,3 +127,28 @@ class TestReadInputParsers:
             readInput.RingCycleSize("2")
         with pytest.raises(Exception, match="Minimum ring size is 3."):
             readInput.RingCycleSize("[2,7]")
+
+
+@pytest.mark.parametrize('flag', ['-MSD', '--MSD'])
+def test_msd_requires_explicit_timestep(monkeypatch, capsys, flag):
+    monkeypatch.setattr('sys.argv', ['MakroLyzer', '-xyz', 'traj.xyz', flag, '10'])
+    with pytest.raises(SystemExit) as exc:
+        readInput.readCommandLine()
+    assert exc.value.code == 2
+    assert '--timestep is required when using --MSD' in capsys.readouterr().err
+
+
+def test_msd_accepts_explicit_timestep(monkeypatch):
+    monkeypatch.setattr('sys.argv', [
+        'MakroLyzer', '-xyz', 'traj.xyz', '--MSD', '10', '--timestep', '0.5',
+    ])
+    args = readInput.readCommandLine()
+    assert args['MSD'] == 10.
+    assert args['timestep'] == .5
+
+
+def test_timestep_optional_without_msd(monkeypatch):
+    monkeypatch.setattr('sys.argv', ['MakroLyzer', '-xyz', 'traj.xyz'])
+    args = readInput.readCommandLine()
+    assert args['MSD'] is None
+    assert args['timestep'] is None

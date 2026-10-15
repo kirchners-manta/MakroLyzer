@@ -1,4 +1,4 @@
-# MaKroLyzer
+# MakroLyzer
 MakroLyzer is a graph based python tool for analyzing and modifying makromolecular structures of natural or synthetic origin, such as peptides or nanoplastics. 
 See our [manual](https://makrolyzer.readthedocs.io/en/latest/index.html) and our [publication](https://pubs.acs.org/doi/10.1021/acs.jpcb.5c06175) for more information.
 

@@ -39,7 +39,7 @@ ASCII_ART = (
     r"""                                                                
 --------------------------------------------------------------------------------------------------
    Group of Prof. Dr. Barbara Kirchner
-   Maintainer: Katrin Drysch
+   Maintainer: Katrin Jonas
    
    Please cite:
    - J. Phys. Chem. B 2025, 129, 50, 12997-13008 (DOI: 10.1021/acs.jpcb.5c06175)
@@ -335,9 +335,37 @@ def readCommandLine() -> dict:
                         nargs='?', const='ConvexHullSolvent.csv', default='ConvexHullSolvent.csv',
                         help='Output filename for convex-hull solvent counting (default: ConvexHullSolvent.csv)')
     
+    # Dynamic Analyzers Group # --------------------------------------------------------------------------------
+    dynamic_analyzer_group = parser.add_argument_group(
+        title=format_header("Arguments for dynamic analyzers"),
+        description='This module includes various analyzers to compute dynamic properties of macromolecules.'
+    )
+    
+    dynamic_analyzer_group.add_argument(
+                        '-RMSD', '--RMSD',
+                        nargs='?', const='RMSD.csv', default=None,
+                        help='Calculate Root Mean Square Deviation.\n'
+                        'Optionally provide an output filename (default: RMSD.csv)')
+
+    dynamic_analyzer_group.add_argument(
+                        '-MSD', '--MSD',
+                        type=float, default=None,
+                        metavar='TIME',
+                        help='Calculate Mean Squared Displacement.\n'
+                        'Maximum MSD correlation time, in the same units as timestep.',)
+
+    dynamic_analyzer_group.add_argument(
+                        '--MSD-file', dest='MSD_file', default='MSD.csv',)
+
+    dynamic_analyzer_group.add_argument(
+                        '--timestep', type=float, default=None,
+                        help='Time between saved trajectory frames, before applying nthStep. Required with --MSD.',)
+
+    
     # Structure Modifiers Group # ------------------------------------------------------------------------------
     modifier_group = parser.add_argument_group(
-        format_header("Arguments for structure modifiers")
+        title = format_header("Arguments for structure modifiers"),
+        description = 'This module includes different modifiers to modify the structure of macromolecules, such as functionalization or saturation.'
     )
     
     modifier_group.add_argument(
@@ -404,6 +432,8 @@ def readCommandLine() -> dict:
 
     
     args = vars(parser.parse_args())
+    if args['MSD'] is not None and args['timestep'] is None:
+        parser.error("--timestep is required when using --MSD")
     
     # Check if the required arguments are provided
     if len(sys.argv) == 1:
