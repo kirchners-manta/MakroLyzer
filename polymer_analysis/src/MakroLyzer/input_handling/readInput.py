@@ -105,6 +105,17 @@ def readCommandLine() -> dict:
     input_group.add_argument('-tpr', '--topology', dest='topologyFile', default=None,
                             help='TPR, GRO, or PDB topology for a TRR/XTC trajectory')
 
+    input_group.add_argument('-startStep', '--startStep',
+                        help='Frame of the trajectory, where the analysis should be started (default: 0)\n'
+                             'NOTE: Frames are zero-based; the selected boundary frame is included.',
+                        type=int,
+                        default=0)
+    input_group.add_argument('-endStep', '--endStep',
+                        help='Frame of the trajectory, where the analysis should be ended (default: last frame)\n'
+                             'NOTE: Frames are zero-based; the selected boundary frame is included.',
+                        type=int,
+                        default=None)
+
     input_group.add_argument('-nth', '--nthStep',
                         help='Analyze/Modify every nth step from the trajectory (default: 1)',
                         type=int,

@@ -24,6 +24,20 @@ def checkInput(args):
         InvalidFileFormatError: If the file format is invalid.
     """
     
+    # Frame indices refer to saved frames, with an inclusive end boundary.
+    start_step = args.get('startStep', 0)
+    end_step = args.get('endStep')
+    nth_step = args.get('nthStep', 1)
+    if start_step < 0:
+        raise ValueError('--startStep must be >= 0 (frames are zero-based).')
+    if end_step is not None:
+        if end_step < 0:
+            raise ValueError('--endStep must be >= 0, or omitted for the last frame.')
+        if end_step < start_step:
+            raise ValueError('--endStep must be >= --startStep.')
+    if nth_step < 1:
+        raise ValueError('--nthStep must be >= 1.')
+
     #---XYZ---#
     # Check if the XYZ file exists
     if args['xyzFile'] is not None:

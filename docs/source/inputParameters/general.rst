@@ -50,6 +50,12 @@ The first selection would select all molecules with exactly 2 carbon and 6 hydro
 Multiple selections can be provided separated by space (e.g. ``-sel C2H6 CH4 CHO``).
 
 In case the user does not want to analyze the structure at each frame, the ``-nth`` flag can be used, followed by an integer number to analyze every n-th frame of the trajectory.
+``-startStep`` (default: 0), and ``-endStep`` (default: through the end of the trajectory) can be used to define the frames to be analyzed. 
+Frame indices are zero-based, rather than simulation timestep numbers or physical times.
+Both indices must be non-negative, the end must be at least the start, and ``-nth`` must be at least 1.
+The stride starts at the selected start frame: ``--startStep 5 --endStep 11 -nth 3`` selects frames 5, 8, and 11.
+These settings apply to structural analysis, dynamic analysis, and structure modification.
+RMSD uses the first selected frame as its reference.
 
 In one MakroLyzer run, as many methods as desired can be called. 
 

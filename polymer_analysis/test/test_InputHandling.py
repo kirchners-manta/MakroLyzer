@@ -152,3 +152,56 @@ def test_timestep_optional_without_msd(monkeypatch):
     args = readInput.readCommandLine()
     assert args['MSD'] is None
     assert args['timestep'] is None
+
+
+@pytest.mark.parametrize('selection, message', [
+    ({'startStep': -1}, '--startStep'),
+    ({'endStep': -1}, '--endStep'),
+    ({'startStep': 5, 'endStep': 4}, '--endStep'),
+    ({'nthStep': 0}, '--nthStep'),
+    ({'nthStep': -2}, '--nthStep'),
+])
+def test_invalid_frame_selection(selection, message):
+    with pytest.raises(ValueError, match=message):
+        checkInput.checkInput({**_base_args(), **selection})
+
+
+@pytest.mark.parametrize('selection', [
+    {}, {'startStep': 0, 'endStep': 0},
+    {'startStep': 5, 'endStep': 5}, {'startStep': 5, 'endStep': None},
+])
+def test_valid_frame_selection(selection):
+    checkInput.checkInput({**_base_args(), **selection})
+
+
+def test_frame_selection_defaults(monkeypatch):
+    monkeypatch.setattr('sys.argv', ['MakroLyzer', '-xyz', 'traj.xyz'])
+    args = readInput.readCommandLine()
+    assert args['startStep'] == 0
+    assert args['endStep'] is None
+
+
+@pytest.mark.parametrize('module_name, registry', [
+    ('MakroLyzer.structure_modules.structureAnalysisMain', 'ANALYZERS_REGISTRATION'),
+    ('MakroLyzer.dynamic_modules.dynamicAnalysisMain', 'ANALYZERS_REGISTRATION'),
+    ('MakroLyzer.modify_modules.structureModificationMain', 'MODIFIERS_REGISTRATION'),
+])
+@pytest.mark.parametrize('selection, expected', [
+    ({}, list(range(8))),
+    ({'startStep': 3}, [3, 4, 5, 6, 7]),
+    ({'startStep': 1, 'endStep': 5, 'nthStep': 2}, [1, 3, 5]),
+    ({'startStep': 0, 'endStep': 0}, [0]),
+])
+def test_frame_selection_in_main(monkeypatch, module_name, registry, selection, expected):
+    import importlib
+    from unittest.mock import Mock
+
+    module = importlib.import_module(module_name)
+    analyzer = Mock()
+    analyzer.requires_full_graph = False
+    monkeypatch.setattr(module, registry, {'test': lambda *a, **kw: analyzer})
+    monkeypatch.setattr(module.readXYZ, 'readXYZ', lambda *a, **kw: iter(range(8)))
+    monkeypatch.setattr(module.estimateFrames.EstimateFrames, 'estimateFramesXYZ', lambda p: 8)
+    monkeypatch.setattr(module.graphs, 'GraphManager', Mock())
+    module.main({'xyzFile': 'traj.xyz', 'orderParameter': None, **selection})
+    assert [call.args[1] for call in analyzer.run.call_args_list] == expected

@@ -34,6 +34,8 @@ def main(args):
     # Get the modulo for reading frames 
     #################################################################################################
     nthStep = args.get('nthStep', 1)
+    startStep = args.get('startStep', 0)
+    endStep = args.get('endStep')
     
     
     # Get the box size 
@@ -102,7 +104,9 @@ def main(args):
     # Main Loop
     ##########################################################################################################################################
     for i, xyz_frame in enumerate(tqdm(read(trajectoryFilePath), total=n_frames, desc="Creating something magical", unit="frame", ncols=100)):
-        if i % nthStep != 0:
+        if endStep is not None and i > endStep:
+            break
+        if i < startStep or (i - startStep) % nthStep != 0:
             continue
          
         # The base_graph contains all atoms as nodes that we read from the specific file, 
