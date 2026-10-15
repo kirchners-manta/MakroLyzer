@@ -12,9 +12,9 @@ from MakroLyzer.dynamic_modules.dynamicBase import OutputHandler
 
 def create_RMSD(args, **context):
     val = args.get('RMSD')
-    if val is None:
+    if val is None or val is False:
         return None
-    out_file = args.get('RMSD_file') or 'RMSD.csv'
+    out_file = args.get('RMSD_file') or (val if val is not True else 'RMSD.csv')
     output_handler = OutputHandler(out_file, mode='streaming')
     return RMSDAnalyzer(output_handler)
 

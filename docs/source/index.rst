@@ -48,6 +48,7 @@ The program has three main functionalities:
    :caption: Dynamic Analyzers
 
    dynamicAnalysis/01MSD.rst
+   dynamicAnalysis/02RMSD.rst
 
 .. toctree::
    :maxdepth: 1
