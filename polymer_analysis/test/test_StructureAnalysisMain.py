@@ -1,4 +1,3 @@
-import csv
 import tempfile
 from pathlib import Path
 from unittest.mock import Mock
@@ -75,7 +74,6 @@ class TestStructureAnalysisMain:
 			'orderParameter': ([1.0], None, None),
 			# enable a test analyzer name used in the patched registry
 			'test_flag': True,
-			'memory_log': str(tmp_path / 'memory.csv'),
 		}
 
 		# Create a mock analyzer with initialize_output, run and finalize_output
@@ -115,10 +113,6 @@ class TestStructureAnalysisMain:
 		# run should be called once per yielded frame
 		assert analyzer_mock.run.call_count == 2
 		analyzer_mock.finalize_output.assert_called()
-		with (tmp_path / 'memory.csv').open() as stream:
-			rows = list(csv.DictReader(stream))
-		assert [row['frame'] for row in rows if row['stage'] == 'frame_end'] == ['0', '1']
-		assert sum(row['stage'] == 'before:Mock' for row in rows) == 2
 
 	def test_main_static_topology_and_selection(self, monkeypatch, tmp_path):
 		xyz_path = str(tmp_path / "traj.xyz")

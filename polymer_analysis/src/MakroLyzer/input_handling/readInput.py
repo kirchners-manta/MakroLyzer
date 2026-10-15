@@ -109,10 +109,6 @@ def readCommandLine() -> dict:
                         help='Analyze/Modify every nth step from the trajectory (default: 1)',
                         type=int,
                         default=1)
-    input_group.add_argument('--memory-log', default=None,
-                            help='Write per-stage structure-analysis memory measurements to a new CSV file (Linux).')
-    input_group.add_argument('--memory-gc', action='store_true',
-                            help='With --memory-log, force garbage collection after each analyzed frame for comparison.')
     input_group.add_argument('-bs', '--BoxSize', 
                         help='Box size for periodic boundary conditions. (default: None)',
                         type=float)
