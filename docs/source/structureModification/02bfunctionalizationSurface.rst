@@ -13,7 +13,7 @@ eligible backbone carbons is chosen. End-group carbons are excluded.
 Functionalization types
 -----------------------
 - ``CO`` replaces CH2 with a carbonyl group. 
-- ``COH``replaces CH2 with a hydroxy group.
+- ``COH`` replaces CH2 with a hydroxy group.
 - ``ester`` replaces CH2-CH2 with COO.
 - ``amide`` replace CH2-CH2 with CONH.
 
