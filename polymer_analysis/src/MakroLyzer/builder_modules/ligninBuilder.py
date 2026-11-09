@@ -108,7 +108,7 @@ class LigninBuilder(Builder):
             
             monomer = self.load_monomer(self.recipe["monomer"][i + 1], monomer_id=i + 1, start_index=max(chain.nodes) + 1)
             chain = self._connect_monomers(chain, linker, monomer, chain_monomer_id=i)
-            chain = self.minimize_energy(chain)
+            chain = globalHelpers.optimize_structure(chain)
             
         return chain
     

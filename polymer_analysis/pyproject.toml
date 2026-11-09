@@ -42,6 +42,7 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
+builder = ["rdkit"]
 test = [
   "pytest",
   "pytest-cov",
