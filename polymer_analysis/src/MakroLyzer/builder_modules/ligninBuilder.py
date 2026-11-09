@@ -1,9 +1,7 @@
 from MakroLyzer.builder_modules.BuilderBase import Builder
-from MakroLyzer.builder_modules import globalHelpers
-from MakroLyzer.graphs import GraphManager
+from MakroLyzer.builder_modules import globalHelpers, liginConnectionLogic
+from MakroLyzer.builder_modules.template_io import load_template_graph
 from pathlib import Path
-from collections import Counter, defaultdict
-import math
 
 class LigninBuilder(Builder):
     """
@@ -22,87 +20,26 @@ class LigninBuilder(Builder):
     })
 
     def load_monomer(self, monomer, monomer_id=0, start_index=0):
-        """Load a fresh GraphManager with explicit template connectivity.
-
-        Node IDs start at ``start_index``. When merging monomers, pass an
-        unused index range and a distinct ``monomer_id``. ``template_label``
-        preserves source labels; ``atom_label`` distinguishes repeated atoms.
-        Coordinates are in the template's original reference frame.
-        """
+        """Load an H, G, or S template with explicit bonds and fresh node data."""
         if not isinstance(monomer, str) or monomer not in self.SUPPORTED_MONOMERS:
             raise ValueError(f"Unsupported monomer: {monomer!r}.")
-        if isinstance(start_index, bool) or not isinstance(start_index, int) or start_index < 0:
-            raise ValueError("start_index must be a nonnegative integer.")
-
         directory = Path(__file__).resolve().parent / 'buildingBlocks' / 'lignin'
-        path = directory / f'{monomer}-topo.xyz'
-        lines = path.read_text(encoding='utf-8').splitlines()
-        if len(lines) < 2:
-            raise ValueError(f"Incomplete XYZ template: {path}.")
-        try:
-            atom_count = int(lines[0])
-        except ValueError as exc:
-            raise ValueError(f"Invalid atom count in {path}.") from exc
-        rows = [line.split() for line in lines[2:] if line.strip()]
-        if atom_count < 1 or len(rows) != atom_count:
-            raise ValueError(f"Atom count does not match template rows in {path}.")
+        return load_template_graph(
+            directory / f'{monomer}-topo.xyz', directory / 'bonding-info.txt',
+            monomer_type=monomer, monomer_id=monomer_id, start_index=start_index,
+            allowed_elements={'C', 'H', 'O'}, skip_missing_bonds=True,
+        )
 
-        counts = Counter(row[0] for row in rows)
-        occurrences = Counter()
-        nodes_by_label = defaultdict(list)
-        graph = GraphManager()
-        for offset, row in enumerate(rows):
-            if len(row) != 4:
-                raise ValueError(f"Invalid atom row {offset + 3} in {path}.")
-            label = row[0]
-            element = label.split('_', 1)[0]
-            if element not in {'C', 'H', 'O'}:
-                raise ValueError(f"Unsupported atom label {label!r} in {path}.")
-            try:
-                x, y, z = map(float, row[1:])
-            except ValueError as exc:
-                raise ValueError(f"Invalid coordinates at row {offset + 3} in {path}.") from exc
-            if not all(math.isfinite(value) for value in (x, y, z)):
-                raise ValueError(f"Nonfinite coordinates at row {offset + 3} in {path}.")
-            occurrences[label] += 1
-            atom_label = f'{label}_{occurrences[label]}' if counts[label] > 1 else label
-            node = start_index + offset
-            graph.add_node(
-                node, index=node, element=element, atom_label=atom_label,
-                template_label=label, monomer_id=monomer_id,
-                monomer_type=monomer, x=x, y=y, z=z,
-            )
-            nodes_by_label[label].append(node)
+    def _connect_monomers(self, chain, linker, monomer, *, chain_monomer_id):
+        """Dispatch a linkage, returning a new graph without editing inputs.
 
-        bond_path = directory / 'bonding-info.txt'
-        for line_number, line in enumerate(bond_path.read_text(encoding='utf-8').splitlines()[1:], 2):
-            if not line.strip():
-                continue
-            fields = line.split()
-            if len(fields) != 3:
-                raise ValueError(f"Invalid bond row {line_number} in {bond_path}.")
-            left, right, order = fields
-            order = int(order)
-            if order not in {1, 2, 3}:
-                raise ValueError(f"Invalid bond order at row {line_number} in {bond_path}.")
-            # The shared table includes substituents absent from some monomers.
-            if left not in nodes_by_label or right not in nodes_by_label:
-                continue
-            if len(nodes_by_label[left]) > 1 and len(nodes_by_label[right]) > 1:
-                raise ValueError(f"Ambiguous bond at row {line_number} in {bond_path}.")
-            for source in nodes_by_label[left]:
-                for target in nodes_by_label[right]:
-                    graph.add_edge(source, target, bond_order=order)
+        ``chain_monomer_id`` identifies the preceding recipe monomer, rather
+        than selecting an arbitrary matching atom anywhere in the chain.
+        """
+        if linker != 'beta-O-4':
+            raise NotImplementedError(f"Linkage {linker!r} is not implemented yet.")
+        return liginConnectionLogic.connect_beta_O_4(chain, monomer, chain_monomer_id)
 
-        for node, degree in graph.degree():
-            if degree == 0:
-                raise ValueError(f"Unbonded atom {graph.nodes[node]['atom_label']} in {path}.")
-            graph.nodes[node]['degree'] = degree
-        return graph
-
-    def _connect_monomers(self, chain, linker, monomer):
-        raise NotImplementedError("Monomer connection is not implemented yet.")
-        
     @staticmethod
     def _forbidden_combinations():
         """Return ordered (left monomer, linker, right monomer) exclusions.
@@ -165,13 +102,12 @@ class LigninBuilder(Builder):
             - connect monober to chain via the linker
             - energy optimization        
         """
+        
         chain = self.load_monomer(self.recipe["monomer"][0])
         for i, linker in enumerate(self.recipe["linker"]):
-            monomer = self.load_monomer(
-                self.recipe["monomer"][i + 1], monomer_id=i + 1,
-                start_index=max(chain.nodes) + 1,
-            )
-            chain = self._connect_monomers(chain, linker, monomer)
+            
+            monomer = self.load_monomer(self.recipe["monomer"][i + 1], monomer_id=i + 1, start_index=max(chain.nodes) + 1)
+            chain = self._connect_monomers(chain, linker, monomer, chain_monomer_id=i)
             chain = self.minimize_energy(chain)
             
         return chain

@@ -1,7 +1,7 @@
 """Here you can find all dictionaries used in the code."""
 
 
-# Dictionaries for element masses, van der Waals radii, and covalent radii
+# Dictionaries for element masses, van der Waals radii, and covalent radii (angstrom)
 def dictMass() -> dict:
     elem_masses = {
         "H": 1.008,
@@ -79,3 +79,12 @@ def dictCovalent() -> dict:
         "X": 0.00,
     }
     return elem_covalent
+
+def dictBondDistances() -> dict:
+    """Initial builder bond lengths in angstroms, keyed by bond and type."""
+    bond_distance = {
+        ("C-O", "ether"): 1.42,
+        ("C-O", "alcohol"): 1.43,
+        ("O-H", "alcohol"): 0.95,
+    }
+    return bond_distance
