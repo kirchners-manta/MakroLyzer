@@ -1,6 +1,7 @@
 import sys
 
 from MakroLyzer.input_handling import inputHandlingMain
+from MakroLyzer.builder_modules import BuilderMain
 from MakroLyzer.structure_modules import structureAnalysisMain
 from MakroLyzer.dynamic_modules import dynamicAnalysisMain
 from MakroLyzer.modify_modules import structureModificationMain
@@ -10,9 +11,12 @@ def main():
     Main function to run the MakroLyzer program.
     """
     # Get command line arguments and xyz data
-    analyzer, dynamic_analyzer, modifier, args = inputHandlingMain.main(sys.argv)
+    analyzer, dynamic_analyzer, modifier, builder, args = inputHandlingMain.main(sys.argv)
         
     try:
+        if builder:
+            BuilderMain.main(args)
+
         # Call the structure analysis of the polymer structure
         if analyzer:
             structureAnalysisMain.main(args)

@@ -84,19 +84,21 @@ class TestInputHandlingMain:
         monkeypatch.setattr(inputHandlingMain.readInput, 'readCommandLine', lambda: args)
         monkeypatch.setattr(inputHandlingMain.checkInput, 'checkInput', lambda a: None)
 
-        analyzer, dynamic_analyzer, modifier, returned = inputHandlingMain.main(None)
+        analyzer, dynamic_analyzer, modifier, builder, returned = inputHandlingMain.main(None)
         assert analyzer is False
         assert dynamic_analyzer is False
         assert modifier is False
+        assert builder is False
         assert returned == args
 
         args['anisotropyFactor'] = True
         args['patternFile'] = "patterns.txt"
 
-        analyzer, dynamic_analyzer, modifier, returned = inputHandlingMain.main(None)
+        analyzer, dynamic_analyzer, modifier, builder, returned = inputHandlingMain.main(None)
         assert analyzer is True
         assert dynamic_analyzer is False
         assert modifier is True
+        assert builder is False
         assert returned == args
 
     def test_main_exits_on_invalid_input(self, monkeypatch, capsys):
@@ -205,3 +207,38 @@ def test_frame_selection_in_main(monkeypatch, module_name, registry, selection, 
     monkeypatch.setattr(module.graphs, 'GraphManager', Mock())
     module.main({'xyzFile': 'traj.xyz', 'orderParameter': None, **selection})
     assert [call.args[1] for call in analyzer.run.call_args_list] == expected
+
+
+@pytest.mark.parametrize('flag', ['-buildLignin', '--buildLigninFile', '--lignin'])
+def test_builder_without_trajectory(monkeypatch, flag):
+    monkeypatch.setattr('sys.argv', ['MakroLyzer', flag, 'recipe.json'])
+    args = readInput.readCommandLine()
+    assert args['lignin'] == 'recipe.json'
+    assert args['lignin_file'] == 'lignin.xyz'
+    assert inputHandlingMain.main(None)[:4] == (False, False, False, True)
+
+
+def test_analysis_still_requires_input_with_builder(monkeypatch):
+    monkeypatch.setattr('sys.argv', ['MakroLyzer', '-buildLignin', 'recipe.json', '-Rg'])
+    with pytest.raises(SystemExit):
+        inputHandlingMain.main(None)
+
+
+def test_no_input_without_builder(monkeypatch):
+    monkeypatch.setattr('sys.argv', ['MakroLyzer', '-Rg'])
+    with pytest.raises(SystemExit) as exc:
+        readInput.readCommandLine()
+    assert exc.value.code == 2
+
+
+def test_entry_point_dispatches_builder(monkeypatch):
+    from unittest.mock import Mock
+    from MakroLyzer import MakroLyzer
+
+    args = {'lignin': 'recipe.json'}
+    monkeypatch.setattr(MakroLyzer.inputHandlingMain, 'main',
+                        lambda argv: (False, False, False, True, args))
+    run_builder = Mock()
+    monkeypatch.setattr(MakroLyzer.BuilderMain, 'main', run_builder)
+    MakroLyzer.main()
+    run_builder.assert_called_once_with(args)

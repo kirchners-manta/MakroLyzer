@@ -9,8 +9,11 @@ class LigninBuilder(Builder):
     Inherits from Builder.
     """
     
-    def __init__(self, recipe_file, output_handler=None):
+    def __init__(self, recipe_file, output_handler=None, max_iterations=1500):
         super().__init__(output_handler)
+        if isinstance(max_iterations, bool) or not isinstance(max_iterations, int) or max_iterations < 1:
+            raise ValueError("max_iterations must be a positive integer.")
+        self.max_iterations = max_iterations
         self.recipe = globalHelpers.read_recipe(recipe_file) # globally for all builders
         
     SUPPORTED_MONOMERS = frozenset({'H', 'G', 'S'})
@@ -108,7 +111,7 @@ class LigninBuilder(Builder):
             
             monomer = self.load_monomer(self.recipe["monomer"][i + 1], monomer_id=i + 1, start_index=max(chain.nodes) + 1)
             chain = self._connect_monomers(chain, linker, monomer, chain_monomer_id=i)
-            chain = globalHelpers.optimize_structure(chain)
+            chain = globalHelpers.optimize_structure(chain, max_iterations=self.max_iterations)
             
         return chain
     

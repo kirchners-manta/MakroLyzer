@@ -50,4 +50,14 @@ def main(args):
     if not any(arg in args and args[arg] is not None for arg in modifier_args):
         modifier = False
 
-    return analyzer, dynamic_analyzer, modifier, args
+    # Check if args from builder_group are called
+    builder = args.get('lignin') is not None
+
+    if (analyzer or dynamic_analyzer or modifier) and not any(
+        args.get(key) is not None
+        for key in ('xyzFile', 'lmpFile', 'groFile', 'pdbFile', 'trrFile', 'xtcFile')
+    ):
+        print('A structure/trajectory input file is required for analysis or modification.')
+        sys.exit(1)
+
+    return analyzer, dynamic_analyzer, modifier, builder, args

@@ -62,3 +62,6 @@ MakroLyzer = "MakroLyzer.MakroLyzer:main"
 [project.gui-scripts]
 
 [project.entry-points."spam.magical"]
+
+[tool.setuptools.package-data]
+"MakroLyzer.builder_modules" = ["buildingBlocks/lignin/*.xyz", "buildingBlocks/lignin/*.txt"]

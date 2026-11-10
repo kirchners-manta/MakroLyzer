@@ -85,7 +85,7 @@ def readCommandLine() -> dict:
     input_group = parser.add_argument_group(
         format_header("Arguments for specifying input files and settings")
     )
-    file_group = input_group.add_mutually_exclusive_group(required=True)
+    file_group = input_group.add_mutually_exclusive_group(required=False)
     
     file_group.add_argument('-xyz', '--xyzFile', 
                         help='Path to the XYZ-trajectory file', 
@@ -441,8 +441,30 @@ def readCommandLine() -> dict:
                     help='Write the wrapped graph coordinates. Requires a box size.\n'
                     'Optionally provide an output filename (default: wrappedGraph.xyz)')
 
-    
+    # Builder Group # ---------------------------------------------------------------------------------------
+    builder_group = parser.add_argument_group(
+        title = format_header("Arguments for builders"),
+        description = 'This module currently only includes the lignin builder.'
+    )
+
+    builder_group.add_argument('-buildLignin', '--buildLigninFile', '--lignin',
+                        dest='lignin',
+                        help='Path to the .json file which specifies the monolignol- and linker sequences.',
+                        default=None)
+
+    builder_group.add_argument('--lignin-file', dest='lignin_file', default='lignin.xyz',
+                               help='Output XYZ filename for built lignin (default: lignin.xyz)')
+
+    builder_group.add_argument('--builder-max-iterations', type=int, default=1500,
+                               help='Maximum UFF optimization iterations after each monomer connection (default: 1500)')
+
     args = vars(parser.parse_args())
+    if args['builder_max_iterations'] < 1:
+        parser.error('--builder-max-iterations must be a positive integer')
+    if args['lignin'] is None and not any(
+        args[action.dest] is not None for action in file_group._group_actions
+    ):
+        parser.error('a structure/trajectory input file is required unless a builder is selected')
     if args['MSD'] is not None and args['timestep'] is None:
         parser.error("--timestep is required when using --MSD")
     

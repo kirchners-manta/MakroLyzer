@@ -19,7 +19,8 @@ def create_lignin(args, **context):
         return None
     output_file = args.get('lignin_file') or 'lignin.xyz'
     output_handler = BuilderOutputHandler(output_file)
-    return LigninBuilder(recipe_file, output_handler)
+    return LigninBuilder(recipe_file, output_handler,
+                         max_iterations=args.get('builder_max_iterations', 1500))
 
 
 BUILDERS_REGISTRATION = {
