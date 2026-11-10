@@ -52,6 +52,12 @@ The program has three main functionalities:
 
 .. toctree::
    :maxdepth: 1
+   :caption: Builders
+
+   builders/01Lignin.rst
+
+.. toctree::
+   :maxdepth: 1
    :caption: Structure Modifiers
 
    structureModification/01patternID.rst
