@@ -28,7 +28,7 @@ These monolignols are connected via different linkers. Common linkers are:
 
 .. note::
 
-   Currently available linkers are: ``4-O-beta`` 
+   Currently available linkers are: ``beta-O-4``, ``4-O-beta``
 
 Linker names use the following convention:
 
@@ -71,7 +71,6 @@ Create a file named ``recipe.json`` with the following contents:
 
 The monolignols are specified as ``H``, ``G``, or ``S``.
 The linker sequence must contain exactly one fewer entry than the monolignol sequence.
-Currently, only the ``4-O-beta`` linkage is implemented.
 
 Build the strand with the default settings, or specify an output filename and optimization iteration limit:
 

@@ -241,36 +241,36 @@ def place_4_O_beta(chain, monomer, beta_atom, oxygen_atom):
         )
 
 
-def edit_4_O_beta_topology(chain, monomer, beta_atom, oxygen_atom):
-    """Apply the specified beta-side and incoming O_4-side edits in place.
+def edit_beta_ether_topology(beta_graph, oxygen_graph, beta_atom, oxygen_atom):
+    """Apply the beta-side and O_4-side edits in place.
 
     Reduce C_a - C_b to order 1 and add O_a - H_Oa while retaining H_a.
     Seed the hydroxyl opposite the new C_b -> O_4 attachment direction.
-    Attachment atoms are selected by connect_4_O_beta; template bonds are trusted.
+    The first graph contains C_b; the second contains O_4. Template bonds are trusted.
     """
     # Restrict alpha-side edits to the same monomer as the selected beta carbon.
-    monomer_id = chain.nodes[beta_atom]['monomer_id']
-    alpha_atom = _find_attachment_atom(chain, 'C_a', monomer_id)
+    monomer_id = beta_graph.nodes[beta_atom]['monomer_id']
+    alpha_atom = _find_attachment_atom(beta_graph, 'C_a', monomer_id)
     
-    # Resolve the incoming phenolic hydrogen within the selected O_4 monomer.
-    incoming_id = monomer.nodes[oxygen_atom]['monomer_id']
-    phenolic_hydrogen = _find_attachment_atom(monomer, 'H_O4', incoming_id)
+    # Resolve the phenolic hydrogen within the selected O_4-side monomer.
+    oxygen_monomer_id = oxygen_graph.nodes[oxygen_atom]['monomer_id']
+    phenolic_hydrogen = _find_attachment_atom(oxygen_graph, 'H_O4', oxygen_monomer_id)
     
     # Require the expected starting bond before changing the topology.
     if (
-        not chain.has_edge(alpha_atom, beta_atom)
-        or chain.edges[alpha_atom, beta_atom].get('bond_order') != 2
+        not beta_graph.has_edge(alpha_atom, beta_atom)
+        or beta_graph.edges[alpha_atom, beta_atom].get('bond_order') != 2
     ):
-        raise ValueError("Expected a C_a--C_b double bond before 4-O-beta edits.")
+        raise ValueError("Expected a C_a--C_b double bond before beta-ether edits.")
 
-    # Get coordinates for OH, which will be added to alpha carbon of "old" monomer
-    oxygen_id = max(max(chain.nodes), max(monomer.nodes)) + 1
+    # Get coordinates for OH, which will be added to alpha carbon of the beta-side monomer
+    oxygen_id = max(max(beta_graph.nodes), max(oxygen_graph.nodes)) + 1
     hydrogen_id = oxygen_id + 1
-    monomer_type = chain.nodes[alpha_atom]['monomer_type']
-    alpha_position = _coordinates(chain, alpha_atom)
-    # Keep H_a in place and point OH away from the newly attached monomer.
+    monomer_type = beta_graph.nodes[alpha_atom]['monomer_type']
+    alpha_position = _coordinates(beta_graph, alpha_atom)
+    # Keep H_a in place and point OH away from the O_4 side.
     hydroxyl_direction = (
-        _coordinates(chain, beta_atom) - _coordinates(monomer, oxygen_atom)
+        _coordinates(beta_graph, beta_atom) - _coordinates(oxygen_graph, oxygen_atom)
     )
     direction_length = np.linalg.norm(hydroxyl_direction)
     if direction_length < 1e-10:
@@ -282,30 +282,38 @@ def edit_4_O_beta_topology(chain, monomer, beta_atom, oxygen_atom):
     oxygen_position = alpha_position + carbon_oxygen_distance * hydroxyl_direction
     hydrogen_position = oxygen_position + oxygen_hydrogen_distance * hydroxyl_direction
     
-    # Adjust bond order between alpha and beta carbons of "old" monomer
-    chain.edges[alpha_atom, beta_atom]['bond_order'] = 1
+    # Adjust bond order between alpha and beta carbons of the beta-side monomer
+    beta_graph.edges[alpha_atom, beta_atom]['bond_order'] = 1
     
-    # Remove the H_O4 atom from the incomming monomer
-    monomer.remove_node(phenolic_hydrogen)
+    # Remove H_O4 from the O_4-side monomer
+    oxygen_graph.remove_node(phenolic_hydrogen)
     
-    # Add OH nodes and edges to "old" monomer
+    # Add OH nodes and edges to the beta-side monomer
     for node, label, element, position in (
         (oxygen_id, 'O_a', 'O', oxygen_position),
         (hydrogen_id, 'H_Oa', 'H', hydrogen_position),
     ):
-        chain.add_node(
+        beta_graph.add_node(
             node, index=node, element=element, atom_label=label,
             template_label=label, monomer_id=monomer_id,
             monomer_type=monomer_type,
             x=float(position[0]), y=float(position[1]), z=float(position[2]),
         )
     # Form the alpha hydroxyl group: C_a - O_a - H_Oa.
-    chain.add_edge(alpha_atom, oxygen_id, bond_order=1)
-    chain.add_edge(oxygen_id, hydrogen_id, bond_order=1)
-    for node, degree in chain.degree():
-        chain.nodes[node]['degree'] = degree
-    for node, degree in monomer.degree():
-        monomer.nodes[node]['degree'] = degree
+    beta_graph.add_edge(alpha_atom, oxygen_id, bond_order=1)
+    beta_graph.add_edge(oxygen_id, hydrogen_id, bond_order=1)
+    for node, degree in beta_graph.degree():
+        beta_graph.nodes[node]['degree'] = degree
+    for node, degree in oxygen_graph.degree():
+        oxygen_graph.nodes[node]['degree'] = degree
+
+def edit_4_O_beta_topology(chain, monomer, beta_atom, oxygen_atom):
+    """Add alpha OH on the chain and remove H_O4 from the incoming monomer."""
+    edit_beta_ether_topology(
+        beta_graph=chain, oxygen_graph=monomer,
+        beta_atom=beta_atom, oxygen_atom=oxygen_atom,
+    )
+
 
 # -----------------------------------------------------------------------------------------------
 # beta-O-4 --------------------------------------------------------------------------------------
@@ -354,22 +362,127 @@ def connect_beta_O_4(chain, monomer, chain_monomer_id):
 
 def place_beta_O_4(chain, monomer, beta_atom, oxygen_atom):
     """
-    Place incoming monomer with its C_b above O_4 such, that the six-ring normal of
-    the "old" monomer is parallel to the new O-C_b bond.
+    Place the incoming monomer's C_b above the chain's O_4.
 
-    Rigidly rotate O_4 - C_4 onto that normal, giving C_b - O_4 - C_4
-    an initial angle of 180 degrees. 
-    Try both ring-normal signs and 20-degree rotations about the new bond.
-    Choose the least-overlapping candidate, including the new alpha hydroxyl.
-    This is an initial placement search, not a guarantee of clash-free geometry.
+    Position C_b one ether bond length from O_4, opposite C_4,
+    giving C_b--O_4--C_4 an initial angle of 180 degrees.
+    Rigidly rotate the incoming monomer so its ring normal is
+    parallel to the existing O_4--C_4 bond.
+
+    Try both ring-normal signs and 20-degree rotations about the
+    new bond. Choose the least-overlapping candidate, including
+    the incoming monomer's new alpha hydroxyl.
     """
     chain_id = chain.nodes[oxygen_atom]['monomer_id']
     incoming_id = monomer.nodes[beta_atom]['monomer_id']
     
-def edit_beta_O_4_topology(chain, monomer, beta_atom, oxygen_atom):
-    """Apply the specified beta-side and O_4-side edits in place.
+    # Get ring normal
+    ring = np.array([
+        _coordinates(monomer, _find_attachment_atom(monomer, f'C_{i}', incoming_id))
+        for i in range(1, 7)
+    ])
+    ## singular values of a matrix are the square roots of the eigenvalues of A^T*A
+    ## tell how much the points spread out along each principle axis in V
+    ##          - Largest: maximum spread (along length of the plane)
+    ##          - Smallest: minimum spread (thickness of plane)
+    _, singular_values, axes = np.linalg.svd(ring - ring.mean(axis=0))
+    if singular_values[1] < 1e-10:
+        raise ValueError("Cannot define a plane from a degenerate six-ring.")
+    normal = axes[-1] # Axis with the smallest spread: perpendicular to the ring.
+    # SVD may return either sign. Ring atom order makes the initial sign repeatable;
+    # the placement search will still consider both sides of the plane.
+    reference = np.cross(ring[1] - ring[0], ring[2] - ring[0])
+    if np.dot(normal, reference) < 0:
+        normal = -normal
+        
+    # Get the C4-O bond of the "old" monomer
+    carbon = _find_attachment_atom(chain, 'C_4', chain_id)
+    origin = _coordinates(chain, oxygen_atom)
+    direction = _coordinates(chain, carbon) - origin
+    length = np.linalg.norm(direction)
+    
+    direction /= length 
 
-    Reduce C_a - C_b to order 1 and add O_a - H_Oa while retaining H_a.
-    Seed the hydroxyl opposite the new C_b -> O_4 attachment direction.
-    Attachment atoms are selected by connect_4_O_beta; template bonds are trusted.
-    """
+    bond_length = dictionaries.dictBondDistances()[('C-O', 'ether')]
+    target = origin - bond_length * direction # target position of C_b
+
+    nodes = list(monomer)
+    beta_origin = _coordinates(monomer, beta_atom)
+    original = np.array([_coordinates(monomer, node) for node in nodes]) - beta_origin
+
+    best_score = float('inf')
+    best_positions = None
+    
+    for sign in (1, -1):
+        source = sign * normal
+        axis = np.cross(source, direction)
+        sine = np.linalg.norm(axis)
+        cosine = np.clip(np.dot(source, direction), -1.0, 1.0)
+
+        if sine > 1e-10:
+            rotation = Rotation.from_rotvec(axis / sine * np.arctan2(sine, cosine))
+        elif cosine < 0:
+            axis = np.cross(source, np.eye(3)[np.argmin(abs(source))])
+            rotation = Rotation.from_rotvec(axis / np.linalg.norm(axis) * np.pi)
+        else:
+            rotation = Rotation.identity()
+
+        aligned = rotation.apply(original)
+
+        for angle in range(0, 360, 20):
+            twist = Rotation.from_rotvec(direction * np.deg2rad(angle))
+            positions = twist.apply(aligned) + target
+
+            candidate = monomer.copy()
+            for node, position in zip(nodes, positions):
+                candidate.nodes[node].update(
+                    zip(('x', 'y', 'z'), map(float, position))
+                )
+
+            candidate_chain = chain.copy()
+            edit_beta_O_4_topology(
+                candidate_chain, candidate, beta_atom, oxygen_atom
+            )
+
+            # The chain attachment is O_4; the incoming attachment is C_b.
+            chain_depth = nx.single_source_shortest_path_length(candidate_chain, oxygen_atom, cutoff=2)
+            monomer_depth = nx.single_source_shortest_path_length(candidate, beta_atom, cutoff=2)
+            excluded_pairs = {
+                (chain_node, incoming_node)
+                for chain_node, chain_distance in chain_depth.items()
+                for incoming_node, incoming_distance in monomer_depth.items()
+                if chain_distance + 1 + incoming_distance <= 3
+            }
+
+            score = clash_score(
+                candidate_chain, candidate, excluded_pairs=excluded_pairs
+            )
+            if score < best_score:
+                best_score = score
+                best_positions = positions.copy()
+
+            if best_score == 0:
+                break
+        if best_score == 0:
+            break
+
+    for node, position in zip(nodes, best_positions):
+        monomer.nodes[node].update(
+            zip(('x', 'y', 'z'), map(float, position))
+        )
+
+    if best_score > 0:
+        import warnings
+        warnings.warn(
+            "All beta-O-4 placements have close nonbonded contacts; "
+            "using the least-overlapping candidate before optimization.",
+            RuntimeWarning, stacklevel=2,
+        )
+    
+    
+def edit_beta_O_4_topology(chain, monomer, beta_atom, oxygen_atom):
+    """Add alpha OH on the incoming monomer and remove H_O4 from the chain."""
+    edit_beta_ether_topology(
+        beta_graph=monomer, oxygen_graph=chain,
+        beta_atom=beta_atom, oxygen_atom=oxygen_atom,
+    )
