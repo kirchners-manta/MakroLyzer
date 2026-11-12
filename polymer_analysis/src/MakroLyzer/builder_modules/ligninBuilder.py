@@ -39,21 +39,36 @@ class LigninBuilder(Builder):
         ``chain_monomer_id`` identifies the preceding recipe monomer, rather
         than selecting an arbitrary matching atom anywhere in the chain.
         """
-        if linker != '4-O-beta':
+        if linker == '4-O-beta':
+            return liginConnectionLogic.connect_4_O_beta(chain, monomer, chain_monomer_id)
+        elif linker == 'beta-O-4':
+            return liginConnectionLogic.connect_beta_O_4(chain, monomer, chain_monomer_id)
+        else:
             raise NotImplementedError(f"Linkage {linker!r} is not implemented yet.")
-        return liginConnectionLogic.connect_4_O_beta(chain, monomer, chain_monomer_id)
 
     @staticmethod
-    def _forbidden_combinations():
-        """Return ordered (left monomer, linker, right monomer) exclusions.
+    def _forbidden_linker_pairs():
+        """Return forbidden ordered pairs of consecutive linkers.
 
-        Map each forbidden triple to a human-readable reason. Rules are
-        directional; add the reverse triple explicitly when needed.
-        This is a scaffold for confirmed linkage rules, not a complete
+        The first linker uses a site on the incoming middle monomer; the
+        next linker must not reuse that site when extending the chain.
+        These rules apply to all monomer types and are not a complete
         chemical compatibility check.
         """
         return {
-            # ('left monomer', 'linker', 'right monomer'): 'Reason',
+            ('beta-O-4', '4-O-beta'): 'beta position of the shared monomer is already occupied',
+            ('4-O-beta', 'beta-O-4'): 'O-4 position of the shared monomer is already occupied',
+        }
+
+    @staticmethod
+    def _forbidden_monomer_linkages():
+        """Map ordered (existing monomer, linker, incoming monomer) triples to reasons.
+
+        Rules are directional: add the reverse triple separately if needed.
+        Each monomer value is an explicit H, G, or S; no wildcards are used.
+        """
+        return {
+            # ('existing monomer', 'linker', 'incoming monomer'): 'Reason',
         }
         
     def validate_recipe(self):
@@ -88,12 +103,21 @@ class LigninBuilder(Builder):
                         f"Supported values: {', '.join(sorted(supported))}."
                     )
 
-        forbidden = self._forbidden_combinations()
+        forbidden = self._forbidden_monomer_linkages()
         for i, linker in enumerate(linkers):
             combination = (monomers[i], linker, monomers[i + 1])
             if combination in forbidden:
                 raise ValueError(
-                    f"Forbidden combination at linker index {i}: "
+                    f"Forbidden monomer linkage at linker index {i}: "
+                    f"{combination!r}. {forbidden[combination]}"
+                )
+
+        forbidden = self._forbidden_linker_pairs()
+        for i, combination in enumerate(zip(linkers, linkers[1:])):
+            if combination in forbidden:
+                raise ValueError(
+                    f"Forbidden combination at linker indices {i} and {i + 1} "
+                    f"(shared monomer index {i + 1}): "
                     f"{combination!r}. {forbidden[combination]}"
                 )
         

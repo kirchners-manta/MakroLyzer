@@ -8,6 +8,52 @@ import pytest
 
 from MakroLyzer.builder_modules import builder_registry, globalHelpers
 from MakroLyzer.input_handling import readInput
+from MakroLyzer.builder_modules.ligninBuilder import LigninBuilder
+
+
+@pytest.mark.parametrize('monomers,linkers,blocked', [
+    (['G', 'S'], ['beta-5'], True),
+    (['H', 'G', 'S'], ['4-O-beta', 'beta-5'], True),
+    (['S', 'G'], ['beta-5'], False),
+    (['G', 'H'], ['beta-5'], False),
+    (['G', 'S'], ['4-O-beta'], False),
+])
+def test_monomer_linkage_rules_are_directional(monkeypatch, monomers, linkers, blocked):
+    # Inject an illustrative rule to test matching without adding chemical rules.
+    monkeypatch.setattr(LigninBuilder, '_forbidden_monomer_linkages', staticmethod(
+        lambda: {('G', 'beta-5', 'S'): 'Test restriction'}
+    ))
+    builder = LigninBuilder.__new__(LigninBuilder)
+    builder.recipe = {'monomer': monomers, 'linker': linkers}
+    if blocked:
+        with pytest.raises(ValueError, match='Forbidden monomer linkage.*Test restriction'):
+            builder.validate_recipe()
+    else:
+        builder.validate_recipe()
+
+
+@pytest.mark.parametrize('monomers', [
+    ['G', 'H', 'S'], ['S', 'G', 'H'], ['H', 'S', 'G'],
+])
+@pytest.mark.parametrize('linkers,site', [
+    (['beta-O-4', '4-O-beta'], 'beta'),
+    (['4-O-beta', 'beta-O-4'], 'O-4'),
+])
+def test_consecutive_linkers_cannot_reuse_middle_site(monomers, linkers, site):
+    builder = LigninBuilder.__new__(LigninBuilder)
+    builder.recipe = {'monomer': monomers, 'linker': linkers}
+    with pytest.raises(ValueError, match=f'{site} position'):
+        builder.validate_recipe()
+
+
+@pytest.mark.parametrize('linkers', [
+    [], ['beta-O-4'], ['4-O-beta'],
+    ['beta-O-4', 'beta-O-4'], ['4-O-beta', '4-O-beta'],
+])
+def test_distinct_middle_sites_are_allowed(linkers):
+    builder = LigninBuilder.__new__(LigninBuilder)
+    builder.recipe = {'monomer': ['G'] * (len(linkers) + 1), 'linker': linkers}
+    builder.validate_recipe()
 
 
 @pytest.mark.parametrize('limit', [None, '25'])
