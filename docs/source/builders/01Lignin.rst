@@ -1,6 +1,12 @@
 Lignin Builder
 ==============
 
+.. note::
+
+   Builders in MakroLyzer require RDKit. Activate your MakroLyzer environment and install MakroLyzer with its builder
+   dependencies using ``python -m pip install ".[builder]"`` from the
+   ``polymer_analysis`` directory. For more details see the :doc:`Installation details </01_Installation>`.
+
 Lignins are complex organic polymers that form the main structural components of the supportive tissues of most plants. 
 They are important in the formation of cell walls in wood, as they provide rigidity and are resistant to decay. 
 Chemically, lignins are polymers formed by the cross-linking of phenolic precursors also called monolignols. 
@@ -22,9 +28,12 @@ These monolignols are connected via different linkers. Common linkers are:
 
 .. note::
 
-   Currently, only the ``beta-O-4`` linkage is available in the lignin builder.
+   Currently available linkers are: ``4-O-beta`` 
 
-The first part of each linker name specifies the bonding site on the preceding monolignol, and the second part specifies the bonding site on the incoming monolignol.
+Linker names use the following convention:
+
+* **First position** = incoming monolignol (usually β)
+* **Second position** = existing lignin chain (usually O-4 or C5)
 
 In MakroLyzer, the user specifies a monolignol sequence and a corresponding linker sequence.
 The builder constructs the lignin strand by adding monolignols sequentially from left to right, connecting each new monolignol via the specified linker.
@@ -57,12 +66,12 @@ Create a file named ``recipe.json`` with the following contents:
 
    {
      "monomer": ["G", "H", "S"],
-     "linker": ["beta-O-4", "beta-O-4"]
+     "linker": ["4-O-beta", "4-O-beta"]
    }
 
 The monolignols are specified as ``H``, ``G``, or ``S``.
 The linker sequence must contain exactly one fewer entry than the monolignol sequence.
-Currently, only the ``beta-O-4`` linkage is implemented.
+Currently, only the ``4-O-beta`` linkage is implemented.
 
 Build the strand with the default settings, or specify an output filename and optimization iteration limit:
 

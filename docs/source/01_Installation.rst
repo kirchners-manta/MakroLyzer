@@ -71,6 +71,25 @@ Make sure you are in the ``polymer_analysis`` directory of the cloned repository
 
    pip install .
 
+.. note::
+
+   Builders require RDKit for UFF geometry optimization.
+   To include it, run the following from the ``polymer_analysis`` directory
+   with your MakroLyzer environment activated:
+
+   .. code-block:: bash
+
+      python -m pip install ".[builder]"
+
+   If MakroLyzer is already installed, you can install RDKit separately:
+
+   .. code-block:: bash
+
+      python -m pip install rdkit
+
+   See the `RDKit installation guide <https://www.rdkit.org/docs/Install.html>`_
+   for further installation options.
+
 
 Call help page
 =================

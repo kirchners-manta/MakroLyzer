@@ -79,10 +79,10 @@ def _coordinates(graph, node):
     return position
 
 # -----------------------------------------------------------------------------------------------
-# Beta-O-4 --------------------------------------------------------------------------------------
+# 4-O-beta --------------------------------------------------------------------------------------
 # -----------------------------------------------------------------------------------------------
 
-def connect_beta_O_4(chain, monomer, chain_monomer_id):
+def connect_4_O_beta(chain, monomer, chain_monomer_id):
     """Scaffold: chain beta carbon connects to incoming monomer O-4.
 
     Find corresponding two atoms, place new monomer at the right position of the chain and 
@@ -107,15 +107,15 @@ def connect_beta_O_4(chain, monomer, chain_monomer_id):
     oxygen_atom = _find_attachment_atom(monomer, 'O_4', incoming_id)
     
     # Place new monomer at the correct position near the existing chain
-    place_beta_O_4(chain, monomer, beta_atom, oxygen_atom)
-    edit_beta_O_4_topology(chain, monomer, beta_atom, oxygen_atom)
+    place_4_O_beta(chain, monomer, beta_atom, oxygen_atom)
+    edit_4_O_beta_topology(chain, monomer, beta_atom, oxygen_atom)
     
     # Add nodes and edges from the incomming monomer to the chain
     result = chain.copy()
     result.add_nodes_from(monomer.nodes(data=True))
     result.add_edges_from(monomer.edges(data=True))
-    # Add the new beta-O-4 bond connecting chain and new monomer
-    result.add_edge(beta_atom, oxygen_atom, bond_order=1, linkage='beta-O-4')
+    # Add the new 4-O-beta bond connecting chain and new monomer
+    result.add_edge(beta_atom, oxygen_atom, bond_order=1, linkage='4-O-beta')
     
     # update degree
     for node, degree in result.degree():
@@ -123,7 +123,7 @@ def connect_beta_O_4(chain, monomer, chain_monomer_id):
         
     return result
 
-def place_beta_O_4(chain, monomer, beta_atom, oxygen_atom):
+def place_4_O_beta(chain, monomer, beta_atom, oxygen_atom):
     """
     Place incoming monomer with its O_4 above C_b along the six-ring 
     normal of the "C_b" monomer.
@@ -203,7 +203,7 @@ def place_beta_O_4(chain, monomer, beta_atom, oxygen_atom):
                 candidate.nodes[node].update(zip(('x', 'y', 'z'), map(float, position)))
             # Score the actual edited atoms: omit H_O4 and include O_a/H_Oa.
             candidate_chain = chain.copy()
-            edit_beta_O_4_topology(candidate_chain, candidate, beta_atom, oxygen_atom)
+            edit_4_O_beta_topology(candidate_chain, candidate, beta_atom, oxygen_atom)
             # Linker-specific exemptions: graph distances across the new bond
             # of at most three bonds (1-2, 1-3, and 1-4 pairs).
             chain_depth = nx.single_source_shortest_path_length(candidate_chain, beta_atom, cutoff=2)
@@ -228,25 +228,25 @@ def place_beta_O_4(chain, monomer, beta_atom, oxygen_atom):
         if best_score == 0:
             break
 
-    # Commit only the winning coordinates. connect_beta_O_4 applies the actual
+    # Commit only the winning coordinates. connect_4_O_beta applies the actual
     # topology edits afterward; the edits above were only on scoring copies.
     for node, position in zip(nodes, best_positions):
         monomer.nodes[node].update(zip(('x', 'y', 'z'), map(float, position)))
     if best_score > 0:
         import warnings
         warnings.warn(
-            "All beta-O-4 placements have close nonbonded contacts; "
+            "All 4-O-beta placements have close nonbonded contacts; "
             "using the least-overlapping candidate before optimization.",
             RuntimeWarning, stacklevel=2,
         )
 
 
-def edit_beta_O_4_topology(chain, monomer, beta_atom, oxygen_atom):
+def edit_4_O_beta_topology(chain, monomer, beta_atom, oxygen_atom):
     """Apply the specified beta-side and incoming O_4-side edits in place.
 
     Reduce C_a - C_b to order 1 and add O_a - H_Oa while retaining H_a.
     Seed the hydroxyl opposite the new C_b -> O_4 attachment direction.
-    Attachment atoms are selected by connect_beta_O_4; template bonds are trusted.
+    Attachment atoms are selected by connect_4_O_beta; template bonds are trusted.
     """
     # Restrict alpha-side edits to the same monomer as the selected beta carbon.
     monomer_id = chain.nodes[beta_atom]['monomer_id']
@@ -261,7 +261,7 @@ def edit_beta_O_4_topology(chain, monomer, beta_atom, oxygen_atom):
         not chain.has_edge(alpha_atom, beta_atom)
         or chain.edges[alpha_atom, beta_atom].get('bond_order') != 2
     ):
-        raise ValueError("Expected a C_a--C_b double bond before beta-O-4 edits.")
+        raise ValueError("Expected a C_a--C_b double bond before 4-O-beta edits.")
 
     # Get coordinates for OH, which will be added to alpha carbon of "old" monomer
     oxygen_id = max(max(chain.nodes), max(monomer.nodes)) + 1

@@ -449,7 +449,7 @@ def readCommandLine() -> dict:
 
     builder_group.add_argument('-buildLignin', '--buildLigninFile', '--lignin',
                         dest='lignin',
-                        help='Path to the .json file which specifies the monolignol- and linker sequences.',
+                        help='Path to the .json file which specifies the monolignol- and linker sequences (currently implemented: 4-O-beta).',
                         default=None)
 
     builder_group.add_argument('--lignin-file', dest='lignin_file', default='lignin.xyz',

@@ -12,7 +12,7 @@ def read_recipe(recipe_file):
 
     Example recipe::
 
-        {"monomer": ["G", "G"], "linker": ["beta-O-4"]}
+        {"monomer": ["G", "G"], "linker": ["4-O-beta"]}
 
     File access errors propagate to the caller. Invalid JSON or a non-object
     root raises ValueError with the recipe path for context.

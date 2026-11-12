@@ -39,9 +39,9 @@ class LigninBuilder(Builder):
         ``chain_monomer_id`` identifies the preceding recipe monomer, rather
         than selecting an arbitrary matching atom anywhere in the chain.
         """
-        if linker != 'beta-O-4':
+        if linker != '4-O-beta':
             raise NotImplementedError(f"Linkage {linker!r} is not implemented yet.")
-        return liginConnectionLogic.connect_beta_O_4(chain, monomer, chain_monomer_id)
+        return liginConnectionLogic.connect_4_O_beta(chain, monomer, chain_monomer_id)
 
     @staticmethod
     def _forbidden_combinations():

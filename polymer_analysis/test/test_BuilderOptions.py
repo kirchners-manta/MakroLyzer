@@ -14,7 +14,7 @@ from MakroLyzer.input_handling import readInput
 def test_iteration_limit_reaches_each_optimization(monkeypatch, tmp_path, limit):
     recipe = tmp_path / 'recipe.json'
     recipe.write_text(json.dumps({
-        'monomer': ['G', 'H', 'S'], 'linker': ['beta-O-4', 'beta-O-4'],
+        'monomer': ['G', 'H', 'S'], 'linker': ['4-O-beta', '4-O-beta'],
     }))
     argv = ['MakroLyzer', '-buildLignin', str(recipe)]
     if limit is not None:

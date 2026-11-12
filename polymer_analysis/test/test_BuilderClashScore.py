@@ -53,7 +53,7 @@ def test_zero_score_stops_linker_search():
     chain = builder.load_monomer('G')
     incoming = builder.load_monomer('H', monomer_id=1, start_index=25)
     with patch.object(logic, 'clash_score', return_value=0) as score:
-        result = logic.connect_beta_O_4(chain, incoming, 0)
+        result = logic.connect_4_O_beta(chain, incoming, 0)
     assert score.call_count == 1
     assert len(result) == 47
     assert score.call_args.kwargs['excluded_pairs']
