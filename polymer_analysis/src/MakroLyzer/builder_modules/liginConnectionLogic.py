@@ -308,5 +308,68 @@ def edit_4_O_beta_topology(chain, monomer, beta_atom, oxygen_atom):
         monomer.nodes[node]['degree'] = degree
 
 # -----------------------------------------------------------------------------------------------
-# beta-o-4 --------------------------------------------------------------------------------------
+# beta-O-4 --------------------------------------------------------------------------------------
 # -----------------------------------------------------------------------------------------------
+
+def connect_beta_O_4(chain, monomer, chain_monomer_id):
+    """Scaffold: chain O-4 connects to incoming monomer beta carbon.
+
+    Find corresponding two atoms, place new monomer at the right position of the chain and 
+    add/remove edges.
+    """    
+    
+    if set(chain).intersection(monomer):
+        raise ValueError("Chain and incoming monomer must have disjoint node IDs.")
+    chain = chain.copy()
+    monomer = monomer.copy()
+    # The incoming graph represents one new monomer, with an identity not
+    # already present in the chain. Node IDs and monomer IDs serve different roles.
+    incoming_ids = {data['monomer_id'] for _, data in monomer.nodes(data=True)}
+    if len(incoming_ids) != 1:
+        raise ValueError("Incoming graph must contain exactly one monomer.")
+    incoming_id = incoming_ids.pop()  # Extract the single ID from the set.
+
+    # beta belongs to the preceding imcomming monomer.
+    # O_4 belongs to the recipe monomer. 
+    # These variables hold node IDs, not atom data.
+    oxygen_atom = _find_attachment_atom(chain, 'O_4', chain_monomer_id)
+    beta_atom = _find_attachment_atom(monomer, 'C_b', incoming_id)
+    
+    # Place new monomer at the correct position near the existing chain
+    place_beta_O_4(chain, monomer, beta_atom, oxygen_atom)
+    edit_beta_O_4_topology(chain, monomer, beta_atom, oxygen_atom)
+    
+    # Add nodes and edges from the incomming monomer to the chain
+    result = chain.copy()
+    result.add_nodes_from(monomer.nodes(data=True))
+    result.add_edges_from(monomer.edges(data=True))
+    # Add the new beta-O-4 bond connecting chain and new monomer
+    result.add_edge(beta_atom, oxygen_atom, bond_order=1, linkage='beta-O-4')
+    
+    # update degree
+    for node, degree in result.degree():
+        result.nodes[node]['degree'] = degree
+        
+    return result
+
+def place_beta_O_4(chain, monomer, beta_atom, oxygen_atom):
+    """
+    Place incoming monomer with its C_b above O_4 such, that the six-ring normal of
+    the "old" monomer is parallel to the new O-C_b bond.
+
+    Rigidly rotate O_4 - C_4 onto that normal, giving C_b - O_4 - C_4
+    an initial angle of 180 degrees. 
+    Try both ring-normal signs and 20-degree rotations about the new bond.
+    Choose the least-overlapping candidate, including the new alpha hydroxyl.
+    This is an initial placement search, not a guarantee of clash-free geometry.
+    """
+    chain_id = chain.nodes[oxygen_atom]['monomer_id']
+    incoming_id = monomer.nodes[beta_atom]['monomer_id']
+    
+def edit_beta_O_4_topology(chain, monomer, beta_atom, oxygen_atom):
+    """Apply the specified beta-side and O_4-side edits in place.
+
+    Reduce C_a - C_b to order 1 and add O_a - H_Oa while retaining H_a.
+    Seed the hydroxyl opposite the new C_b -> O_4 attachment direction.
+    Attachment atoms are selected by connect_4_O_beta; template bonds are trusted.
+    """
