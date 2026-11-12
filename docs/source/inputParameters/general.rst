@@ -1,5 +1,5 @@
 General Input Parameters [1]_
-===========================
+=============================
 
 To run MakroLyzer, a structure or trajectory in **XYZ**, **LAMMPS**, or a supported **GROMACS** format is required.
 The structure can be provided via the command line using the ``-xyz`` or ``-lmp`` flag, respectively.
@@ -11,7 +11,7 @@ The structure can be provided via the command line using the ``-xyz`` or ``-lmp`
 
 
 GROMACS input (MDAnalysis)
--------------------------
+--------------------------
 
 GRO structures, PDB structures (including multiple models), and TRR/XTC trajectories are read with MDAnalysis >= 2.8. TRR/XTC files require a TPR,
 GRO, or PDB topology with the same atom count and ordering:

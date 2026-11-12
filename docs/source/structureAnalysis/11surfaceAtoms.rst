@@ -1,5 +1,5 @@
 Surface Atoms [1]_
-=================
+==================
 
 This analyzer identifies surface atoms of a polymer particle and classifies them into:
 

@@ -17,7 +17,7 @@ where :math:`\lambda_1 \ge \lambda_2 \ge \lambda_3` are the eigenvalues of the
 radius of gyration tensor.
 
 Command Line Input
-------------
+------------------
 .. line-block::
   ``-af``
   ``--anisotropyFactor``

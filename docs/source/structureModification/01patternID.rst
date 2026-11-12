@@ -21,7 +21,7 @@ Command line
       *Default: patternIDs.csv*
 
 Pattern file format
-^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^
 The pattern file is a plain text file with one or two non-empty lines:
 
 - Line 1: A Python-style list of lists describing patterns, e.g.::

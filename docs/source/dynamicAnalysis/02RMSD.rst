@@ -1,5 +1,5 @@
 Root Mean Square Deviation (RMSD)
-================================
+=================================
 
 The root mean square deviation (RMSD) measures how far the selected atoms
 move from their positions in the first analyzed frame. MakroLyzer reports

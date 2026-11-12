@@ -31,7 +31,7 @@ and thus, G describes a symmetric 3 :math:`\times` 3 matrix:
 It is used for the calculation of the anisotropy factor and the asphericity parameter.
 
 Command Line Input
-------------
+------------------
 .. line-block::
   ``-Rg``
   ``--radiusOfGyration``
