@@ -15,13 +15,14 @@ from MakroLyzer.builder_modules.ligninBuilder import LigninBuilder
     (['G', 'S'], ['beta-5'], True),
     (['H', 'G', 'S'], ['4-O-beta', 'beta-5'], True),
     (['S', 'G'], ['beta-5'], False),
-    (['G', 'H'], ['beta-5'], False),
+    (['G', 'H'], ['beta-5'], True),
+    (['H', 'G'], ['beta-5'], False),
     (['G', 'S'], ['4-O-beta'], False),
 ])
 def test_monomer_linkage_rules_are_directional(monkeypatch, monomers, linkers, blocked):
-    # Inject an illustrative rule to test matching without adding chemical rules.
+    # Restrict the existing monomer/linker pair regardless of incoming type.
     monkeypatch.setattr(LigninBuilder, '_forbidden_monomer_linkages', staticmethod(
-        lambda: {('G', 'beta-5', 'S'): 'Test restriction'}
+        lambda: {('G', 'beta-5'): 'Test restriction'}
     ))
     builder = LigninBuilder.__new__(LigninBuilder)
     builder.recipe = {'monomer': monomers, 'linker': linkers}
@@ -69,10 +70,15 @@ def test_iteration_limit_reaches_each_optimization(monkeypatch, tmp_path, limit)
     builder = builder_registry.create_lignin(readInput.readCommandLine())
     monkeypatch.setattr(builder, '_connect_monomers',
                         lambda chain, linker, monomer, **kw: nx.compose(chain, monomer))
-    optimize = Mock(side_effect=lambda graph, **kw: graph)
+    def optimized_copy(graph, **kwargs):
+        result = graph.copy()
+        result.graph['uff_optimization'] = {'final_energy': 10.0}
+        return result
+
+    optimize = Mock(side_effect=optimized_copy)
     monkeypatch.setattr(globalHelpers, 'optimize_structure', optimize)
     builder.build_structure()
-    assert optimize.call_count == 2
+    assert optimize.call_count == 3
     assert all(call.kwargs == {'max_iterations': int(limit) if limit else 1500}
                for call in optimize.call_args_list)
 
@@ -85,3 +91,37 @@ def test_invalid_iteration_limit_rejected(monkeypatch, limit):
     with pytest.raises(SystemExit) as exc:
         readInput.readCommandLine()
     assert exc.value.code == 2
+
+
+@pytest.mark.parametrize('second_energy,keep_second', [(5.0, True), (15.0, False), (10.0, False)])
+def test_final_relaxation_keeps_lower_energy_result(monkeypatch, second_energy, keep_second):
+    builder = LigninBuilder.__new__(LigninBuilder)
+    builder.recipe = {'monomer': ['G', 'H'], 'linker': ['beta-5']}
+    builder.max_iterations = 25
+    monkeypatch.setattr(builder, '_connect_monomers',
+                        lambda chain, linker, monomer, **kw: nx.compose(chain, monomer))
+    results = []
+
+    def optimize(graph, **kwargs):
+        result = graph.copy()
+        energy = 10.0 if not results else second_energy
+        result.graph['uff_optimization'] = {'final_energy': energy}
+        results.append(result)
+        return result
+
+    monkeypatch.setattr(globalHelpers, 'optimize_structure', optimize)
+    result = builder.build_structure()
+    assert len(results) == 2
+    assert result is results[1 if keep_second else 0]
+    assert results[0].graph['uff_optimization']['final_energy'] == 10.0
+
+
+def test_single_monomer_receives_one_optimization(monkeypatch):
+    builder = LigninBuilder.__new__(LigninBuilder)
+    builder.recipe = {'monomer': ['G'], 'linker': []}
+    builder.max_iterations = 25
+    optimize = Mock(side_effect=lambda graph, **kw: graph)
+    monkeypatch.setattr(globalHelpers, 'optimize_structure', optimize)
+    builder.build_structure()
+    assert optimize.call_count == 1
+    assert optimize.call_args.kwargs == {'max_iterations': 25}

@@ -43,6 +43,8 @@ class LigninBuilder(Builder):
             return liginConnectionLogic.connect_4_O_beta(chain, monomer, chain_monomer_id)
         elif linker == 'beta-O-4':
             return liginConnectionLogic.connect_beta_O_4(chain, monomer, chain_monomer_id)
+        elif linker == 'beta-5':
+            return liginConnectionLogic.connect_beta_5(chain, monomer, chain_monomer_id)
         else:
             raise NotImplementedError(f"Linkage {linker!r} is not implemented yet.")
 
@@ -58,17 +60,19 @@ class LigninBuilder(Builder):
         return {
             ('beta-O-4', '4-O-beta'): 'beta position of the shared monomer is already occupied',
             ('4-O-beta', 'beta-O-4'): 'O-4 position of the shared monomer is already occupied',
+            ('4-O-beta', 'beta-5'): 'O-4 position of the shared monomer is already occupied',
+            ('beta-5', '4-O-beta'): 'beta position of the shared monomer is already occupied',
         }
 
     @staticmethod
     def _forbidden_monomer_linkages():
-        """Map ordered (existing monomer, linker, incoming monomer) triples to reasons.
+        """Map ordered (existing monomer, linker) triples to reasons.
 
         Rules are directional: add the reverse triple separately if needed.
         Each monomer value is an explicit H, G, or S; no wildcards are used.
         """
         return {
-            # ('existing monomer', 'linker', 'incoming monomer'): 'Reason',
+            ('S', 'beta-5'): 'S does not have a free 5 position',
         }
         
     def validate_recipe(self):
@@ -105,7 +109,7 @@ class LigninBuilder(Builder):
 
         forbidden = self._forbidden_monomer_linkages()
         for i, linker in enumerate(linkers):
-            combination = (monomers[i], linker, monomers[i + 1])
+            combination = (monomers[i], linker)
             if combination in forbidden:
                 raise ValueError(
                     f"Forbidden monomer linkage at linker index {i}: "
@@ -136,7 +140,18 @@ class LigninBuilder(Builder):
             monomer = self.load_monomer(self.recipe["monomer"][i + 1], monomer_id=i + 1, start_index=max(chain.nodes) + 1)
             chain = self._connect_monomers(chain, linker, monomer, chain_monomer_id=i)
             chain = globalHelpers.optimize_structure(chain, max_iterations=self.max_iterations)
-            
+
+        # If only one monomer is given, optimize it
+        if not self.recipe["linker"]:
+            return globalHelpers.optimize_structure(chain, max_iterations=self.max_iterations)
+
+        # Retry relaxation of the completed structure, retaining the previous
+        # geometry if the new run (which adds small coordinate noise) is worse.
+        previous_energy = chain.graph['uff_optimization']['final_energy']
+        relaxed = globalHelpers.optimize_structure(chain, max_iterations=self.max_iterations)
+        if relaxed.graph['uff_optimization']['final_energy'] < previous_energy:
+            return relaxed
+        
         return chain
     
     def render_output(self, data):

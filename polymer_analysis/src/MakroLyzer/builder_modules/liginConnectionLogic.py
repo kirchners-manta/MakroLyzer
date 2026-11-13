@@ -2,81 +2,13 @@
 
 import numpy as np
 from scipy.spatial.transform import Rotation
-from scipy.spatial import cKDTree
 import networkx as nx
 from MakroLyzer import dictionaries
+from MakroLyzer.builder_modules.ligninHelpers import (
+    _coordinates, _find_attachment_atom, alignment_rotation, branch_nodes,
+    clash_score, ring_center, ring_normal, rotate_nodes, unit_vector,
+)
 
-
-# -----------------------------------------------------------------------------------------------
-# Generell --------------------------------------------------------------------------------------
-# -----------------------------------------------------------------------------------------------
-
-def _find_attachment_atom(graph, template_label, monomer_id):
-    """Find the atom of the monomer in the chain to connect the new monomer to"""
-    # Labels recur in different monomers, so both label and monomer ID are needed.
-    matches = [
-        node for node, data in graph.nodes(data=True)
-        if data.get('template_label') == template_label
-        and data.get('monomer_id') == monomer_id
-    ]
-    if len(matches) != 1:
-        raise ValueError(f"Expected one {template_label} in monomer {monomer_id}; found {len(matches)}.")
-    return matches[0]
-
-def clash_score(fixed_graph, moving_graph, excluded_pairs=(), scale=0.75):
-    """Sum squared cross-graph overlaps using a KD-tree (angstroms squared).
-
-    A pair clashes below scale * (vdW_radius_a + vdW_radius_b). Exclusions
-    are ordered (fixed_node_id, moving_node_id) pairs supplied by the linker;
-    excluding one pair does not exempt either atom from other contacts.
-    Only cross-graph contacts are scored. Neither input is modified.
-    """
-    if not np.isfinite(scale) or scale <= 0:
-        raise ValueError("Clash scale must be finite and positive.")
-    if not fixed_graph or not moving_graph:
-        return 0.0
-    excluded_pairs = set(excluded_pairs)
-    radii = dictionaries.dictVdW()
-    # fixed_graph is the existing chain; moving_graph is the candidate incoming
-    # monomer. These names describe their roles, not left/right in physical space.
-    # Keep node IDs in lists: array indices i/j are not necessarily graph IDs.
-    fixed_nodes = list(fixed_graph)
-    moving_nodes = list(moving_graph)
-    fixed_positions = np.array([_coordinates(fixed_graph, n) for n in fixed_nodes])
-    moving_positions = np.array([_coordinates(moving_graph, n) for n in moving_nodes])
-    fixed_radii = np.array([radii[fixed_graph.nodes[n]['element']] for n in fixed_nodes])
-    moving_radii = np.array([radii[moving_graph.nodes[n]['element']] for n in moving_nodes])
-    # Index chain coordinates spatially so distant atoms need no pairwise check.
-    tree = cKDTree(fixed_positions)
-    # A conservative per-atom cutoff finds every possible overlap. Actual
-    # element-specific thresholds are applied only to the nearby candidates.
-    neighbors = tree.query_ball_point(
-        moving_positions, scale * (moving_radii + fixed_radii.max()),
-    )
-    score = 0.0
-    # neighbors[j] contains ARRAY INDICES of chain atoms near incoming atom j.
-    # Convert those indices to node IDs when checking linker-specific exemptions.
-    for j, nearby in enumerate(neighbors):
-        indices = np.array([
-            i for i in nearby
-            if (fixed_nodes[i], moving_nodes[j]) not in excluded_pairs
-        ], dtype=int)
-        if not len(indices):
-            continue
-        # Compare each nearby pair with its own element-dependent threshold.
-        # Positive overlap = too close; negative values are clipped to zero.
-        distances = np.linalg.norm(fixed_positions[indices] - moving_positions[j], axis=1)
-        overlaps = np.maximum(scale * (fixed_radii[indices] + moving_radii[j]) - distances, 0)
-        score += float(np.dot(overlaps, overlaps))  # Sum of squared overlaps, not energy.
-    return score
-
-
-def _coordinates(graph, node):
-    """Read a finite coordinate vector from a graph node."""
-    position = np.array([graph.nodes[node][key] for key in ('x', 'y', 'z')], dtype=float)
-    if not np.isfinite(position).all():
-        raise ValueError(f"Nonfinite coordinates for atom {node}.")
-    return position
 
 # -----------------------------------------------------------------------------------------------
 # 4-O-beta --------------------------------------------------------------------------------------
@@ -137,24 +69,7 @@ def place_4_O_beta(chain, monomer, beta_atom, oxygen_atom):
     chain_id = chain.nodes[beta_atom]['monomer_id']
     incoming_id = monomer.nodes[oxygen_atom]['monomer_id']
     
-    # Get ring-normal
-    ring = np.array([
-        _coordinates(chain, _find_attachment_atom(chain, f'C_{i}', chain_id))
-        for i in range(1, 7)
-    ])
-    ## singular values of a matrix are the square roots of the eigenvalues of A^T*A
-    ## tell how much the points spread out along each principle axis in V
-    ##          - Largest: maximum spread (along length of the plane)
-    ##          - Smallest: minimum spread (thickness of plane)
-    _, singular_values, axes = np.linalg.svd(ring - ring.mean(axis=0))
-    if singular_values[1] < 1e-10:
-        raise ValueError("Cannot define a plane from a degenerate six-ring.")
-    normal = axes[-1] # Axis with the smallest spread: perpendicular to the ring.
-    # SVD may return either sign. Ring atom order makes the initial sign repeatable;
-    # the placement search will still consider both sides of the plane.
-    reference = np.cross(ring[1] - ring[0], ring[2] - ring[0])
-    if np.dot(normal, reference) < 0:
-        normal = -normal
+    normal = ring_normal(chain, chain_id)
 
     # get C-O bond vector of incomming monomer
     carbon = _find_attachment_atom(monomer, 'C_4', incoming_id)
@@ -177,16 +92,7 @@ def place_4_O_beta(chain, monomer, beta_atom, oxygen_atom):
         outward = sign * normal
         # Rotate O_4->C_4 onto the chosen outward direction. The cross product
         # gives the rotation axis; atan2(sine, cosine) gives its angle in radians.
-        axis = np.cross(direction, outward)
-        sine = np.linalg.norm(axis)
-        cosine = np.clip(np.dot(direction, outward), -1.0, 1.0)
-        if sine > 1e-10:
-            rotation = Rotation.from_rotvec(axis / sine * np.arctan2(sine, cosine))
-        elif cosine < 0:
-            axis = np.cross(direction, np.eye(3)[np.argmin(abs(direction))])
-            rotation = Rotation.from_rotvec(axis / np.linalg.norm(axis) * np.pi)
-        else:
-            rotation = Rotation.identity()  # Already aligned.
+        rotation = alignment_rotation(direction, outward)
         aligned = rotation.apply(original)
         # Translation puts O_4 one dictionary bond length away from C_b.
         target = _coordinates(chain, beta_atom) + bond_length * outward
@@ -376,25 +282,8 @@ def place_beta_O_4(chain, monomer, beta_atom, oxygen_atom):
     chain_id = chain.nodes[oxygen_atom]['monomer_id']
     incoming_id = monomer.nodes[beta_atom]['monomer_id']
     
-    # Get ring normal
-    ring = np.array([
-        _coordinates(monomer, _find_attachment_atom(monomer, f'C_{i}', incoming_id))
-        for i in range(1, 7)
-    ])
-    ## singular values of a matrix are the square roots of the eigenvalues of A^T*A
-    ## tell how much the points spread out along each principle axis in V
-    ##          - Largest: maximum spread (along length of the plane)
-    ##          - Smallest: minimum spread (thickness of plane)
-    _, singular_values, axes = np.linalg.svd(ring - ring.mean(axis=0))
-    if singular_values[1] < 1e-10:
-        raise ValueError("Cannot define a plane from a degenerate six-ring.")
-    normal = axes[-1] # Axis with the smallest spread: perpendicular to the ring.
-    # SVD may return either sign. Ring atom order makes the initial sign repeatable;
-    # the placement search will still consider both sides of the plane.
-    reference = np.cross(ring[1] - ring[0], ring[2] - ring[0])
-    if np.dot(normal, reference) < 0:
-        normal = -normal
-        
+    normal = ring_normal(monomer, incoming_id)
+
     # Get the C4-O bond of the "old" monomer
     carbon = _find_attachment_atom(chain, 'C_4', chain_id)
     origin = _coordinates(chain, oxygen_atom)
@@ -415,17 +304,7 @@ def place_beta_O_4(chain, monomer, beta_atom, oxygen_atom):
     
     for sign in (1, -1):
         source = sign * normal
-        axis = np.cross(source, direction)
-        sine = np.linalg.norm(axis)
-        cosine = np.clip(np.dot(source, direction), -1.0, 1.0)
-
-        if sine > 1e-10:
-            rotation = Rotation.from_rotvec(axis / sine * np.arctan2(sine, cosine))
-        elif cosine < 0:
-            axis = np.cross(source, np.eye(3)[np.argmin(abs(source))])
-            rotation = Rotation.from_rotvec(axis / np.linalg.norm(axis) * np.pi)
-        else:
-            rotation = Rotation.identity()
+        rotation = alignment_rotation(source, direction)
 
         aligned = rotation.apply(original)
 
@@ -486,3 +365,220 @@ def edit_beta_O_4_topology(chain, monomer, beta_atom, oxygen_atom):
         beta_graph=monomer, oxygen_graph=chain,
         beta_atom=beta_atom, oxygen_atom=oxygen_atom,
     )
+
+# -----------------------------------------------------------------------------------------------
+# beta-5 ----------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------
+
+def connect_beta_5(chain, monomer, chain_monomer_id):
+    """Scaffold: chain C5 connects to incoming monomer beta carbon.
+                 chains C4 and incoming monomer C_a form an ether.
+                 -> We keep the chain monomers O4 for the ether.
+
+    Find corresponding atoms, place new monomer at the right position of the chain and 
+    add/remove edges.
+    """   
+    if set(chain).intersection(monomer):
+        raise ValueError("Chain and incoming monomer must have disjoint node IDs.")
+    chain = chain.copy()
+    monomer = monomer.copy()
+    # The incoming graph represents one new monomer, with an identity not
+    # already present in the chain. Node IDs and monomer IDs serve different roles.
+    incoming_ids = {data['monomer_id'] for _, data in monomer.nodes(data=True)}
+    if len(incoming_ids) != 1:
+        raise ValueError("Incoming graph must contain exactly one monomer.")
+    incoming_id = incoming_ids.pop()  # Extract the single ID from the set.
+    
+    # imcomming monomer : C_a, C_5
+    # chain monomer : C_5, O_C4 
+    # These variables hold node IDs, not atom data.
+    alpha_atom = _find_attachment_atom(monomer, 'C_a', incoming_id)
+    beta_atom = _find_attachment_atom(monomer, 'C_b', incoming_id)
+    C_5 = _find_attachment_atom(chain, 'C_5', chain_monomer_id)
+    O_4 = _find_attachment_atom(chain, 'O_4', chain_monomer_id)
+    
+    # Place new monomer at the correct position near the existing chain
+    place_beta_5(chain, monomer, C_5, O_4, alpha_atom, beta_atom)
+    edit_beta_5_topology(chain, monomer, C_5, alpha_atom, beta_atom)
+    
+    # Add nodes and edges from the incomming monomer to the chain
+    result = chain.copy()
+    result.add_nodes_from(monomer.nodes(data=True))
+    result.add_edges_from(monomer.edges(data=True))
+    # Add the two new bonds connecting chain and new monomer
+    result.add_edge(beta_atom, C_5, bond_order=1, linkage='beta-5')
+    result.add_edge(alpha_atom, O_4, bond_order=1, linkage='beta-5')
+    
+    # update degree
+    for node, degree in result.degree():
+        result.nodes[node]['degree'] = degree
+        
+    return result
+    
+def place_beta_5(chain, monomer, C_5, O_4, alpha_atom, beta_atom):
+    """
+    Place incomming monomer in the same layer as the chain monomer.
+    This is done by adjusting the ring normal of the incomming monomer such, that is is parallel
+    to the one of the chain monomer.
+    
+    Make C_b-C_g bond of the incomming monomer parallel to its C_a-Cb bond to avoid clashes.
+    Align the C_a-C_b bond of the incomming monomer parallel to C_4-C_5 bond of the chain monomer
+    with a distance of 1.3*C-C bond lenth.
+    Compare both ring-normal signs and retain the less-clashing orientation.
+    """
+    # get monomer IDs
+    monomer_id = monomer.nodes[beta_atom]['monomer_id']
+    chain_id = chain.nodes[C_5]['monomer_id']
+    # get chain - C_4 and monomer C_g 
+    carbon_4 = _find_attachment_atom(chain, 'C_4', chain_id)
+    gamma_atom = _find_attachment_atom(monomer, 'C_g', monomer_id)
+
+    # 1. Rotate the incoming ring normal onto the chain ring normal.
+    normal = ring_normal(chain, chain_id)
+    incoming_normal = ring_normal(monomer, monomer_id)
+    rotate_nodes(
+        monomer, list(monomer),
+        alignment_rotation(incoming_normal, normal),
+        ring_center(monomer, monomer_id),
+    )
+
+    # Keep the attachment bond in that plane. Templates can have a small
+    # out-of-plane component; bend only the beta-side group to remove it.
+    alpha = _coordinates(monomer, alpha_atom)
+    direction = _coordinates(monomer, beta_atom) - alpha
+    in_plane = direction - np.dot(direction, normal) * normal
+    rotate_nodes(
+        monomer, branch_nodes(monomer, alpha_atom, beta_atom),
+        alignment_rotation(direction, in_plane), alpha,
+    )
+
+    # 2. Point C_b->C_g along C_a->C_b, keeping the gamma group rigid.
+    # This deliberately changes the C_a--C_b--C_g angle to 180 degrees.
+    beta = _coordinates(monomer, beta_atom)
+    direction = beta - alpha
+    rotate_nodes(
+        monomer, branch_nodes(monomer, beta_atom, gamma_atom),
+        alignment_rotation(_coordinates(monomer, gamma_atom) - beta, direction), beta,
+    )
+
+    # 3. Rotate within the common ring plane to align C_a->C_b with C_4->C_5.
+    c4 = _coordinates(chain, carbon_4)
+    c5 = _coordinates(chain, C_5)
+    edge = c5 - c4
+    edge_in_plane = unit_vector(edge - np.dot(edge, normal) * normal)
+    direction = unit_vector(direction)
+    angle = np.arctan2(np.dot(normal, np.cross(direction, edge_in_plane)),
+                       np.dot(direction, edge_in_plane))
+    rotate_nodes(monomer, list(monomer), Rotation.from_rotvec(angle * normal), alpha)
+
+    # Translate outside the C_4--C_5 edge at 1.3 times its C--C length.
+    # The ring normals are already aligned, so both planes share this normal.
+    # Their centers locate each plane along that normal (its "height").
+    incoming_center = ring_center(monomer, monomer_id)
+    chain_center = ring_center(chain, chain_id)
+
+    # Start halfway between the incoming attachment atoms C_a and C_b.
+    midpoint = (_coordinates(monomer, alpha_atom) + _coordinates(monomer, beta_atom)) / 2
+    # dot(midpoint - center, normal) is the signed height above the ring plane.
+    # Subtract that height along the unit normal to project onto the plane.
+    # This projected midpoint is the incoming reference point we will move.
+    anchor = midpoint - np.dot(midpoint - incoming_center, normal) * normal
+
+    # Likewise, project the chain's C_4--C_5 midpoint onto its ring plane.
+    # Both reference points now lie in their respective ring planes, so moving
+    # anchor onto a point in the chain plane makes the parallel planes coincide.
+    target = (c4 + c5) / 2
+    target -= np.dot(target - chain_center, normal) * normal
+
+    # Crossing the plane normal with the edge direction gives a direction
+    # within the plane, perpendicular to C_4--C_5. Normalize it to unit length.
+    outward = unit_vector(np.cross(normal, edge_in_plane))
+    # There are two perpendicular directions. Choose the one pointing away
+    # from the chain ring center toward the edge, rather than into the ring.
+    if np.dot(outward, target - chain_center) < 0:
+        outward = -outward
+
+    # The desired anchor position is beyond the edge by 1.3 * its bond length.
+    # Destination minus current anchor gives the required translation vector.
+    # This offset sets the separation of the projected bond midpoints; it does
+    # not set either of the two new attachment bond lengths directly.
+    shift = target + 1.3 * np.linalg.norm(edge) * outward - anchor
+    # Apply the same shift to every incoming atom: internal geometry and
+    # orientation stay unchanged, and the existing chain stays fixed.
+    for node in monomer:
+        position = _coordinates(monomer, node) + shift
+        monomer.nodes[node].update(zip(('x', 'y', 'z'), map(float, position)))
+
+    # Score the product atoms using copies; remove hydrogens only on these copies.
+    scoring_chain = chain.copy()
+    scoring_monomer = monomer.copy()
+    edit_beta_5_topology(scoring_chain, scoring_monomer, C_5, alpha_atom, beta_atom)
+    # Include both new bonds when calculating graph distances.
+    joined = nx.compose(scoring_chain, scoring_monomer)
+    joined.add_edge(beta_atom, C_5, bond_order=1)
+    joined.add_edge(alpha_atom, O_4, bond_order=1)
+    # Skip cross-monomer pairs within three bonds: their proximity is expected.
+    excluded_pairs = {
+        (fixed, moving)
+        for fixed in scoring_chain
+        for moving in nx.single_source_shortest_path_length(joined, fixed, cutoff=3)
+        if moving in scoring_monomer
+    }
+    # Preserve the current orientation as the first candidate.
+    nodes = list(monomer)
+    original = np.array([_coordinates(monomer, node) for node in nodes])
+    # Flip the incoming ring to the other side of the C_a--C_b axis.
+    pivot = _coordinates(monomer, alpha_atom)
+    axis = unit_vector(_coordinates(monomer, beta_atom) - pivot)
+    flipped = Rotation.from_rotvec(np.pi * axis).apply(original - pivot) + pivot
+    # Small template deviations can put the axis slightly above the ring
+    # plane. Restore the common plane height after flipping.
+    flipped_center = Rotation.from_rotvec(np.pi * axis).apply(
+        ring_center(monomer, monomer_id) - pivot
+    ) + pivot
+    flipped -= np.dot(flipped_center - chain_center, normal) * normal
+    # Compare both orientations and keep the one with less nonbonded overlap.
+    best_score = float('inf')
+    best_positions = original
+    for positions in (original, flipped):
+        candidate = scoring_monomer.copy()
+        for node, position in zip(nodes, positions):
+            candidate.nodes[node].update(zip(('x', 'y', 'z'), map(float, position)))
+        score = clash_score(scoring_chain, candidate, excluded_pairs=excluded_pairs)
+        if score < best_score:
+            best_score, best_positions = score, positions
+    # Commit only the winning coordinates; actual topology edits happen later.
+    for node, position in zip(nodes, best_positions):
+        monomer.nodes[node].update(zip(('x', 'y', 'z'), map(float, position)))
+
+
+def edit_beta_5_topology(chain, monomer, C_5, alpha_atom, beta_atom):
+    """
+    incoming monomer: reduce C_a - C_b bond order
+    chain: remove H5 (H or G), remove H_O4
+    """
+    # get monomer IDs
+    monomer_id = monomer.nodes[beta_atom]['monomer_id']
+    chain_monomer_id = chain.nodes[C_5]['monomer_id']
+    
+    ### incoming monomer ###
+    # C_a-C_b bond order
+    if (
+        not monomer.has_edge(alpha_atom, beta_atom)
+        or monomer.edges[alpha_atom, beta_atom].get('bond_order') != 2
+    ):
+        raise ValueError("Expected a C_a--C_b double bond before beta-ether edits.")
+    monomer.edges[alpha_atom, beta_atom]['bond_order'] = 1
+    
+    ### chain monomer ###
+    # remove H5
+    H_5 = _find_attachment_atom(chain, 'H_5', chain_monomer_id)
+    chain.remove_node(H_5)
+    # H_O4
+    H_O4 = _find_attachment_atom(chain, 'H_O4', chain_monomer_id)
+    chain.remove_node(H_O4)
+    
+    for node, degree in chain.degree():
+        chain.nodes[node]['degree'] = degree
+    for node, degree in monomer.degree():
+        monomer.nodes[node]['degree'] = degree

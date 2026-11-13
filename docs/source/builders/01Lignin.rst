@@ -28,7 +28,7 @@ These monolignols are connected via different linkers. Common linkers are:
 
 .. note::
 
-   Currently available linkers are: ``beta-O-4``, ``4-O-beta``
+   Currently available linkers are: ``beta-O-4``, ``4-O-beta``, ``beta-5``
 
 Linker names use the following convention:
 
