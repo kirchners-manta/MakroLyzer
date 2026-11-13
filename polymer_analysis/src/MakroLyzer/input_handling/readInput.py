@@ -459,7 +459,7 @@ def readCommandLine() -> dict:
                                help='Maximum UFF optimization iterations after each monomer connection (default: 1500)')
 
     args = vars(parser.parse_args())
-    if args['builder_max_iterations'] < 1:
+    if args['builder_max_iterations'] < 0:
         parser.error('--builder-max-iterations must be a positive integer')
     if args['lignin'] is None and not any(
         args[action.dest] is not None for action in file_group._group_actions

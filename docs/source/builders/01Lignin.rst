@@ -25,10 +25,11 @@ These monolignols are connected via different linkers. Common linkers are:
 * ``5-5`` / ``4-O-beta``
 * ``5-O-4``
 * ``beta-1``
+* ``4-O-beta``
 
 .. note::
 
-   Currently available linkers are: ``beta-O-4``, ``4-O-beta``, ``beta-5``
+   Currently available linkers are: ``beta-O-4``, ``beta-5``, ``beta-5``, ``4-O-beta``
 
 Linker names use the following convention:
 

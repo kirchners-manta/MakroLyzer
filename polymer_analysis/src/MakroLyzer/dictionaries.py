@@ -86,5 +86,6 @@ def dictBondDistances() -> dict:
         ("C-O", "ether"): 1.42,
         ("C-O", "alcohol"): 1.43,
         ("O-H", "alcohol"): 0.95,
+        ("C-C", "single"): 1.54,
     }
     return bond_distance

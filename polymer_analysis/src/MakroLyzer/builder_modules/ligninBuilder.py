@@ -11,7 +11,7 @@ class LigninBuilder(Builder):
     
     def __init__(self, recipe_file, output_handler=None, max_iterations=1500):
         super().__init__(output_handler)
-        if isinstance(max_iterations, bool) or not isinstance(max_iterations, int) or max_iterations < 1:
+        if isinstance(max_iterations, bool) or not isinstance(max_iterations, int) or max_iterations < 0:
             raise ValueError("max_iterations must be a positive integer.")
         self.max_iterations = max_iterations
         self.recipe = globalHelpers.read_recipe(recipe_file) # globally for all builders
@@ -45,6 +45,10 @@ class LigninBuilder(Builder):
             return liginConnectionLogic.connect_beta_O_4(chain, monomer, chain_monomer_id)
         elif linker == 'beta-5':
             return liginConnectionLogic.connect_beta_5(chain, monomer, chain_monomer_id)
+        elif linker == 'beta-beta':
+            return liginConnectionLogic.connect_beta_beta(
+                chain, monomer, chain_monomer_id, max_iterations=self.max_iterations,
+            )
         else:
             raise NotImplementedError(f"Linkage {linker!r} is not implemented yet.")
 
@@ -62,6 +66,9 @@ class LigninBuilder(Builder):
             ('4-O-beta', 'beta-O-4'): 'O-4 position of the shared monomer is already occupied',
             ('4-O-beta', 'beta-5'): 'O-4 position of the shared monomer is already occupied',
             ('beta-5', '4-O-beta'): 'beta position of the shared monomer is already occupied',
+            ('beta-5', 'beta-beta'): 'beta position of the shared monomer is already occupied',
+            ('beta-O-4', 'beta-beta'): 'beta position of the shared monomer is already occupied',
+            ('beta-beta', '4-O-beta'): 'beta position of the shared monomer is already occupied',
         }
 
     @staticmethod

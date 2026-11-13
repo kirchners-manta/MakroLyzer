@@ -45,7 +45,7 @@ def optimize_structure(graph, max_iterations=1500):
     from rdkit import Chem
     from rdkit.Chem import AllChem
 
-    if isinstance(max_iterations, bool) or not isinstance(max_iterations, int) or max_iterations < 1:
+    if isinstance(max_iterations, bool) or not isinstance(max_iterations, int) or max_iterations < 0:
         raise ValueError("max_iterations must be a positive integer.")
     nodes = list(graph)
     if not nodes:
