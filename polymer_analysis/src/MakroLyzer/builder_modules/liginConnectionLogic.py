@@ -810,3 +810,265 @@ def edit_beta_beta_topology(chain, monomer, chain_C_a, chain_C_b, monomer_C_a, m
         chain.nodes[node]['degree'] = degree
     for node, degree in monomer.degree():
         monomer.nodes[node]['degree'] = degree
+
+
+# -----------------------------------------------------------------------------------------------
+# beta-1 ----------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------
+
+def connect_beta_1(chain, monomer, chain_monomer_id):
+    """
+    Connect incoming C_b to chain C_1 and close the C_a--O--C_a ether.
+
+    Return a new graph without editing the inputs.
+    """
+    if set(chain).intersection(monomer):
+        raise ValueError("Chain and incoming monomer must have disjoint node IDs.")
+    chain = chain.copy()
+    monomer = monomer.copy()
+    # The incoming graph represents one new monomer, with an identity not
+    # already present in the chain. Node IDs and monomer IDs serve different roles.
+    incoming_ids = {data['monomer_id'] for _, data in monomer.nodes(data=True)}
+    if len(incoming_ids) != 1:
+        raise ValueError("Incoming graph must contain exactly one monomer.")
+    incoming_id = incoming_ids.pop()  # Extract the single ID from the set.
+    if any(data['monomer_id'] == incoming_id for _, data in chain.nodes(data=True)):
+        raise ValueError("Incoming monomer ID must not already occur in the chain.")
+
+    # Incoming monomer: C_a, C_b; chain monomer: C_1.
+    # These variables hold node IDs, not atom data.
+    monomer_C_a = _find_attachment_atom(monomer, 'C_a', incoming_id)
+    monomer_C_b = _find_attachment_atom(monomer, 'C_b', incoming_id)
+    chain_C_1 = _find_attachment_atom(chain, 'C_1', chain_monomer_id)
+
+    # Place new monomer at the correct position near the existing chain
+    place_beta_1(chain, monomer, chain_C_1, monomer_C_b)
+    ether_oxygen = edit_beta_1_topology(chain, monomer, chain_C_1, monomer_C_b)
+
+    # Add nodes and edges from the incoming monomer to the chain
+    result = chain.copy()
+    result.add_nodes_from(monomer.nodes(data=True))
+    result.add_edges_from(monomer.edges(data=True))
+    # Add the two new bonds connecting chain and new monomer
+    result.add_edge(monomer_C_b, chain_C_1, bond_order=1, linkage='beta-1')
+    result.add_edge(monomer_C_a, ether_oxygen, bond_order=1, linkage='beta-1')
+
+    # update degree
+    for node, degree in result.degree():
+        result.nodes[node]['degree'] = degree
+
+    return result
+
+def place_beta_1(chain, monomer, chain_C_1, monomer_C_b):
+    """
+    Place the incoming monomer above the chain with parallel ring planes.
+    Align the incoming ring normal with the chain ring normal.
+
+    For the incoming and the chain monomer, we need to rearrange the carbon tails at C1.
+    For this we mirror the positions of the carbon atoms of the rings at the mirror plane spanned
+    by the C1-C6 vector and the ring normal vector.
+    Ca comes on C2', Cb on C3', Cg on C4'. Preserve the Cg-Og bond length
+    and point Cg->Og parallel to C2->C1 in each monomer.
+    Then we arrange the incoming monomer such that its Ca-Cb vector is parallel to the chain's Ca-C1 vector,
+    align the projected midpoints of these vectors, and separate the midpoints
+    by 1.3*C-C "single" along the positive chain ring normal. Both atom pairs
+    are vertically aligned for matching planar attachment edges. Preserve tiny
+    endpoint mismatches from unequal edge lengths or nonplanar XYZ templates.
+    """
+    # get monomer IDs
+    monomer_id = monomer.nodes[monomer_C_b]['monomer_id']
+    chain_id = chain.nodes[chain_C_1]['monomer_id']
+
+    # 1. Rotate the incoming ring normal onto the chain ring normal.
+    normal = ring_normal(chain, chain_id)
+    incoming_normal = ring_normal(monomer, monomer_id)
+    rotate_nodes(
+        monomer, list(monomer),
+        alignment_rotation(incoming_normal, normal),
+        ring_center(monomer, monomer_id),
+    )
+
+    # 2. Reflect C_2..C_4 across the plane through C_1 spanned by
+    # C_1->C_6 and the ring normal, and put C_a, C_b, C_g there.
+    def mirror_tail(graph, identity):
+        c1 = _find_attachment_atom(graph, 'C_1', identity)
+        c6 = _find_attachment_atom(graph, 'C_6', identity)
+        origin = _coordinates(graph, c1)
+        mirror_normal = unit_vector(np.cross(
+            _coordinates(graph, c6) - origin, ring_normal(graph, identity),
+        ))
+        targets = []
+        for i in range(2, 5):
+            position = _coordinates(graph, _find_attachment_atom(graph, f'C_{i}', identity))
+            targets.append(position - 2 * np.dot(position - origin, mirror_normal) * mirror_normal)
+
+        backbone = [c1] + [_find_attachment_atom(graph, label, identity)
+                           for label in ('C_a', 'C_b', 'C_g', 'O_g')]
+        downstream = [branch_nodes(graph, left, right)
+                      for left, right in zip(backbone, backbone[1:])]
+        original = {node: _coordinates(graph, node) for node in downstream[0] | {c1}}
+        gamma, oxygen = backbone[-2:]
+        co_length = np.linalg.norm(original[oxygen] - original[gamma])
+        c2 = _find_attachment_atom(graph, 'C_2', identity)
+        targets.append(targets[-1] + co_length * unit_vector(origin - _coordinates(graph, c2)))
+        positions = [origin] + targets
+        for i, right in enumerate(backbone[1:], 1):
+            # Move each atom with its own substituents. Fit the two local
+            # backbone directions so hydrogens follow the bend instead of
+            # pointing into the next carbon. Backbone anchors stay exact.
+            left = backbone[i - 1]
+            source = [unit_vector(original[left] - original[right])]
+            target = [unit_vector(positions[i - 1] - positions[i])]
+            nodes = downstream[i - 1]
+            if i < len(backbone) - 1:
+                source.append(unit_vector(original[backbone[i + 1]] - original[right]))
+                target.append(unit_vector(positions[i + 1] - positions[i]))
+                rotation, _ = Rotation.align_vectors(target, source)
+                nodes = nodes - downstream[i]
+            else:
+                rotation = alignment_rotation(source[0], target[0])
+            for node in nodes:
+                position = rotation.apply(original[node] - original[right]) + positions[i]
+                graph.nodes[node].update(zip(('x', 'y', 'z'), map(float, position)))
+
+    mirror_tail(chain, chain_id)
+    mirror_tail(monomer, monomer_id)
+
+    # 3. Rotate about the common ring normal to align incoming C_a->C_b
+    # with chain C_a->C_1. Use projections because XYZ rings have small
+    # departures from planarity; keep the exact mirrored tail positions.
+    chain_C_a = _find_attachment_atom(chain, 'C_a', chain_id)
+    monomer_C_a = _find_attachment_atom(monomer, 'C_a', monomer_id)
+    chain_alpha = _coordinates(chain, chain_C_a)
+    incoming_alpha = _coordinates(monomer, monomer_C_a)
+    direction = _coordinates(monomer, monomer_C_b) - incoming_alpha
+    edge = _coordinates(chain, chain_C_1) - chain_alpha
+    along = unit_vector(edge - np.dot(edge, normal) * normal)
+    incoming_along = unit_vector(direction - np.dot(direction, normal) * normal)
+    angle = np.arctan2(np.dot(normal, np.cross(incoming_along, along)),
+                       np.dot(incoming_along, along))
+    rotate_nodes(monomer, list(monomer), Rotation.from_rotvec(angle * normal), incoming_alpha)
+
+    # 4. Stack the incoming monomer above the chain along the ring normal.
+    # Center the attachment edges in projection rather than displacing them
+    # sideways. Unequal template edge lengths leave small endpoint residuals;
+    # the attachment midpoints are separated by exactly distance * normal.
+    distance = 1.3 * dictionaries.dictBondDistances()[('C-C', 'single')]
+    chain_midpoint = (chain_alpha + _coordinates(chain, chain_C_1)) / 2
+    incoming_midpoint = (incoming_alpha + _coordinates(monomer, monomer_C_b)) / 2
+    shift = chain_midpoint + distance * normal - incoming_midpoint
+    for node in monomer:
+        position = _coordinates(monomer, node) + shift
+        monomer.nodes[node].update(zip(('x', 'y', 'z'), map(float, position)))
+
+def edit_beta_1_topology(chain, monomer, chain_C_1, monomer_C_b):
+    """Apply the beta-1 scaffold edits in place and return the new ether O ID.
+
+    Reduce both C_a--C_b double bonds. On the chain side, form the dienone
+    ring (C_2=C_3, C_5=C_6 and C_4=O_4), remove H_O4, and add O_b--H_Ob
+    at C_b along the less-clashing ring-normal direction using the alcohol
+    bond distances. Score both hydroxyl orientations against the completed
+    product, excluding atom pairs separated by up to three bonds.
+
+    Store the new O_a at the midpoint of the two alpha carbons in ``chain``
+    and bond it to chain C_a. ``connect_beta_1`` adds its bond to incoming
+    C_a and the C_1--C_b bond after merging the two graphs. This avoids
+    creating incomplete copies of incoming atoms in the chain graph.
+    """
+    monomer_id = monomer.nodes[monomer_C_b]['monomer_id']
+    chain_monomer_id = chain.nodes[chain_C_1]['monomer_id']
+    monomer_C_a = _find_attachment_atom(monomer, 'C_a', monomer_id)
+    chain_C_a = _find_attachment_atom(chain, 'C_a', chain_monomer_id)
+    chain_C_b = _find_attachment_atom(chain, 'C_b', chain_monomer_id)
+    # Resolve and validate both sides before making any edits.
+    for graph, alpha, beta in (
+        (monomer, monomer_C_a, monomer_C_b),
+        (chain, chain_C_a, chain_C_b),
+    ):
+        if not graph.has_edge(alpha, beta) or graph.edges[alpha, beta].get('bond_order') != 2:
+            raise ValueError("Expected a C_a--C_b double bond before beta-1 edits.")
+
+    H_O4 = _find_attachment_atom(chain, 'H_O4', chain_monomer_id)
+    chain_C_2 = _find_attachment_atom(chain, 'C_2', chain_monomer_id)
+    chain_C_3 = _find_attachment_atom(chain, 'C_3', chain_monomer_id)
+    chain_C_4 = _find_attachment_atom(chain, 'C_4', chain_monomer_id)
+    chain_C_5 = _find_attachment_atom(chain, 'C_5', chain_monomer_id)
+    chain_C_6 = _find_attachment_atom(chain, 'C_6', chain_monomer_id)
+    chain_O_4 = _find_attachment_atom(chain, 'O_4', chain_monomer_id)
+    ring_bonds = (
+        (chain_C_1, chain_C_2, 1), (chain_C_2, chain_C_3, 2),
+        (chain_C_3, chain_C_4, 1), (chain_C_4, chain_C_5, 1),
+        (chain_C_5, chain_C_6, 2), (chain_C_6, chain_C_1, 1),
+        (chain_C_4, chain_O_4, 2),
+    )
+    if any(not chain.has_edge(left, right) for left, right, _ in ring_bonds):
+        raise ValueError("Expected an intact six-ring and C_4--O_4 bond before beta-1 edits.")
+
+    # Allocate across both graphs before deleting H_O4, so IDs cannot collide
+    # with incoming atoms or reuse the ID of the removed hydrogen.
+    oxygen_id = max(max(chain), max(monomer)) + 1
+    hydrogen_id = oxygen_id + 1
+    ether_oxygen_id = oxygen_id + 2
+    monomer_type = chain.nodes[chain_C_a]['monomer_type']
+    distances = dictionaries.dictBondDistances()
+    normal = ring_normal(chain, chain_monomer_id)
+    oxygen_position = _coordinates(chain, chain_C_b) + distances[('C-O', 'alcohol')] * normal
+    hydrogen_position = oxygen_position + distances[('O-H', 'alcohol')] * normal
+    ether_position = (_coordinates(chain, chain_C_a) + _coordinates(monomer, monomer_C_a)) / 2
+
+    monomer.edges[monomer_C_a, monomer_C_b]['bond_order'] = 1
+    chain.edges[chain_C_a, chain_C_b]['bond_order'] = 1
+    chain.remove_node(H_O4)
+    for left, right, order in ring_bonds:
+        chain.edges[left, right]['bond_order'] = order
+
+    # Both the beta hydroxyl and the alpha ether belong to the selected chain monomer.
+    for node, label, element, position in (
+        (oxygen_id, 'O_b', 'O', oxygen_position),
+        (hydrogen_id, 'H_Ob', 'H', hydrogen_position),
+        (ether_oxygen_id, 'O_a', 'O', ether_position),
+    ):
+        chain.add_node(
+            node, index=node, element=element, atom_label=label,
+            template_label=label, monomer_id=chain_monomer_id,
+            monomer_type=monomer_type,
+            x=float(position[0]), y=float(position[1]), z=float(position[2]),
+        )
+    chain.add_edge(chain_C_b, oxygen_id, bond_order=1)
+    chain.add_edge(oxygen_id, hydrogen_id, bond_order=1)
+    chain.add_edge(chain_C_a, ether_oxygen_id, bond_order=1, linkage='beta-1')
+
+    # Include the actual cross-monomer bonds when exempting nearby bonded
+    # atoms. Score only the movable hydroxyl against the rest of the product,
+    # so other close contacts cannot obscure the difference between sides.
+    product = nx.compose(chain, monomer)
+    product.add_edge(chain_C_1, monomer_C_b, bond_order=1)
+    product.add_edge(ether_oxygen_id, monomer_C_a, bond_order=1)
+    hydroxyl_nodes = {oxygen_id, hydrogen_id}
+    fixed_nodes = set(product) - hydroxyl_nodes
+    excluded_pairs = {
+        (fixed, moving)
+        for moving in hydroxyl_nodes
+        for fixed in nx.single_source_shortest_path_length(product, moving, cutoff=3)
+        if fixed in fixed_nodes
+    }
+    beta_position = _coordinates(chain, chain_C_b)
+    offsets = (oxygen_position - beta_position, hydrogen_position - beta_position)
+    best_score, best_positions = float('inf'), None
+    for sign in (1, -1):
+        positions = [beta_position + sign * offset for offset in offsets]
+        for node, position in zip((oxygen_id, hydrogen_id), positions):
+            product.nodes[node].update(zip(('x', 'y', 'z'), map(float, position)))
+        score = clash_score(product.subgraph(fixed_nodes), product.subgraph(hydroxyl_nodes),
+                            excluded_pairs=excluded_pairs)
+        if score < best_score:
+            best_score, best_positions = score, positions
+    for node, position in zip((oxygen_id, hydrogen_id), best_positions):
+        chain.nodes[node].update(zip(('x', 'y', 'z'), map(float, position)))
+
+    for node, degree in chain.degree():
+        chain.nodes[node]['degree'] = degree
+    for node, degree in monomer.degree():
+        monomer.nodes[node]['degree'] = degree
+
+    return ether_oxygen_id

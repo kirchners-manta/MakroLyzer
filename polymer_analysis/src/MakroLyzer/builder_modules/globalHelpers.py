@@ -45,7 +45,7 @@ def optimize_structure(graph, max_iterations=1500):
     from rdkit import Chem
     from rdkit.Chem import AllChem
 
-    if isinstance(max_iterations, bool) or not isinstance(max_iterations, int) or max_iterations < 0:
+    if isinstance(max_iterations, bool) or not isinstance(max_iterations, int) or max_iterations <= 0:
         raise ValueError("max_iterations must be a positive integer.")
     nodes = list(graph)
     if not nodes:
@@ -88,8 +88,9 @@ def optimize_structure(graph, max_iterations=1500):
     positions = np.asarray(positions, dtype=float)
     if not np.isfinite(positions).all():
         raise ValueError("Optimization requires finite coordinates.")
-    # Add tiny displacements (standard deviation 0.001 angstrom) so exactly
-    # linear angles can bend. Seed 0 makes this perturbation reproducible.
+    # Add tiny displacements so exactly linear angles can bend. Keep the
+    # original coordinates for a retry if this leaves severely strained bonds.
+    starting_positions = positions.copy()
     positions += np.random.default_rng(0).normal(0, 0.001, positions.shape)
     # A conformer stores one set of 3D coordinates for the molecule's atoms.
     # Constructed geometry is used directly, rather than generating a new one.
@@ -112,6 +113,36 @@ def optimize_structure(graph, max_iterations=1500):
     optimized = molecule.GetConformer().GetPositions()
     if not np.isfinite(optimized).all() or not np.isfinite([initial_energy, final_energy]).all():
         raise RuntimeError("UFF produced nonfinite coordinates or energies.")
+
+    # Near-linear starting angles can trap UFF even when it reports convergence.
+    # Detect severe bond strain against UFF's own equilibrium lengths, then
+    # retry from the input with a larger reproducible displacement. Retain the
+    # lower-energy result; each minimization respects the iteration limit.
+    strained = False
+    for bond in molecule.GetBonds():
+        left, right = bond.GetBeginAtomIdx(), bond.GetEndAtomIdx()
+        _, equilibrium = AllChem.GetUFFBondStretchParams(molecule, left, right)
+        length = np.linalg.norm(optimized[left] - optimized[right])
+        if abs(length - equilibrium) > 0.15 * equilibrium:
+            strained = True
+            break
+    if strained:
+        retry_positions = starting_positions + np.random.default_rng(0).normal(
+            0, 0.01, starting_positions.shape,
+        )
+        conformer = molecule.GetConformer()
+        for index, position in enumerate(retry_positions):
+            conformer.SetAtomPosition(index, tuple(map(float, position)))
+        retry_field = AllChem.UFFGetMoleculeForceField(molecule, ignoreInterfragInteractions=False)
+        retry_initial = float(retry_field.CalcEnergy())
+        retry_status = retry_field.Minimize(maxIts=max_iterations)
+        retry_energy = float(retry_field.CalcEnergy())
+        retry_optimized = molecule.GetConformer().GetPositions()
+        if (np.isfinite(retry_optimized).all()
+                and np.isfinite([retry_initial, retry_energy]).all()
+                and retry_energy < final_energy):
+            initial_energy, final_energy = retry_initial, retry_energy
+            status, optimized = retry_status, retry_optimized
 
     # Keep the original graph untouched. Transfer only x/y/z; retain its atom
     # labels, IDs, bond orders and all other existing attributes.
