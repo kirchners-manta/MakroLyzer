@@ -9,6 +9,16 @@ The structure can be provided via the command line using the ``-xyz`` or ``-lmp`
    MakroLyzer -xyz <trajectory.xyz>
    MakroLyzer -lmp <trajectory.lmp>
 
+Use ``-o DIR`` or ``--output-dir DIR`` to save analysis and modification
+results in a directory of your choice. MakroLyzer creates the directory if
+needed. Relative output filenames are interpreted within that directory,
+and absolute output filenames are used as supplied. The default is the
+current working directory.
+
+.. code-block:: bash
+
+   MakroLyzer -xyz trajectory.xyz -Rg --output-dir results/run1
+
 
 GROMACS input (MDAnalysis)
 -------------------------

@@ -1,4 +1,5 @@
 import sys
+from pathlib import Path
 
 from MakroLyzer.input_handling import inputHandlingMain
 from MakroLyzer.structure_modules import structureAnalysisMain
@@ -13,6 +14,11 @@ def main():
     analyzer, dynamic_analyzer, modifier, args = inputHandlingMain.main(sys.argv)
         
     try:
+        if args.get('output_dir') is not None and (analyzer or dynamic_analyzer or modifier):
+            output_dir = Path(args['output_dir']).expanduser()
+            output_dir.mkdir(parents=True, exist_ok=True)
+            args['output_dir'] = output_dir
+
         # Call the structure analysis of the polymer structure
         if analyzer:
             structureAnalysisMain.main(args)

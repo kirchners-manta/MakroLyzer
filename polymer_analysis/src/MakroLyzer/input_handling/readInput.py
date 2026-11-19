@@ -104,6 +104,8 @@ def readCommandLine() -> dict:
                                 help=f'Path to the {description}', default=None)
     input_group.add_argument('-tpr', '--topology', dest='topologyFile', default=None,
                             help='TPR, GRO, or PDB topology for a TRR/XTC trajectory')
+    input_group.add_argument('-o', '--output-dir', metavar='DIR',
+                            help='Directory for relative output filenames (default: current directory)')
 
     input_group.add_argument('-startStep', '--startStep',
                         help='Frame of the trajectory, where the analysis should be started (default: 0)\n'

@@ -6,6 +6,7 @@ Each entry in `MODIFIERS_REGISTRATION` maps a short key to a factory
 callable that accepts `(args, **context)` and returns an modifier
 instance or `None` if it should not be created for the given args.
 """
+from MakroLyzer.output_paths import output_path
 from MakroLyzer.modify_modules.Patterns import PatternModifier
 from MakroLyzer.modify_modules.structureModifierBase import ModifyOutputHandler
 from MakroLyzer.modify_modules.AminoSaturation import AminoSaturationModifier
@@ -20,7 +21,7 @@ def create_patterns(args, **context):
     if not pattern_path:
         return None
     out_file = args.get('patternID_file') if args.get('patternID_file') is not None else 'patternIDs.csv'
-    output_handler = ModifyOutputHandler(out_file)
+    output_handler = ModifyOutputHandler(output_path(args, out_file))
     return PatternModifier(pattern_path, output_handler)
 
 def create_AminoSaturation(args, **context):
@@ -28,7 +29,7 @@ def create_AminoSaturation(args, **context):
     if val is None:
         return None
     out_file = val if isinstance(val, str) else 'saturatedPolymers.xyz'
-    output_handler = ModifyOutputHandler(out_file)
+    output_handler = ModifyOutputHandler(output_path(args, out_file))
     return AminoSaturationModifier(output_handler)
 
 def create_subgraph_print(args, **context):
@@ -36,7 +37,7 @@ def create_subgraph_print(args, **context):
     if val is None:
         return None
     out_file = val if isinstance(val, str) else 'subgraphCoordinates.xyz'
-    output_handler = ModifyOutputHandler(out_file)
+    output_handler = ModifyOutputHandler(output_path(args, out_file))
     return SubgraphPrintModifier(output_handler)
 
 def create_wrap_graph_print(args, **context):
@@ -44,7 +45,7 @@ def create_wrap_graph_print(args, **context):
     if val is None:
         return None
     out_file = val if isinstance(val, str) else 'wrappedGraph.xyz'
-    output_handler = ModifyOutputHandler(out_file)
+    output_handler = ModifyOutputHandler(output_path(args, out_file))
     return WrapGraphModifier(output_handler)
 
 def create_functionalize_PE(args, **context):
@@ -57,7 +58,7 @@ def create_functionalize_PE(args, **context):
     neighbor_exclusion = val.get('neighbor_exclusion')
     distance = val.get('distance')
     out_file = args.get('functionalizePE_file') if args.get('functionalizePE_file') is not None else 'functionalizedPE.xyz'
-    output_handler = ModifyOutputHandler(out_file)
+    output_handler = ModifyOutputHandler(output_path(args, out_file))
     return FunctionalizePEModifier(mode, func_type, percentage, neighbor_exclusion, distance, output_handler)
 
 def create_functionalize_PEsurf(args, **context):
@@ -68,7 +69,7 @@ def create_functionalize_PEsurf(args, **context):
     func_type = val['func_type']
     neighbor_exclusion = val.get('neighbor_exclusion')
     out_file = args.get('functionalizePE_file') if args.get('functionalizePE_file') is not None else 'functionalizedPE.xyz'
-    output_handler = ModifyOutputHandler(out_file)
+    output_handler = ModifyOutputHandler(output_path(args, out_file))
     box_size = context.get('boxSize')
     return FunctionalizePEsurfaceModifier(
         percentage,

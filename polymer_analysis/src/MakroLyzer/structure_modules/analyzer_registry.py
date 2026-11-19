@@ -6,6 +6,7 @@ Each entry in `ANALYZERS_REGISTRATION` maps a short key to a factory
 callable that accepts `(args, **context)` and returns an analyzer
 instance or `None` if it should not be created for the given args.
 """
+from MakroLyzer.output_paths import output_path
 from MakroLyzer.structure_modules.Hbonds import HBondsAnalyzer
 from MakroLyzer.structure_modules.HbondsBetween import HbondsBetweenAnalyzer
 from MakroLyzer.structure_modules.HBondPositions import HBondPositionsAnalyzer
@@ -30,7 +31,7 @@ def create_hbonds(args, **context):
         return None
     cutoffs = args['hydrogenBonds']
     hbonds_file = args.get('hbonds_file') or 'hydrogenBonds.csv'
-    output_handler = OutputHandler(hbonds_file, mode='streaming')
+    output_handler = OutputHandler(output_path(args, hbonds_file), mode='streaming')
     return HBondsAnalyzer(cutoffs, output_handler)
 
 def create_hbond_positions(args, **context):
@@ -41,7 +42,7 @@ def create_hbond_positions(args, **context):
     if not cutoffs:
         raise ValueError("'--hbondPositions' requires '--hydrogenBonds'.")
     out_file = val if isinstance(val, str) else 'hbondPositions.xyz'
-    output_handler = OutputHandler(out_file, mode='collect')
+    output_handler = OutputHandler(output_path(args, out_file), mode='collect')
     return HBondPositionsAnalyzer(cutoffs, output_handler)
 
 def create_hbonds_between(args, **context):
@@ -52,7 +53,7 @@ def create_hbonds_between(args, **context):
     if not cutoffs:
         raise ValueError("'--hb-between' requires '--hydrogenBonds'.")
     hbonds_between_file = args.get('hbonds_between_file') or 'hydrogenBondsBetween.csv'
-    output_handler = OutputHandler(hbonds_between_file, mode='streaming')
+    output_handler = OutputHandler(output_path(args, hbonds_between_file), mode='streaming')
     static_topology = context.get('static_topology', False)
     return HbondsBetweenAnalyzer(
         cutoffs,
@@ -68,7 +69,7 @@ def create_anisotropy(args, **context):
     if val is None:
         return None
     out_file = args.get('anisotropy_file') if args.get('anisotropy_file') is not None else (val if isinstance(val, str) else 'anisotropyFactor.csv')
-    output_handler = OutputHandler(out_file, mode='streaming')
+    output_handler = OutputHandler(output_path(args, out_file), mode='streaming')
     return AnisotropyAnalyzer(output_handler)
 
 
@@ -77,7 +78,7 @@ def create_asphericity(args, **context):
     if val is None:
         return None
     out_file = args.get('asphericity_file') if args.get('asphericity_file') is not None else (val if isinstance(val, str) else 'asphericityParameter.csv')
-    output_handler = OutputHandler(out_file, mode='streaming')
+    output_handler = OutputHandler(output_path(args, out_file), mode='streaming')
     return AsphericityAnalyzer(output_handler)
 
 
@@ -86,7 +87,7 @@ def create_radius_of_gyration(args, **context):
     if val is None:
         return None
     out_file = args.get('Rg_file') if args.get('Rg_file') is not None else (val if isinstance(val, str) else 'Rg.csv')
-    output_handler = OutputHandler(out_file, mode='streaming')
+    output_handler = OutputHandler(output_path(args, out_file), mode='streaming')
     return RadiusOfGyrationAnalyzer(output_handler)
 
 def create_spread_radius(args, **context):
@@ -94,7 +95,7 @@ def create_spread_radius(args, **context):
     if val is None:
         return None
     out_file = args.get('Rs_file') if args.get('Rs_file') is not None else (val if isinstance(val, str) else 'Rs.csv')
-    output_handler = OutputHandler(out_file, mode='streaming')
+    output_handler = OutputHandler(output_path(args, out_file), mode='streaming')
     return SpreadRadiusAnalyzer(output_handler)
 
 def create_molecule_count(args, **context):
@@ -102,7 +103,7 @@ def create_molecule_count(args, **context):
     if val is None:
         return None
     out_file = args.get('NoSub_file') if args.get('NoSub_file') is not None else (val if isinstance(val, str) else 'NoSubGraphs.csv')
-    output_handler = OutputHandler(out_file, mode='streaming')
+    output_handler = OutputHandler(output_path(args, out_file), mode='streaming')
     return MoleculeCountAnalyzer(output_handler)
 
 
@@ -111,7 +112,7 @@ def create_end_to_end(args, **context):
     if val is None:
         return None
     out_file = args.get('e2e_file') if args.get('e2e_file') is not None else (val if isinstance(val, str) else 'e2eDistances.csv')
-    output_handler = OutputHandler(out_file, mode='streaming')
+    output_handler = OutputHandler(output_path(args, out_file), mode='streaming')
     static_topology = context.get('static_topology', False)
     backbone_cache = context.get('backbone_cache')
     return EndToEndDistanceAnalyzer(output_handler, static_topology=static_topology, backbone_cache=backbone_cache)
@@ -129,7 +130,7 @@ def create_order_parameter(args, **context):
     static_topology = context.get('static_topology', False)
     backbone_cache = context.get('backbone_cache')
     order_file = args.get('order_file') or 'orderParameter.csv'
-    output_handler = OutputHandler(order_file, mode='streaming')
+    output_handler = OutputHandler(output_path(args, order_file), mode='streaming')
     return OrderParameterAnalyzer(
         BoxSize,
         NoCellsPerDim,
@@ -147,7 +148,7 @@ def create_ramachandran(args, **context):
     if val is None:
         return None
     out_file = args.get('Ramachandran_file') if args.get('Ramachandran_file') is not None else (val if isinstance(val, str) else 'Ramachandran.csv')
-    output_handler = OutputHandler(out_file, mode='streaming')
+    output_handler = OutputHandler(output_path(args, out_file), mode='streaming')
     return RamachandranAnalyzer(output_handler)
 
 
@@ -160,10 +161,11 @@ def create_dihedrals(args, **context):
     cistrans_handler = None
     if dihedral_val is not None:
         dihedral_file = 'dihedrals.csv'
-        dihedral_handler = OutputHandler(dihedral_file, mode='collect')
-        dihedral_list_handler = OutputHandler(dihedral_file.replace('.csv', '_list.csv'), mode='streaming')
+        dihedral_handler = OutputHandler(output_path(args, dihedral_file), mode='collect')
+        dihedral_list_file = dihedral_file.replace('.csv', '_list.csv')
+        dihedral_list_handler = OutputHandler(output_path(args, dihedral_list_file), mode='streaming')
         cistrans_file = 'CisTrans.csv'
-        cistrans_handler = OutputHandler(cistrans_file, mode='streaming')
+        cistrans_handler = OutputHandler(output_path(args, cistrans_file), mode='streaming')
     static_topology = context.get('static_topology', False)
     backbone_cache = context.get('backbone_cache')
     return DihedralsAnalyzer(
@@ -182,7 +184,7 @@ def create_chemical_formula(args, **context):
     if val is None:
         return None
     out_file = args.get('formula_file') if args.get('formula_file') is not None else (val if isinstance(val, str) else 'chemicalFormulas.csv')
-    formula_handler = OutputHandler(out_file, mode='streaming')
+    formula_handler = OutputHandler(output_path(args, out_file), mode='streaming')
     return ChemicalFormulaAnalyzer(formula_handler)
 
 def create_surface_atoms(args, **context):
@@ -190,7 +192,7 @@ def create_surface_atoms(args, **context):
     if val is None:
         return None
     out_file = args.get('surfaceAtoms_file') if args.get('surfaceAtoms_file') is not None else (val if isinstance(val, str) else 'surfaceAtoms.csv')
-    surface_atoms_handler = OutputHandler(out_file, mode='streaming')
+    surface_atoms_handler = OutputHandler(output_path(args, out_file), mode='streaming')
     ring_size = args.get('sA_ring_size', 6)
     box_size = context.get('boxSize')
     return SurfaceAtomsAnalyzer(surface_atoms_handler, box_size=box_size, ring_size=ring_size)
@@ -200,7 +202,7 @@ def create_convex_hull_volume(args, **context):
     if val is None:
         return None
     out_file = val if isinstance(val, str) else 'ConvexHullVolume.csv'
-    output_handler = OutputHandler(out_file, mode='streaming')
+    output_handler = OutputHandler(output_path(args, out_file), mode='streaming')
     return ConvexHullVolumeAnalyzer(output_handler)
 
 
@@ -210,7 +212,7 @@ def create_convex_hull_solvent(args, **context):
         return None
     out_file = args.get('convexHullSolvent_file') or 'ConvexHullSolvent.csv'
     box_size = context.get('boxSize')
-    output_handler = OutputHandler(out_file, mode='streaming')
+    output_handler = OutputHandler(output_path(args, out_file), mode='streaming')
     static_topology = context.get('static_topology', False)
     return ConvexHullSolventAnalyzer(
         selections[0],
