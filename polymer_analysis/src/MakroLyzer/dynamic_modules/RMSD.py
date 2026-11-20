@@ -1,3 +1,5 @@
+# Module of Leo von Elmpt
+
 import numpy as np
 
 from MakroLyzer.dynamic_modules.dynamicBase import DynamicAnalyzer

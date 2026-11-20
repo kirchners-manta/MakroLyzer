@@ -42,6 +42,7 @@ The program has three main functionalities:
    structureAnalysis/10formula.rst
    structureAnalysis/11surfaceAtoms.rst
    structureAnalysis/12convexHull.rst
+   structureAnalysis/13distanceCOM.rst
 
 .. toctree::
    :maxdepth: 1

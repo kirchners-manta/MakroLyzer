@@ -348,6 +348,18 @@ def readCommandLine() -> dict:
                         nargs='?', const='ConvexHullSolvent.csv', default='ConvexHullSolvent.csv',
                         help='Output filename for convex-hull solvent counting (default: ConvexHullSolvent.csv)')
     
+    analyzer_group.add_argument(
+        '-DistCOM', '--distanceFromCOM', '--distance-from-com', dest='distanceFromCOM',
+        nargs=2, metavar=('PARTICLE_SEL', 'SOLVENT_SEL'),
+        help='Measure the distance from the selected particle center of mass to each selected solvent center of mass.\n'
+             'Use -bs for periodic distances. Example: -DistCOM CHON H2O',
+    )
+    analyzer_group.add_argument(
+        '-DistCOM-file', '--distanceFromCOM-file', '--distance-from-com-file',
+        dest='distanceFromCOM_file', metavar='FILE',
+        help='Output filename for COM distances (default: DistanceFromCOM.csv)',
+    )
+
     # Dynamic Analyzers Group # --------------------------------------------------------------------------------
     dynamic_analyzer_group = parser.add_argument_group(
         title=format_header("Arguments for dynamic analyzers"),

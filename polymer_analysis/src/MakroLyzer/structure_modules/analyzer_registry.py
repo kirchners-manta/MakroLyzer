@@ -23,6 +23,7 @@ from MakroLyzer.structure_modules.ChemicalFormula import ChemicalFormulaAnalyzer
 from MakroLyzer.structure_modules.SurfaceAtoms import SurfaceAtomsAnalyzer
 from MakroLyzer.structure_modules.ConvexHullVolume import ConvexHullVolumeAnalyzer
 from MakroLyzer.structure_modules.ConvexHullSolvent import ConvexHullSolventAnalyzer
+from MakroLyzer.structure_modules.DistanceFromCOM import DistanceFromCOMAnalyzer
 from MakroLyzer.structure_modules.structureBase import OutputHandler
 
 
@@ -223,6 +224,22 @@ def create_convex_hull_solvent(args, **context):
     )
     
 
+def create_distance_from_com(args, **context):
+    selections = args.get('distanceFromCOM')
+    if selections is None:
+        return None
+
+    particle_selection, solvent_selection = selections
+    out_file = args.get('distanceFromCOM_file') or 'DistanceFromCOM.csv'
+    return DistanceFromCOMAnalyzer(
+        particle_selection,
+        solvent_selection,
+        box_size=context.get('boxSize'),
+        output_handler=OutputHandler(output_path(args, out_file), mode='streaming'),
+        static_topology=context.get('static_topology', False),
+    )
+
+
 ANALYZERS_REGISTRATION = {
     'hbonds': create_hbonds,
     'hbondPositions': create_hbond_positions,
@@ -240,4 +257,5 @@ ANALYZERS_REGISTRATION = {
     'surfaceAtoms': create_surface_atoms,
     'ConvexHullVolume': create_convex_hull_volume,
     'ConvexHullSolvent': create_convex_hull_solvent,
+    'DistanceFromCOM': create_distance_from_com,
 }
