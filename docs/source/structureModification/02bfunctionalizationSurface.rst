@@ -21,6 +21,15 @@ Modes
 -----
 - ``Random`` mode selects a target number of CH2 sites based on the requested percentage and then chooses positions at random while respecting ``neighbor_exclusion`` to keep functional groups separated. A neighbor_exclusion value of three means, that between two functional groups are at least three untouched CH2 units.
 
+Random mode calculates each target from all carbon atoms in the outermost GITIM layer of the original structure, including
+chain ends in the count. Chain ends remain unavailable for placement. The target is
+rounded down to whole groups, with two backbone carbons counted for each ester or amide.
+
+Use a comma-separated list to request multiple group types with a shared exclusion
+distance, for example ``-funcPEsurf random:15:CO,10:ester:2``. Each type may
+appear once and the percentages must total at most 100. Sites are reserved in input
+order before any atoms are modified.
+
 Command line
 ------------
 .. line-block::
@@ -29,7 +38,8 @@ Command line
       Random functionalization of the PE surface by replacing CH2 groups with ``func_type``.
       ``func_type`` is ``CO``, ``COH``, ``ester``, or ``amide``.
       ``percentage`` is a float from 0 to 100.
-      ``neighbor_exclusion`` is the minimum C-C hop distance between functional groups.
+      ``neighbor_exclusion`` blocks sites up to and including that many C-C bonds away
+      from any carbon assigned to another group.
 
   ``-funcPE-file``
   ``--functionalizePE-file``
@@ -48,7 +58,12 @@ Example
 
 Output
 ------
-An XYZ file containing the modified structure.
+Each modified XYZ structure has a matching ``.info.txt`` file. For example,
+``functionalizedPE_1.xyz`` is accompanied by ``functionalizedPE_1.info.txt``.
+The report records the input, original atom counts, and the actual group count and
+percentage for each group. Random reports also include the target and any shortfall.
+The maximum count and percentage are calculated for each group as if used alone,
+with the requested spacing.
 
 
 .. [1]  Sega, M.; Kantorovich, S.; Jedlovszky, P.; Jorge, M. The generalized identification of truly interfacial molecules (ITIM) algorithm for nonplanar interfaces. J. Chem. Phys. 2013, 138, 044110.

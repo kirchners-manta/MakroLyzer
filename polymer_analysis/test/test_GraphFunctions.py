@@ -552,13 +552,16 @@ def test_functionalize_pe_co_periodic():
     before_o = sum(1 for n in graph.nodes() if graph.nodes[n]['element'] == 'O')
     before_h = sum(1 for n in graph.nodes() if graph.nodes[n]['element'] == 'H')
 
-    graph.functionalizePE("periodic", "CO", distance=2)
+    report = graph.functionalizePE("periodic", "CO", distance=2)
 
     after_o = sum(1 for n in graph.nodes() if graph.nodes[n]['element'] == 'O')
     after_h = sum(1 for n in graph.nodes() if graph.nodes[n]['element'] == 'H')
 
     assert after_o == before_o + 2
     assert after_h == before_h - 4
+    group, = report["groups"]
+    assert group["maximum_groups"] == 2
+    assert group["actual_percentage"] == pytest.approx(200 / 6)
 
 
 def test_parse_selection_list():
@@ -617,3 +620,63 @@ def test_select_subgraph_nodes():
     # no N in set
     for n in selected_nodes:
         assert graph.nodes[n]['element'] != 'N'
+
+
+def test_functionalize_pe_mixed_report(tmp_path, monkeypatch, capsys):
+    from MakroLyzer.input_handling.readInput import functionalize_pe
+    from MakroLyzer.modify_modules.modifier_registry import create_functionalize_PE
+
+    graph = _build_linear_pe_chain(13)
+    monkeypatch.setattr(np.random, "choice", min)
+    original = "random:20:CO,40:ester:2"
+    modifier = create_functionalize_PE({
+        "functionalizePE": functionalize_pe(original),
+        "output_dir": tmp_path,
+    })
+    (tmp_path / "functionalizedPE.xyz").touch()
+    assert modifier.run(graph, 0) is graph
+
+    assert (tmp_path / "functionalizedPE_1.xyz").is_file()
+    report = (tmp_path / "functionalizedPE_1.info.txt").read_text()
+    assert f"Input: {original}" in report
+    assert "Original carbon atoms: 13" in report
+    co, ester = modifier.report["groups"]
+    assert (co["target_groups"], co["actual_groups"], co["maximum_groups"]) == (2, 2, 4)
+    assert (ester["target_groups"], ester["actual_groups"], ester["maximum_groups"]) == (2, 1, 2)
+    assert co["actual_percentage"] == pytest.approx(200 / 13)
+    assert ester["actual_percentage"] == pytest.approx(200 / 13)
+    assert sum(data["element"] == "O" for _, data in graph.nodes(data=True)) == 4
+    assert capsys.readouterr().out == ""
+
+
+def test_functionalize_pe_surface_counts_original_surface_carbons(tmp_path, monkeypatch):
+    from MakroLyzer.input_handling.readInput import functionalize_pe_surface
+    from MakroLyzer.modify_modules.modifier_registry import create_functionalize_PEsurf
+
+    graph = _build_linear_pe_chain(13)
+    modifier = create_functionalize_PEsurf({
+        "functionalizePEsurface": functionalize_pe_surface("random:80:CO:2"),
+        "output_dir": tmp_path,
+    })
+    monkeypatch.setattr(modifier, "_find_surface_atoms", lambda graph: [0, 1, 4, 8, 12, 13])
+    modifier.run(graph, 0)
+
+    group, = modifier.report["groups"]
+    assert (group["target_groups"], group["actual_groups"], group["maximum_groups"]) == (4, 3, 3)
+    assert group["actual_percentage"] == pytest.approx(60)
+    report = (tmp_path / "functionalizedPE.info.txt").read_text()
+    assert "Detected surface atoms: 6" in report
+    assert "Original surface carbon atoms: 5" in report
+
+
+def test_functionalize_pe_touching_replacements_preserve_backbone(monkeypatch):
+    graph = _build_linear_pe_chain(8)
+    # Reserve (2, 3) and (5, 4), replacing adjacent carbons 3 and 4.
+    choices = iter((2, 5))
+    monkeypatch.setattr(np.random, "choice", lambda nodes: next(choices))
+    report = graph.functionalizePE(
+        "random", "ester", neighbor_exclusion=0,
+        requests=[("ester", 25), ("amide", 25)],
+    )
+    assert [group["actual_groups"] for group in report["groups"]] == [1, 1]
+    assert len(graph.get_subgraphs()) == 1

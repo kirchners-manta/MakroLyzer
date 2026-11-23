@@ -64,7 +64,7 @@ class ModifyOutputHandler:
                     for attr in attributes:
                         row += f"    {d.get(attr, '')}"
                 f.write(row + '\n')      
-        new_path = None               
+        return new_path
                     
 class StructureModifier(ABC):
     """

@@ -2,7 +2,9 @@ import numpy as np
 import networkx as nx
 from scipy.spatial import cKDTree
 import matplotlib.pyplot as plt
-from collections import defaultdict, deque
+from collections import defaultdict
+from decimal import Decimal
+from numbers import Integral
 
 from MakroLyzer import dictionaries
 
@@ -967,204 +969,115 @@ class GraphManager(nx.Graph):
         #else:
         #    raise ValueError("No new H atom can be added to the amide nitrogen.")
         
-    def functionalizePE(self, mode, func_type, percentage=None, neighbor_exclusion=None, distance=None, surface_atoms=None):
-        """
-        Functionalize polyethylene (PE) features.
-
-        Args:
-            mode: random or periodically
-            func_type (str): The type of functionalization 
-            percentage (float): 0 <= percentage <= 100, percentage of PE units to be functionalized - (random mode)
-            neighbor_exclusion (int): Minimum C-C hop distance to avoid selecting adjacent nodes - (random mode)
-            distance (int): Distance between functional groups along the backbone - (periodic mode)
-        """
-        # Check if everything is correctly given ------------------------------------------------------------------
-        if func_type not in ['CO', 'COH', 'ester', 'amide']:
-            raise ValueError("func_type must be 'CO', 'COH', 'ester' or 'amide'.")
-        if mode not in ['random', 'periodic']:
+    def functionalizePE(self, mode, func_type, percentage=None, neighbor_exclusion=None,
+                        distance=None, surface_atoms=None, *, requests=None):
+        """Modify PE in place and return counts relative to the original carbon pool."""
+        operations = {
+            'CO': self.add_CO_to_PE,
+            'COH': self.add_OH_to_PE,
+            'ester': self.add_ester_to_PE,
+            'amide': self.add_amide_to_PE,
+        }
+        if mode not in ('random', 'periodic'):
             raise ValueError("mode must be 'random' or 'periodic'.")
+        if requests is not None and mode != 'random':
+            raise ValueError("Multiple groups are supported only in random mode.")
+        requests = [(func_type, percentage)] if requests is None else list(requests)
+        types = [group for group, _ in requests]
+        if not types or any(group not in operations for group in types):
+            raise ValueError("Expected one or more of CO, COH, ester, or amide.")
+        if len(types) != len(set(types)):
+            raise ValueError("Functional group types must be unique.")
+
+        carbons = {node for node, data in self.nodes(data=True) if data['element'] == 'C'}
+        backbone = self.subgraph(carbons)
+        # Count chain ends in the percentage denominator before filtering placement sites.
+        counted = carbons if surface_atoms is None else carbons.intersection(surface_atoms)
+        ends = {node for node in counted if backbone.degree[node] == 1}
+        eligible = counted - ends
+        # Ester and amide also exclude sites adjacent to the detected chain ends.
+        pair_sites = eligible - {node for end in ends for node in backbone[end]}
+
+        carbon_count = len(counted)
+        report = {
+            'mode': mode,
+            'carbon_count': carbon_count,
+            'surface_atom_count': None if surface_atoms is None else len(surface_atoms),
+            'groups': [],
+        }
+        placements = []
         if mode == 'random':
-            if percentage is None:
-                raise ValueError("percentage is required for random mode.")
-            if not (0 <= percentage <= 100):
-                raise ValueError("percentage must be between 0 and 100.")
-            if neighbor_exclusion is None:
-                neighbor_exclusion = 1
-            if neighbor_exclusion < 0:
-                raise ValueError("neighbor_exclusion must be >= 0.")
-        else:
-            if distance is None:
-                raise ValueError("distance is required for periodic mode.")
-            if distance < 1:
-                raise ValueError("distance must be >= 1.")
-
-        # Adjust parameters for functional groups consuming more than one atom of the backbone ---------------------
-        # These groups consume two carbons along the backbone.
-        func_types_consuming_two = ['ester', 'amide']
-        
-        if func_type in func_types_consuming_two:
-            if mode == 'random':
-                percentage = percentage / 2.0
-            elif mode == 'periodic':
-                distance += 1
-
-        # Find the C_nodes which are available for functionalization ------------------------------------------------
-        if surface_atoms:
-            C_nodes = [node for node in surface_atoms.nodes if surface_atoms.nodes[node]['element'] == 'C']
-        else:
-            C_nodes = [node for node in self.nodes if self.nodes[node]['element'] == 'C']
-        
-        # Remove those with only one C-neighbor (chain ends).
-        end_nodes = [
-            node for node in C_nodes
-            if sum(1 for neighbor in self.neighbors(node) if self.nodes[neighbor]['element'] == 'C') == 1
-        ]
-        C_nodes = [node for node in C_nodes if node not in end_nodes]
-        
-        num_avail_atoms = len(C_nodes)
-        
-        # Exclude the carbon neighbors of chain ends for ester/amide for the random mode 
-        # since the functional groups consume two carbons along the backbone.
-        if func_type in func_types_consuming_two:
-            end_neighbors = set()
-            for end_node in end_nodes:
-                for neighbor in self.neighbors(end_node):
-                    if self.nodes[neighbor]['element'] == 'C':
-                        end_neighbors.add(neighbor)
-            if end_neighbors:
-                C_nodes = [node for node in C_nodes if node not in end_neighbors]
-
-        # --- MODE SELECTION --- # ----------------------------------------------------------------------------------
-        # The modes differ only by how carbons are selected for functionalization.
-        
-        selected_C_nodes = []
-        selected_neighbor_nodes = []
-        
-        # RANDOM -----------------------------------------------------------------------
-        if mode == 'random':
-            num_to_functionalize = int(len(C_nodes) * (percentage / 100.0))
-            if num_to_functionalize == 0:
-                return
-
-            # BFS
-            def exclusion_shell(start_node, max_hops): 
-                if max_hops < 1: 
-                    return {start_node} 
-                visited = {start_node}
-                queue = deque([(start_node, 0)])
-                while queue: 
-                    current, dist = queue.popleft()
-                    if dist >= max_hops:
-                        continue
-                    for neighbor in self.neighbors(current):
-                        if self.nodes[neighbor]['element'] != 'C':
+            percentages = [value for _, value in requests]
+            if any(value is None or not 0 <= value <= 100 for value in percentages):
+                raise ValueError("Each percentage must be between 0 and 100.")
+            if sum(Decimal(str(value)) for value in percentages) > 100:
+                raise ValueError("Functionalization percentages must total at most 100.")
+            hops = 1 if neighbor_exclusion is None else neighbor_exclusion
+            if not isinstance(hops, Integral) or hops < 0:
+                raise ValueError("neighbor_exclusion must be a nonnegative integer.")
+            report['neighbor_exclusion'] = hops
+            available = eligible.copy()
+            maxima = {}
+            for group, value in requests:
+                width = 2 if group in ('ester', 'amide') else 1
+                candidates = eligible if width == 1 else pair_sites
+                # Convert the carbon budget to whole groups. Decimal keeps inputs
+                # such as 58% of 100 carbons from rounding down to 57.
+                target = int(Decimal(str(value)) * carbon_count / (100 * width))
+                # Compute each maximum before accounting for other groups' reservations.
+                if width not in maxima:
+                    maxima[width] = _maximum_random_groups(backbone, candidates, width, hops)
+                selected = []
+                remaining = available & candidates
+                while remaining and len(selected) < target:
+                    node = np.random.choice(list(remaining))
+                    footprint = (node,)
+                    if width == 2:
+                        partner = next((neighbor for neighbor in backbone[node]
+                                        if neighbor in remaining), None)
+                        if partner is None:
+                            remaining.remove(node)
                             continue
-                        if neighbor not in visited:
-                            visited.add(neighbor)
-                            queue.append((neighbor, dist + 1))
-                return visited
-
-            # Greedy selection that enforces neighbor_exclusion.
-            available = set(C_nodes) 
-            while available and len(selected_C_nodes) < num_to_functionalize:
-                node = np.random.choice(list(available))
-                
-                if func_type in func_types_consuming_two:
-                    # For the functionalizations which consume multiple backbone C's, we need 
-                    # to select an additional neighbor C
-                    C_neighbors = [neighbor for neighbor in self.neighbors(node) if self.nodes[neighbor]['element'] == 'C']
-                    # check if one of them is in "available"
-                    if any (C_neighbor in available for C_neighbor in C_neighbors):
-                        # choose an available one
-                        if C_neighbors[0] in available:
-                            selected_neighbor_nodes.append(C_neighbors[0])
-                            available -= exclusion_shell(C_neighbors[0], neighbor_exclusion) 
-                        else:
-                            selected_neighbor_nodes.append(C_neighbors[1])  
-                            available -= exclusion_shell(C_neighbors[1], neighbor_exclusion)        
-                    # if not. We cannot choose this C
-                    else: 
-                        available.discard(node)
-                        continue    
-                    
-                selected_C_nodes.append(node)
-                available -= exclusion_shell(node, neighbor_exclusion)      
-                
-                
-            if len(selected_C_nodes) < num_to_functionalize:
-                actual_pct = 0.0
-                if C_nodes:
-                    actual_pct = (len(selected_C_nodes) / num_avail_atoms) * 100.0
-                if func_type in func_types_consuming_two:
-                    actual_pct *= 2
-                print("\nWARNING: Could not meet requested functionalization percentage due to neighbor_exclusion.")
-                print(f"         Actual functionalization: {actual_pct:.2f}%")
-                
-        # PERIODIC --------------------------------------------------------------------------
+                        footprint = node, partner
+                    selected.append(footprint)
+                    for site in footprint:
+                        # Use full-backbone distances, including between surface sites.
+                        # Carry the exclusions forward to every later group in input order.
+                        blocked = nx.single_source_shortest_path_length(backbone, site, cutoff=hops)
+                        available.difference_update(blocked)
+                        remaining.difference_update(blocked)
+                placements.append((group, selected))
+                report['groups'].append(_functionalization_counts(
+                    group, width, carbon_count, selected, maxima[width], value, target
+                ))
         else:
-            subgraphs = self.get_subgraphs()
-            for subgraph in subgraphs:
-                # Get backbone
-                backbone = subgraph.find_longest_path()
-                backbone_c = [node for node in backbone if subgraph.nodes[node]['element'] == 'C']
-                backbone_c = [
-                    node for node in backbone_c
-                    if sum(1 for neighbor in self.neighbors(node) if self.nodes[neighbor]['element'] == 'C') > 1
-                ]
-                # Select atoms along the backbone
-                # Exclude the carbon neighbors of chain ends for ester/amide for the periodic mode
-                if func_type in func_types_consuming_two:
-                    start = 1
-                    end = len(backbone_c)-1
-                else:
-                    start = 0
-                    end = len(backbone_c)
-                    
-                for idx in range(start, end, distance+1):
-                    node = backbone_c[idx]
-                    if func_type in func_types_consuming_two:
-                        selected_neighbor_nodes.append(backbone_c[idx + 1])
-                    selected_C_nodes.append(node)
-        
-        # For each selected C atom, add the functional group ----------------------------------------------------------------------
-        i = 0
-        for node in selected_C_nodes:
-            if func_type == 'CO':
-                self.add_CO_to_PE(node)
-                
-            if func_type == 'COH':
-                self.add_OH_to_PE(node)
-                
-            elif func_type == 'ester':
-                if selected_neighbor_nodes:
-                    C_neighbor = selected_neighbor_nodes[i]
-                else:
-                    # select carbon neighbor to be replaced with O
-                    # avoid selecting c atoms on the ends
-                    C_neighbors = [neighbor for neighbor in self.neighbors(node) if self.nodes[neighbor]['element'] == 'C']
-                    if sum(1 for neighbor in self.neighbors(C_neighbors[0]) if self.nodes[neighbor]['element'] == 'C') > 1:
-                        C_neighbor = C_neighbors[0]
-                    else:
-                        C_neighbor = C_neighbors[1]
+            if not isinstance(distance, Integral) or distance < 1:
+                raise ValueError("distance must be a positive integer.")
+            report['distance'] = distance
+            width = 2 if func_type in ('ester', 'amide') else 1
+            selected = []
+            maximum = 0
+            stride = distance + width
+            for component in self.get_subgraphs():
+                path = [node for node in component.find_longest_path()
+                        if node in counted and backbone.degree[node] > 1]
+                start = width - 1
+                stop = len(path) - start
+                indices = range(start, stop, stride)
+                selected.extend(tuple(path[idx:idx + width]) for idx in indices)
+                # On this contiguous window, starting at its first site fits the most groups.
+                maximum += len(indices)
+            placements.append((func_type, selected))
+            report['groups'].append(_functionalization_counts(
+                func_type, width, carbon_count, selected, maximum
+            ))
 
-                self.add_ester_to_PE(node, C_neighbor)
-                
-            elif func_type == 'amide':
-                if selected_neighbor_nodes:
-                    C_neighbor = selected_neighbor_nodes[i]
-                else:
-                    # select carbon neighbor to be replaced with NH
-                    # avoid selecting c atoms on the ends
-                    C_neighbors = [neighbor for neighbor in self.neighbors(node) if self.nodes[neighbor]['element'] == 'C']
-                    if sum(1 for neighbor in self.neighbors(C_neighbors[0]) if self.nodes[neighbor]['element'] == 'C') > 1:
-                        C_neighbor = C_neighbors[0]
-                    else:
-                        C_neighbor = C_neighbors[1]
+        # Reserve all sites before replacing any carbons so every group sees the same backbone.
+        for group, selected in placements:
+            for footprint in selected:
+                operations[group](*footprint)
+        return report
 
-                self.add_amide_to_PE(node, C_neighbor)
-                
-            i += 1
-                           
     def add_CO_to_PE(self, node):
         """
         Add CO functional group to a polyethylene (PE) carbon atom.
@@ -1209,7 +1122,9 @@ class GraphManager(nx.Graph):
         
         # get coords for new O
         new_O_coords = self.get_coordinates(C_neighbor)
-        CC_neighbors = [neighbor for neighbor in self.neighbors(C_neighbor) if self.nodes[neighbor]['element'] == 'C']
+        # At zero exclusion, a neighboring carbon may already have become O or N.
+        heavy_neighbors = [neighbor for neighbor in self.neighbors(C_neighbor)
+                           if self.nodes[neighbor]['element'] != 'H']
         
         # delete CH2
         CH_neighbors = [neighbor for neighbor in self.neighbors(C_neighbor) if self.nodes[neighbor]['element'] == 'H']
@@ -1220,7 +1135,7 @@ class GraphManager(nx.Graph):
         # add O
         new_index = max(self.nodes) + 1
         self.add_node(new_index, index=new_index, element='O', x=new_O_coords[0], y=new_O_coords[1], z=new_O_coords[2])
-        for neighbor in CC_neighbors:
+        for neighbor in heavy_neighbors:
              self.add_edge(neighbor, new_index)        
              
     def add_amide_to_PE(self, node, C_neighbor):
@@ -1235,7 +1150,9 @@ class GraphManager(nx.Graph):
         
         # get coords for new O
         new_N_coords = self.get_coordinates(C_neighbor)
-        CC_neighbors = [neighbor for neighbor in self.neighbors(C_neighbor) if self.nodes[neighbor]['element'] == 'C']
+        # Preserve bonds to any neighboring O or N installed by an earlier replacement.
+        heavy_neighbors = [neighbor for neighbor in self.neighbors(C_neighbor)
+                           if self.nodes[neighbor]['element'] != 'H']
         
         # delete CH2 and add NH
         CH_neighbors = [neighbor for neighbor in self.neighbors(C_neighbor) if self.nodes[neighbor]['element'] == 'H']
@@ -1253,7 +1170,7 @@ class GraphManager(nx.Graph):
         
         new_index = max(self.nodes) + 1
         self.add_node(new_index, index=new_index, element='N', x=new_N_coords[0], y=new_N_coords[1], z=new_N_coords[2])
-        for neighbor in CC_neighbors:
+        for neighbor in heavy_neighbors:
              self.add_edge(neighbor, new_index) 
         self.add_node(new_index+1, index=new_index+1, element='H', x=H_coords[0], y=H_coords[1], z=H_coords[2])
         self.add_edge(new_index, new_index+1)
@@ -1626,3 +1543,57 @@ def shift_coordinates_graph(graph, boxsize):
         graph.nodes[node]['x'] = shifted_coords[i, 0]
         graph.nodes[node]['y'] = shifted_coords[i, 1]
         graph.nodes[node]['z'] = shifted_coords[i, 2]
+
+
+def _functionalization_counts(group, width, carbon_count, selected, maximum,
+                              requested=None, target=None):
+    return {
+        'type': group,
+        'requested_percentage': requested,
+        'target_groups': target,
+        'actual_groups': len(selected),
+        'actual_percentage': 100 * width * len(selected) / carbon_count if carbon_count else 0.0,
+        'maximum_groups': maximum,
+        'maximum_percentage': 100 * width * maximum / carbon_count if carbon_count else 0.0,
+    }
+
+
+def _maximum_random_groups(backbone, candidates, width, hops):
+    """Find the exact maximum number of nonconflicting footprints."""
+    maximum = 0
+    for nodes in nx.connected_components(backbone):
+        sites = nodes & candidates
+        if not sites:
+            continue
+        component = backbone.subgraph(nodes)
+        endpoints = [node for node, degree in component.degree if degree <= 1]
+        if endpoints and all(degree <= 2 for _, degree in component.degree):
+            # Along a chain, choosing the earliest finishing interval is optimal.
+            free_at = 0
+            previous = None
+            for index, node in enumerate(nx.dfs_preorder_nodes(component, endpoints[0])):
+                if index - width + 1 >= free_at and node in sites and (width == 1 or previous in sites):
+                    maximum += 1
+                    free_at = index + hops + 1
+                previous = node
+            continue
+
+        # Cyclic or branched carbon graphs require checking compatible footprints.
+        if width == 1:
+            footprints = [(node,) for node in sites]
+        else:
+            footprints = list(component.subgraph(sites).edges)
+        conflicts = nx.Graph()
+        conflicts.add_nodes_from(range(len(footprints)))
+        by_site = defaultdict(list)
+        for index, footprint in enumerate(footprints):
+            for node in footprint:
+                by_site[node].append(index)
+        for node, indices in by_site.items():
+            for neighbor in nx.single_source_shortest_path_length(component, node, cutoff=hops):
+                conflicts.add_edges_from((left, right) for left in indices
+                                         for right in by_site.get(neighbor, ()) if left != right)
+        for indices in nx.connected_components(conflicts):
+            _, size = nx.max_weight_clique(nx.complement(conflicts.subgraph(indices)), weight=None)
+            maximum += size
+    return maximum

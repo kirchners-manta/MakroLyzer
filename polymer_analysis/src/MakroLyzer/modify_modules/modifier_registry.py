@@ -59,7 +59,10 @@ def create_functionalize_PE(args, **context):
     distance = val.get('distance')
     out_file = args.get('functionalizePE_file') if args.get('functionalizePE_file') is not None else 'functionalizedPE.xyz'
     output_handler = ModifyOutputHandler(output_path(args, out_file))
-    return FunctionalizePEModifier(mode, func_type, percentage, neighbor_exclusion, distance, output_handler)
+    return FunctionalizePEModifier(
+        mode, func_type, percentage, neighbor_exclusion, distance, output_handler,
+        requests=val.get('requests'), original_input=val.get('original_input'),
+    )
 
 def create_functionalize_PEsurf(args, **context):
     val = args.get('functionalizePEsurface')
@@ -77,6 +80,8 @@ def create_functionalize_PEsurf(args, **context):
         output_handler,
         box_size=box_size,
         neighbor_exclusion=neighbor_exclusion,
+        requests=val.get('requests'),
+        original_input=val.get('original_input'),
     )
 
 

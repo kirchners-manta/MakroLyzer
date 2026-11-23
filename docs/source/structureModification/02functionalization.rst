@@ -12,7 +12,7 @@ or periodic (fixed spacing along the backbone). End-group carbons are excluded.
 Functionalization types
 -----------------------
 - ``CO`` replaces CH2 with a carbonyl group. 
-- ``COH``replaces CH2 with a hydroxy group.
+- ``COH`` replaces CH2 with a hydroxy group.
 - ``ester`` replaces CH2-CH2 with COO.
 - ``amide`` replace CH2-CH2 with CONH.
 
@@ -27,6 +27,15 @@ Modes
    :align: center
 
 
+Random mode calculates each target from all carbon atoms in the original structure, including
+chain ends in the count. Chain ends remain unavailable for placement. The target is
+rounded down to whole groups, with two backbone carbons counted for each ester or amide.
+
+Use a comma-separated list to request multiple group types with a shared exclusion
+distance, for example ``-funcPE random:15:CO,10:ester:2``. Each type may
+appear once and the percentages must total at most 100. Sites are reserved in input
+order before any atoms are modified.
+
 Command line
 ------------
 .. line-block::
@@ -34,7 +43,8 @@ Command line
   ``--functionalizePE``
       Random functionalization of PE by replacing CH2 groups with ``func_type``.
       ``percentage`` is a float from 0 to 100.
-      ``neighbor_exclusion`` is the minimum C-C hop distance between functional groups.
+      ``neighbor_exclusion`` blocks sites up to and including that many C-C bonds away
+      from any carbon assigned to another group.
 
   ``-funcPE periodic:distance:func_type``
   ``--functionalizePE``
@@ -61,4 +71,9 @@ Example
 
 Output
 ------
-An XYZ file containing the modified structure.
+Each modified XYZ structure has a matching ``.info.txt`` file. For example,
+``functionalizedPE_1.xyz`` is accompanied by ``functionalizedPE_1.info.txt``.
+The report records the input, original atom counts, and the actual group count and
+percentage for each group. Random reports also include the target and any shortfall.
+The maximum count and percentage are calculated for each group as if used alone,
+with the requested spacing.

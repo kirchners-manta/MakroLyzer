@@ -1,3 +1,4 @@
+from decimal import Decimal
 import argparse
 import re
 import sys
@@ -402,11 +403,12 @@ def readCommandLine() -> dict:
                         '  periodic:<distance>:<func_type>\n'
                         'The random mode ramdomly distibutes the functional groups <func_type> over the polymerstrands,\n'
                         'with a minimum distance of <neighbor_exclusion>. The <percentage> value gives the percentage of\n'
-                        'adjusted carbon atoms in the backbone, excluding end group carbons (CH3).\n'
+                        'all original carbon atoms. Chain ends are excluded from placement.\n'
                         'The periodic mode adds functional groups of type <func_type> in distances of <distance> along the\n'
                         'backbones of the PE strands.\n'
                         'Usage examples:\n'
                         '  -funcPE random:15.8:CO:2\n'
+                        '  -funcPE random:15:CO,10:ester:2\n'
                         '  -funcPE periodic:6:ester',
                         type=functionalize_pe)
     
@@ -417,7 +419,7 @@ def readCommandLine() -> dict:
                         'Modes:\n'
                             'random:<percentage>:<func_type>:<neighbor_exclusion>\n'
                         'Usage example:\n'
-                            '-funcPEsurf random:15:CO:2',
+                            '-funcPEsurf random:15:CO,10:ester:2 (percentages of surface carbons)',
                         type=functionalize_pe_surface)
     
     modifier_group.add_argument(
@@ -552,23 +554,31 @@ def functionalize_pe(value):
         )
     mode = parts[0].lower()
     if mode == 'random':
-        if len(parts) != 4:
+        # The final field is shared by all comma-separated percentage:type pairs.
+        fields = value.split(':', 1)[1].rsplit(':', 1)
+        if len(fields) != 2:
             raise argparse.ArgumentTypeError(
-                "Invalid random format. Expected random:<percentage>:<func_type>:<neighbor_exclusion>."
+                "Expected random:<percentage>:<func_type>:<neighbor_exclusion>."
             )
+        requests = []
+        for entry in fields[0].split(','):
+            try:
+                raw_percentage, func_type = entry.split(':')
+                percentage = float(raw_percentage)
+            except ValueError:
+                raise argparse.ArgumentTypeError(
+                    f"Invalid request '{entry}'. Expected <percentage>:<func_type>."
+                ) from None
+            if not 0 <= percentage <= 100:
+                raise argparse.ArgumentTypeError(f"Percentage must be between 0 and 100 in '{entry}'.")
+            requests.append((_parse_func_type(func_type, value), percentage))
+        if len({group for group, _ in requests}) != len(requests):
+            raise argparse.ArgumentTypeError("Functional group types must be unique.")
+        if sum(Decimal(str(percentage)) for _, percentage in requests) > 100:
+            raise argparse.ArgumentTypeError("Functionalization percentages must total at most 100.")
+        func_type, percentage = requests[0]
         try:
-            percentage = float(parts[1])
-        except ValueError:
-            raise argparse.ArgumentTypeError(
-                f"Invalid percentage value in '{value}'. Expected a float between 0 and 100."
-            )
-        if not (0 <= percentage <= 100):
-            raise argparse.ArgumentTypeError(
-                f"Percentage must be between 0 and 100 in '{value}'."
-            )
-        func_type = _parse_func_type(parts[2], value)
-        try:
-            neighbor_exclusion = int(parts[3])
+            neighbor_exclusion = int(fields[1])
         except ValueError:
             raise argparse.ArgumentTypeError(
                 f"Invalid neighbor_exclusion in '{value}'. Expected an integer >= 0."
@@ -582,6 +592,8 @@ def functionalize_pe(value):
             'percentage': percentage,
             'func_type': func_type,
             'neighbor_exclusion': neighbor_exclusion,
+            'original_input': value,
+            **({'requests': requests} if len(requests) > 1 else {}),
         }
     if mode == 'periodic':
         if len(parts) != 3:
@@ -603,6 +615,7 @@ def functionalize_pe(value):
             'mode': 'periodic',
             'distance': distance,
             'func_type': func_type,
+            'original_input': value,
         }
     raise argparse.ArgumentTypeError(
         f"Invalid mode in '{value}'. Expected 'random' or 'periodic'."
