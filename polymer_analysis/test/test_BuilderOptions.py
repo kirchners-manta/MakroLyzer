@@ -12,17 +12,17 @@ from MakroLyzer.builder_modules.ligninBuilder import LigninBuilder
 
 
 @pytest.mark.parametrize('monomers,linkers,blocked', [
-    (['G', 'S'], ['beta-5'], True),
-    (['H', 'G', 'S'], ['4-O-beta', 'beta-5'], True),
-    (['S', 'G'], ['beta-5'], False),
-    (['G', 'H'], ['beta-5'], True),
-    (['H', 'G'], ['beta-5'], False),
+    (['G', 'S'], ['phenylcoumaran-beta-5'], True),
+    (['H', 'G', 'S'], ['4-O-beta', 'phenylcoumaran-beta-5'], True),
+    (['S', 'G'], ['phenylcoumaran-beta-5'], False),
+    (['G', 'H'], ['phenylcoumaran-beta-5'], True),
+    (['H', 'G'], ['phenylcoumaran-beta-5'], False),
     (['G', 'S'], ['4-O-beta'], False),
 ])
 def test_monomer_linkage_rules_are_directional(monkeypatch, monomers, linkers, blocked):
     # Restrict the existing monomer/linker pair regardless of incoming type.
     monkeypatch.setattr(LigninBuilder, '_forbidden_monomer_linkages', staticmethod(
-        lambda: {('G', 'beta-5'): 'Test restriction'}
+        lambda: {('G', 'phenylcoumaran-beta-5'): 'Test restriction'}
     ))
     builder = LigninBuilder.__new__(LigninBuilder)
     builder.recipe = {'monomer': monomers, 'linker': linkers}
@@ -96,7 +96,7 @@ def test_invalid_iteration_limit_rejected(monkeypatch, limit):
 @pytest.mark.parametrize('second_energy,keep_second', [(5.0, True), (15.0, False), (10.0, False)])
 def test_final_relaxation_keeps_lower_energy_result(monkeypatch, second_energy, keep_second):
     builder = LigninBuilder.__new__(LigninBuilder)
-    builder.recipe = {'monomer': ['G', 'H'], 'linker': ['beta-5']}
+    builder.recipe = {'monomer': ['G', 'H'], 'linker': ['phenylcoumaran-beta-5']}
     builder.max_iterations = 25
     monkeypatch.setattr(builder, '_connect_monomers',
                         lambda chain, linker, monomer, **kw: nx.compose(chain, monomer))

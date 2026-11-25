@@ -1,173 +1,122 @@
-"""Check beta-1 chemistry and graph ownership independently of placement."""
+"""Check the native spirodienone trimer through real builder workflows."""
+
+import json
+from collections import Counter
+from itertools import product
 
 import networkx as nx
-import numpy as np
 import pytest
-from scipy.spatial.transform import Rotation
 
-from MakroLyzer import dictionaries
 from MakroLyzer.builder_modules import liginConnectionLogic as logic
 from MakroLyzer.builder_modules.ligninBuilder import LigninBuilder
 
 
-def monomer_pair(first='G', second='H'):
-    builder = LigninBuilder.__new__(LigninBuilder)
-    chain = builder.load_monomer(first, monomer_id=4, start_index=10)
-    incoming = builder.load_monomer(second, monomer_id=9, start_index=200)
-    # Start from distinct coordinates; placement must handle the translation.
-    for node in incoming:
-        incoming.nodes[node]['x'] += 3.0
-    return builder, chain, incoming
+SPIRO = 'spirodienone-beta-1'
 
 
-@pytest.mark.parametrize('first', 'HGS')
-@pytest.mark.parametrize('second', 'HGS')
-def test_beta1_forms_closed_shell_spiro_ring_without_editing_inputs(first, second):
-    builder, chain, incoming = monomer_pair(first, second)
-    original_chain, original_incoming = chain.copy(), incoming.copy()
-    original_ids = set(chain) | set(incoming)
-    result = builder._connect_monomers(chain, 'beta-1', incoming, chain_monomer_id=4)
+def build(tmp_path, monomers, linkers):
+    """Write a user recipe and return its builder and completed structure."""
+    recipe = tmp_path / 'recipe.json'
+    recipe.write_text(json.dumps({'monomer': monomers, 'linker': linkers}))
+    builder = LigninBuilder(recipe)
+    return builder, builder.run()
 
-    assert nx.utils.graphs_equal(chain, original_chain)
-    assert nx.utils.graphs_equal(incoming, original_incoming)
-    assert nx.is_connected(result)
-    assert len(result) == len(chain) + len(incoming) + 2
-    for node, data in result.nodes(data=True):
+
+@pytest.mark.parametrize('monomers', list(product('HGS', repeat=3)))
+def test_spirodienone_trimer_connectivity_and_formula(tmp_path, monomers):
+    _, graph = build(tmp_path, monomers, ['beta-O-4', SPIRO])
+    find = logic._find_attachment_atom
+    atom = lambda label, identity: find(graph, label, identity)
+
+    # Elder et al., Figure 1: incoming unit 2 forms beta--1 and alpha--O--alpha
+    # with unit 1, which retains its beta--O_4 connection to unit 0. These
+    # tests use complete H/G/S units, including unit 0's C3 side chain.
+    cycle = [atom('C_1', 1), atom('C_a', 1), atom('O_a', 1),
+             atom('C_a', 2), atom('C_b', 2)]
+    assert nx.is_isomorphic(graph.subgraph(cycle), nx.cycle_graph(5))
+    assert set(graph[atom('O_a', 1)]) == {atom('C_a', 1), atom('C_a', 2)}
+    assert set(graph[atom('C_1', 1)]) == {
+        atom('C_2', 1), atom('C_6', 1), atom('C_a', 1), atom('C_b', 2),
+    }
+    assert set(graph[atom('O_4', 0)]) == {atom('C_4', 0), atom('C_b', 1)}
+    assert graph.edges[atom('C_b', 1), atom('O_4', 0)] == {
+        'bond_order': 1, 'linkage': 'beta-O-4',
+    }
+    for left, right, order in (
+        ('C_1', 'C_2', 1), ('C_2', 'C_3', 2), ('C_3', 'C_4', 1),
+        ('C_4', 'C_5', 1), ('C_5', 'C_6', 2), ('C_6', 'C_1', 1),
+        ('C_4', 'O_4', 2), ('C_a', 'C_b', 1),
+    ):
+        assert graph.edges[atom(left, 1), atom(right, 1)]['bond_order'] == order
+    assert graph.edges[atom('C_a', 2), atom('C_b', 2)]['bond_order'] == 1
+    assert graph.edges[atom('C_a', 0), atom('C_b', 0)]['bond_order'] == 2
+    assert not any(data['template_label'] in {'H_Oa', 'H_O4', 'O_b', 'H_Ob'}
+                   for _, data in graph.nodes(data=True) if data['monomer_id'] == 1)
+    assert atom('H_O4', 2) in graph
+    assert nx.is_connected(graph)
+    assert {data['monomer_id'] for _, data in graph.nodes(data=True)} == {0, 1, 2}
+    for node, data in graph.nodes(data=True):
         assert data['index'] == node
-        assert data['degree'] == result.degree(node)
-        valence = sum(result.edges[node, other]['bond_order'] for other in result[node])
+        assert data['degree'] == graph.degree(node)
+        valence = sum(graph.edges[node, other]['bond_order'] for other in graph[node])
         assert valence == {'C': 4, 'O': 2, 'H': 1}[data['element']]
 
+    # Independent monolignol formulas: beta-ether formation adds net O;
+    # spirodienone completion loses two H and adds no further oxygen.
+    formulas = {'H': Counter(C=9, H=10, O=2), 'G': Counter(C=10, H=12, O=3),
+                'S': Counter(C=11, H=14, O=4)}
+    expected = sum((formulas[kind] for kind in monomers), Counter())
+    expected['O'] += 1
+    expected['H'] -= 2
+    assert Counter(data['element'] for _, data in graph.nodes(data=True)) == expected
+
+
+@pytest.mark.parametrize('precursor_linker,target', [('beta-O-4', 1), ('4-O-beta', 0)])
+def test_spirodienone_reuses_precursor_oxygen_without_editing_inputs(tmp_path, precursor_linker, target):
+    builder, chain = build(tmp_path, ['G', 'H'], [precursor_linker])
+    incoming = builder.load_monomer('S', monomer_id=2, start_index=max(chain) + 1)
+    originals = chain.copy(), incoming.copy()
     find = logic._find_attachment_atom
-    bridge = find(result, 'O_a', 4)
-    cycle = [find(result, 'C_1', 4), find(result, 'C_a', 4), bridge,
-             find(result, 'C_a', 9), find(result, 'C_b', 9)]
-    assert nx.is_isomorphic(result.subgraph(cycle), nx.cycle_graph(5))
-    assert result.edges[find(result, 'C_4', 4), find(result, 'O_4', 4)]['bond_order'] == 2
-    assert find(chain, 'H_O4', 4) not in result
-    assert find(incoming, 'H_O4', 9) in result
-    assert all(data['bond_order'] == 1 for _, _, data in result.edges(data=True)
-               if data.get('linkage') == 'beta-1')
-    for node in set(result) - original_ids:
-        assert node > max(original_ids)
-        assert result.nodes[node]['monomer_id'] == 4
-        assert result.nodes[node]['monomer_type'] == first
+    oxygen = find(chain, 'O_a', target)
+    removed = {find(chain, 'H_Oa', target), find(chain, 'H_O4', target)}
+    result = logic.connect_spirodienone_beta_1(chain, incoming, target)
+
+    assert nx.utils.graphs_equal(chain, originals[0])
+    assert nx.utils.graphs_equal(incoming, originals[1])
+    assert set(result) == (set(chain) | set(incoming)) - removed
+    assert set(result[oxygen]) == {find(chain, 'C_a', target), find(incoming, 'C_a', 2)}
+    assert sum(data.get('linkage') == SPIRO for _, _, data in result.edges(data=True)) == 3
 
 
-@pytest.mark.parametrize('rotation_vector', [[0, 0, 0], [np.pi, 0, 0], [0.7, -1.2, 2]])
-def test_beta1_seeds_beta_hydroxyl_along_a_normal_and_ether_at_alpha_midpoint(rotation_vector):
-    _, chain, incoming = monomer_pair()
-    rotation = Rotation.from_rotvec(rotation_vector)
-    for graph in (chain, incoming):
-        for node in graph:
-            position = rotation.apply(logic._coordinates(graph, node)) + [5, -3, 7]
-            graph.nodes[node].update(zip(('x', 'y', 'z'), position))
-    find = logic._find_attachment_atom
-    normal = logic.ring_normal(chain, 4)
-    beta_position = logic._coordinates(chain, find(chain, 'C_b', 4))
-    alpha_midpoint = (logic._coordinates(chain, find(chain, 'C_a', 4))
-                      + logic._coordinates(incoming, find(incoming, 'C_a', 9))) / 2
-    bridge = logic.edit_beta_1_topology(chain, incoming, find(chain, 'C_1', 4),
-                                       find(incoming, 'C_b', 9))
-    distances = dictionaries.dictBondDistances()
-    oxygen = logic._coordinates(chain, find(chain, 'O_b', 4))
-    hydrogen = logic._coordinates(chain, find(chain, 'H_Ob', 4))
-    direction = logic.unit_vector(oxygen - beta_position)
-    assert abs(np.dot(direction, normal)) == pytest.approx(1)
-    assert np.linalg.norm(oxygen - beta_position) == pytest.approx(distances['C-O', 'alcohol'])
-    np.testing.assert_allclose(hydrogen - oxygen, distances['O-H', 'alcohol'] * direction)
-    np.testing.assert_allclose(logic._coordinates(chain, bridge), alpha_midpoint)
-    # The helper must not create bare incoming nodes when forming the ether.
-    assert not set(chain).intersection(incoming)
-    assert set(chain[bridge]) == {find(chain, 'C_a', 4)}
-    assert all(chain.nodes[node]['degree'] == degree for node, degree in chain.degree())
-
-
-@pytest.mark.parametrize('preferred', [0, 1])
-def test_beta1_selects_hydroxyl_side_using_complete_product_connectivity(monkeypatch, preferred):
-    _, chain, incoming = monomer_pair('S', 'H')
-    find = logic._find_attachment_atom
-    c1, ca, cb = (find(chain, label, 4) for label in ('C_1', 'C_a', 'C_b'))
-    incoming_ca, incoming_cb, incoming_ha = (
-        find(incoming, label, 9) for label in ('C_a', 'C_b', 'H_a')
-    )
-    phenolic_hydrogen = find(chain, 'H_O4', 4)
-    logic.place_beta_1(chain, incoming, c1, incoming_cb)
-    incoming_positions = {node: logic._coordinates(incoming, node) for node in incoming}
-    normal = logic.ring_normal(chain, 4)
-    beta_position = logic._coordinates(chain, cb)
-    trials = []
-
-    def score(fixed, moving, excluded_pairs):
-        oxygen = find(moving, 'O_b', 4)
-        hydrogen = find(moving, 'H_Ob', 4)
-        assert set(moving) == {oxygen, hydrogen}
-        assert fixed.edges[c1, incoming_cb]['bond_order'] == 1
-        assert fixed.edges[incoming_ca, incoming_cb]['bond_order'] == 1
-        ether = find(fixed, 'O_a', 4)
-        assert set(fixed[ether]) == {ca, incoming_ca}
-        assert phenolic_hydrogen not in fixed
-        # O_b--C_b--C_a--C_1 is exempt; the incoming alpha carbon
-        # and its hydrogen are further away in the completed bond graph.
-        assert (cb, oxygen) in excluded_pairs
-        assert (c1, oxygen) in excluded_pairs
-        assert (incoming_ca, oxygen) not in excluded_pairs
-        assert (incoming_ha, oxygen) not in excluded_pairs
-        trials.append(logic._coordinates(moving, oxygen))
-        return 0.0 if len(trials) - 1 == preferred else 1.0
-
-    monkeypatch.setattr(logic, 'clash_score', score)
-    logic.edit_beta_1_topology(chain, incoming, c1, incoming_cb)
-    assert len(trials) == 2
-    np.testing.assert_allclose(trials[0] - beta_position, 1.43 * normal)
-    np.testing.assert_allclose(trials[1] - beta_position, -1.43 * normal)
-    np.testing.assert_allclose(logic._coordinates(chain, find(chain, 'O_b', 4)), trials[preferred])
-    for node in incoming:
-        np.testing.assert_array_equal(logic._coordinates(incoming, node), incoming_positions[node])
-
-
-@pytest.mark.parametrize('invalid', ['chain_double_bond', 'incoming_double_bond', 'phenol', 'ring'])
-def test_beta1_rejects_invalid_precursors_before_editing_either_graph(invalid):
-    _, chain, incoming = monomer_pair()
-    find = logic._find_attachment_atom
-    if invalid.endswith('double_bond'):
-        graph, identity = (chain, 4) if invalid.startswith('chain') else (incoming, 9)
-        graph.edges[find(graph, 'C_a', identity), find(graph, 'C_b', identity)]['bond_order'] = 1
-    elif invalid == 'phenol':
-        chain.remove_node(find(chain, 'H_O4', 4))
-    else:
-        chain.remove_edge(find(chain, 'C_1', 4), find(chain, 'C_2', 4))
-    original_chain, original_incoming = chain.copy(), incoming.copy()
-    with pytest.raises(ValueError):
-        logic.edit_beta_1_topology(chain, incoming, find(chain, 'C_1', 4),
-                                   find(incoming, 'C_b', 9))
-    assert nx.utils.graphs_equal(chain, original_chain)
-    assert nx.utils.graphs_equal(incoming, original_incoming)
-
-
-def test_beta1_only_edits_the_selected_chain_monomer():
-    builder, chain, incoming = monomer_pair()
-    spectator = builder.load_monomer('S', monomer_id=0, start_index=1000)
-    chain = nx.compose(spectator, chain)
-    result = logic.connect_beta_1(chain, incoming, 4)
-    assert nx.utils.graphs_equal(result.subgraph(spectator), spectator)
-    assert min(set(result) - set(chain) - set(incoming)) > max(chain)
-
-
-@pytest.mark.parametrize('previous,following', [
-    ('beta-1', '4-O-beta'), ('beta-1', 'beta-beta'), ('beta-1', 'beta-1'),
-    ('beta-O-4', 'beta-1'), ('beta-5', 'beta-1'), ('beta-beta', 'beta-1'),
-    ('4-O-beta', 'beta-1'),
+@pytest.mark.parametrize('precursor_linker,target', [
+    ('beta-O-4', 0), ('4-O-beta', 1), ('resinol-beta-beta', 1),
+    ('phenylcoumaran-beta-5', 1),
 ])
-def test_beta1_recipe_rejects_reusing_occupied_sites(previous, following):
-    builder = LigninBuilder.__new__(LigninBuilder)
-    builder.recipe = {'monomer': ['G', 'H', 'S'], 'linker': [previous, following]}
-    with pytest.raises(ValueError, match='position of the shared monomer is already occupied'):
-        builder.validate_recipe()
+def test_spirodienone_rejects_ineligible_existing_units(tmp_path, precursor_linker, target):
+    builder, chain = build(tmp_path, ['G', 'H'], [precursor_linker])
+    incoming = builder.load_monomer('G', monomer_id=2, start_index=max(chain) + 1)
+    originals = chain.copy(), incoming.copy()
+    with pytest.raises(ValueError, match='beta-O-4 precursor'):
+        logic.connect_spirodienone_beta_1(chain, incoming, target)
+    assert nx.utils.graphs_equal(chain, originals[0])
+    assert nx.utils.graphs_equal(incoming, originals[1])
 
 
-@pytest.mark.parametrize('following', ['beta-O-4', 'beta-5'])
-def test_beta1_recipe_can_extend_using_free_ring_sites(following):
-    builder = LigninBuilder.__new__(LigninBuilder)
-    builder.recipe = {'monomer': ['G', 'H', 'S'], 'linker': ['beta-1', following]}
-    builder.validate_recipe()
+@pytest.mark.parametrize('linkers', [
+    [SPIRO], ['4-O-beta', SPIRO], ['phenylcoumaran-beta-5', SPIRO],
+    ['resinol-beta-beta', SPIRO], ['beta-O-4', SPIRO, SPIRO],
+])
+def test_spirodienone_recipe_requires_the_correct_precursor(tmp_path, linkers):
+    with pytest.raises(ValueError, match="requires a preceding 'beta-O-4'"):
+        build(tmp_path, ['G'] * (len(linkers) + 1), linkers)
+
+
+@pytest.mark.parametrize('following', ['4-O-beta', 'resinol-beta-beta'])
+def test_spirodienone_recipe_rejects_reusing_incoming_beta(tmp_path, following):
+    with pytest.raises(ValueError, match='beta position of the shared monomer is already occupied'):
+        build(tmp_path, ['G'] * 4, ['beta-O-4', SPIRO, following])
+
+
+def test_legacy_beta1_name_is_rejected(tmp_path):
+    with pytest.raises(ValueError, match='Unsupported linker'):
+        build(tmp_path, ['G', 'H'], ['beta-1'])

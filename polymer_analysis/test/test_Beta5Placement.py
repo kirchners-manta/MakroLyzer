@@ -1,4 +1,4 @@
-"""Verify the beta-5 alignment, side-chain bending, and offset protocol."""
+"""Verify the phenylcoumaran-beta-5 alignment, side-chain bending, and offset protocol."""
 
 import numpy as np
 import pytest
@@ -28,7 +28,7 @@ def test_beta5_placement_follows_protocol(rotation_vector):
     chain_before = positions(chain)
     alpha, beta = (atom(monomer, label, 1) for label in ('C_a', 'C_b'))
     c4, c5, o4 = (atom(chain, label, 0) for label in ('C_4', 'C_5', 'O_4'))
-    logic.place_beta_5(chain, monomer, c5, o4, alpha, beta)
+    logic.place_phenylcoumaran_beta_5(chain, monomer, c5, o4, alpha, beta)
     after = positions(monomer)
     np.testing.assert_array_equal(positions(chain), chain_before)
     # Bending changes internal angles, but every existing bond length stays fixed.
@@ -82,7 +82,7 @@ def test_beta5_selects_lower_score_using_edited_topology(monkeypatch, preferred)
         return 0.0 if len(trials) - 1 == preferred else 1.0
 
     monkeypatch.setattr(logic, 'clash_score', score)
-    logic.place_beta_5(chain, monomer, c5, o4, alpha, beta)
+    logic.place_phenylcoumaran_beta_5(chain, monomer, c5, o4, alpha, beta)
     assert len(trials) == 2
     np.testing.assert_allclose(
         [logic._coordinates(monomer, n) for n in monomer], trials[preferred], atol=1e-12,
@@ -100,7 +100,7 @@ def test_beta5_dimer_optimizes_to_reasonable_attachment_lengths():
     builder = LigninBuilder.__new__(LigninBuilder)
     chain = builder.load_monomer('G')
     monomer = builder.load_monomer('H', monomer_id=1, start_index=max(chain) + 1)
-    result = globalHelpers.optimize_structure(logic.connect_beta_5(chain, monomer, 0))
+    result = globalHelpers.optimize_structure(logic.connect_phenylcoumaran_beta_5(chain, monomer, 0))
     for left, left_id, right, right_id, expected in (
         ('C_b', 1, 'C_5', 0, 1.5), ('C_a', 1, 'O_4', 0, 1.42),
     ):

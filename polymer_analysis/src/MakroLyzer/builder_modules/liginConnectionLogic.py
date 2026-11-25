@@ -368,10 +368,10 @@ def edit_beta_O_4_topology(chain, monomer, beta_atom, oxygen_atom):
     )
 
 # -----------------------------------------------------------------------------------------------
-# beta-5 ----------------------------------------------------------------------------------------
+# phenylcoumaran-beta-5 ----------------------------------------------------------------------------------------
 # -----------------------------------------------------------------------------------------------
 
-def connect_beta_5(chain, monomer, chain_monomer_id):
+def connect_phenylcoumaran_beta_5(chain, monomer, chain_monomer_id):
     """Scaffold: chain C5 connects to incoming monomer beta carbon.
                  chains C4 and incoming monomer C_a form an ether.
                  -> We keep the chain monomers O4 for the ether.
@@ -399,16 +399,16 @@ def connect_beta_5(chain, monomer, chain_monomer_id):
     O_4 = _find_attachment_atom(chain, 'O_4', chain_monomer_id)
     
     # Place new monomer at the correct position near the existing chain
-    place_beta_5(chain, monomer, C_5, O_4, alpha_atom, beta_atom)
-    edit_beta_5_topology(chain, monomer, C_5, alpha_atom, beta_atom)
+    place_phenylcoumaran_beta_5(chain, monomer, C_5, O_4, alpha_atom, beta_atom)
+    edit_phenylcoumaran_beta_5_topology(chain, monomer, C_5, alpha_atom, beta_atom)
     
     # Add nodes and edges from the incomming monomer to the chain
     result = chain.copy()
     result.add_nodes_from(monomer.nodes(data=True))
     result.add_edges_from(monomer.edges(data=True))
     # Add the two new bonds connecting chain and new monomer
-    result.add_edge(beta_atom, C_5, bond_order=1, linkage='beta-5')
-    result.add_edge(alpha_atom, O_4, bond_order=1, linkage='beta-5')
+    result.add_edge(beta_atom, C_5, bond_order=1, linkage='phenylcoumaran-beta-5')
+    result.add_edge(alpha_atom, O_4, bond_order=1, linkage='phenylcoumaran-beta-5')
     
     # update degree
     for node, degree in result.degree():
@@ -416,7 +416,7 @@ def connect_beta_5(chain, monomer, chain_monomer_id):
         
     return result
     
-def place_beta_5(chain, monomer, C_5, O_4, alpha_atom, beta_atom):
+def place_phenylcoumaran_beta_5(chain, monomer, C_5, O_4, alpha_atom, beta_atom):
     """
     Place incomming monomer in the same layer as the chain monomer.
     This is done by adjusting the ring normal of the incomming monomer such, that is is parallel
@@ -513,7 +513,7 @@ def place_beta_5(chain, monomer, C_5, O_4, alpha_atom, beta_atom):
     # Score the product atoms using copies; remove hydrogens only on these copies.
     scoring_chain = chain.copy()
     scoring_monomer = monomer.copy()
-    edit_beta_5_topology(scoring_chain, scoring_monomer, C_5, alpha_atom, beta_atom)
+    edit_phenylcoumaran_beta_5_topology(scoring_chain, scoring_monomer, C_5, alpha_atom, beta_atom)
     # Include both new bonds when calculating graph distances.
     joined = nx.compose(scoring_chain, scoring_monomer)
     joined.add_edge(beta_atom, C_5, bond_order=1)
@@ -553,7 +553,7 @@ def place_beta_5(chain, monomer, C_5, O_4, alpha_atom, beta_atom):
         monomer.nodes[node].update(zip(('x', 'y', 'z'), map(float, position)))
 
 
-def edit_beta_5_topology(chain, monomer, C_5, alpha_atom, beta_atom):
+def edit_phenylcoumaran_beta_5_topology(chain, monomer, C_5, alpha_atom, beta_atom):
     """
     incoming monomer: reduce C_a - C_b bond order
     chain: remove H5 (H or G), remove H_O4
@@ -585,10 +585,10 @@ def edit_beta_5_topology(chain, monomer, C_5, alpha_atom, beta_atom):
         monomer.nodes[node]['degree'] = degree
         
 # -----------------------------------------------------------------------------------------------
-# beta-beta -------------------------------------------------------------------------------------
+# resinol-beta-beta -------------------------------------------------------------------------------------
 # -----------------------------------------------------------------------------------------------
 
-def connect_beta_beta(chain, monomer, chain_monomer_id, *, max_iterations=1500):
+def connect_resinol_beta_beta(chain, monomer, chain_monomer_id, *, max_iterations=1500):
     """Scaffold: chain C_b connects to incoming monomer C_b.
                  chains O_g connects to incoming monomer C_a.
                  Incoming monomers O_g connects to chains C_a.
@@ -618,18 +618,18 @@ def connect_beta_beta(chain, monomer, chain_monomer_id, *, max_iterations=1500):
     chain_O_g = _find_attachment_atom(chain, 'O_g', chain_monomer_id)
     
     # Place new monomer at the correct position near the existing chain
-    place_beta_beta(chain, monomer, chain_C_a, chain_C_b, chain_O_g, monomer_C_a, monomer_C_b, monomer_O_g,
+    place_resinol_beta_beta(chain, monomer, chain_C_a, chain_C_b, chain_O_g, monomer_C_a, monomer_C_b, monomer_O_g,
                     max_iterations=max_iterations)
-    edit_beta_beta_topology(chain, monomer, chain_C_a, chain_C_b, monomer_C_a, monomer_C_b)
+    edit_resinol_beta_beta_topology(chain, monomer, chain_C_a, chain_C_b, monomer_C_a, monomer_C_b)
     
     # Add nodes and edges from the incomming monomer to the chain
     result = chain.copy()
     result.add_nodes_from(monomer.nodes(data=True))
     result.add_edges_from(monomer.edges(data=True))
     # Add the three new bonds connecting chain and new monomer
-    result.add_edge(monomer_C_b, chain_C_b, bond_order=1, linkage='beta-beta')
-    result.add_edge(monomer_C_a, chain_O_g, bond_order=1, linkage='beta-beta')
-    result.add_edge(chain_C_a, monomer_O_g, bond_order=1, linkage='beta-beta')
+    result.add_edge(monomer_C_b, chain_C_b, bond_order=1, linkage='resinol-beta-beta')
+    result.add_edge(monomer_C_a, chain_O_g, bond_order=1, linkage='resinol-beta-beta')
+    result.add_edge(chain_C_a, monomer_O_g, bond_order=1, linkage='resinol-beta-beta')
     
     # update degree
     for node, degree in result.degree():
@@ -637,10 +637,10 @@ def connect_beta_beta(chain, monomer, chain_monomer_id, *, max_iterations=1500):
         
     return result
 
-def place_beta_beta(chain, monomer, chain_C_a, chain_C_b, chain_O_g, monomer_C_a, monomer_C_b, monomer_O_g,
+def place_resinol_beta_beta(chain, monomer, chain_C_a, chain_C_b, chain_O_g, monomer_C_a, monomer_C_b, monomer_O_g,
                     *, max_iterations=1500):
     """
-    Place incoming monomer in the same layer as the chain monomer, similar to beta-5.
+    Place incoming monomer in the same layer as the chain monomer, similar to phenylcoumaran-beta-5.
     Make C_1-C_3 vactors of incoming and chain monomer parallel.
     Make C_a-C_b-C_g linear and parallel to C_1-C_3, in the ring layer. -> For incoming monomer and 
     chain monomer individually. 
@@ -706,7 +706,7 @@ def place_beta_beta(chain, monomer, chain_C_a, chain_C_b, chain_O_g, monomer_C_a
     # Use the product topology for exemptions through any of the three bonds.
     # Remove both H_Og atoms and reduce the double bonds on temporary copies.
     scoring_chain, scoring_monomer = chain.copy(), monomer.copy()
-    edit_beta_beta_topology(scoring_chain, scoring_monomer,
+    edit_resinol_beta_beta_topology(scoring_chain, scoring_monomer,
                             chain_C_a, chain_C_b, monomer_C_a, monomer_C_b)
     joined = nx.compose(scoring_chain, scoring_monomer)
     for left, right in ((chain_C_b, monomer_C_b), (chain_O_g, monomer_C_a),
@@ -773,7 +773,7 @@ def place_beta_beta(chain, monomer, chain_C_a, chain_C_b, chain_O_g, monomer_C_a
         monomer.nodes[node].update(zip(('x', 'y', 'z'), map(float, position)))
 
 
-def edit_beta_beta_topology(chain, monomer, chain_C_a, chain_C_b, monomer_C_a, monomer_C_b):
+def edit_resinol_beta_beta_topology(chain, monomer, chain_C_a, chain_C_b, monomer_C_a, monomer_C_b):
     """
     incoming monomer: reduce C_a - C_b bond order, remove H_Og
     chain monomer: : reduce C_a - C_b bond order, remove H_Og
@@ -813,14 +813,19 @@ def edit_beta_beta_topology(chain, monomer, chain_C_a, chain_C_b, monomer_C_a, m
 
 
 # -----------------------------------------------------------------------------------------------
-# beta-1 ----------------------------------------------------------------------------------------
+# spirodienone-beta-1 ---------------------------------------------------------------------------
 # -----------------------------------------------------------------------------------------------
 
-def connect_beta_1(chain, monomer, chain_monomer_id):
-    """
-    Connect incoming C_b to chain C_1 and close the C_a--O--C_a ether.
+def connect_spirodienone_beta_1(chain, monomer, chain_monomer_id, *, max_iterations=1500):
+    """Complete spirodienone on an existing beta-O-4 unit, adding one monolignol.
 
-    Return a new graph without editing the inputs.
+    ``chain_monomer_id`` selects the middle unit of the resulting trimer.
+    Its beta ether to another chain unit is retained. Reuse its alpha OH
+    oxygen to close the alpha-O-alpha ring with the incoming unit, whose
+    beta carbon bonds to the selected C_1. Return a new graph; inputs stay
+    unchanged. This is the connectivity in Elder et al. (2017), Figure 1,
+    DOI: 10.1021/acssuschemeng.7b01373, with full H/G/S unit templates.
+    ``max_iterations`` limits each UFF placement trial.
     """
     if set(chain).intersection(monomer):
         raise ValueError("Chain and incoming monomer must have disjoint node IDs.")
@@ -841,17 +846,23 @@ def connect_beta_1(chain, monomer, chain_monomer_id):
     monomer_C_b = _find_attachment_atom(monomer, 'C_b', incoming_id)
     chain_C_1 = _find_attachment_atom(chain, 'C_1', chain_monomer_id)
 
-    # Place new monomer at the correct position near the existing chain
-    place_beta_1(chain, monomer, chain_C_1, monomer_C_b)
-    ether_oxygen = edit_beta_1_topology(chain, monomer, chain_C_1, monomer_C_b)
+    # Check the precursor before geometry work can move its connected tail.
+    _spirodienone_precursor_atoms(chain, chain_monomer_id)
+    if (not monomer.has_edge(monomer_C_a, monomer_C_b)
+            or monomer.edges[monomer_C_a, monomer_C_b].get('bond_order') != 2):
+        raise ValueError("Spirodienone requires an incoming C_a--C_b double bond.")
+    place_spirodienone_beta_1(
+        chain, monomer, chain_C_1, monomer_C_b, max_iterations=max_iterations,
+    )
+    ether_oxygen = edit_spirodienone_beta_1_topology(chain, monomer, chain_C_1, monomer_C_b)
 
     # Add nodes and edges from the incoming monomer to the chain
     result = chain.copy()
     result.add_nodes_from(monomer.nodes(data=True))
     result.add_edges_from(monomer.edges(data=True))
     # Add the two new bonds connecting chain and new monomer
-    result.add_edge(monomer_C_b, chain_C_1, bond_order=1, linkage='beta-1')
-    result.add_edge(monomer_C_a, ether_oxygen, bond_order=1, linkage='beta-1')
+    result.add_edge(monomer_C_b, chain_C_1, bond_order=1, linkage='spirodienone-beta-1')
+    result.add_edge(monomer_C_a, ether_oxygen, bond_order=1, linkage='spirodienone-beta-1')
 
     # update degree
     for node, degree in result.degree():
@@ -859,7 +870,7 @@ def connect_beta_1(chain, monomer, chain_monomer_id):
 
     return result
 
-def place_beta_1(chain, monomer, chain_C_1, monomer_C_b):
+def place_spirodienone_beta_1(chain, monomer, chain_C_1, monomer_C_b, *, max_iterations=1500):
     """
     Place the incoming monomer above the chain with parallel ring planes.
     Align the incoming ring normal with the chain ring normal.
@@ -871,9 +882,13 @@ def place_beta_1(chain, monomer, chain_C_1, monomer_C_b):
     and point Cg->Og parallel to C2->C1 in each monomer.
     Then we arrange the incoming monomer such that its Ca-Cb vector is parallel to the chain's Ca-C1 vector,
     align the projected midpoints of these vectors, and separate the midpoints
-    by 1.3*C-C "single" along the positive chain ring normal. Both atom pairs
+    by 1.3*C-C "single" along the chain ring normal. Both atom pairs
     are vertically aligned for matching planar attachment edges. Preserve tiny
     endpoint mismatches from unequal edge lengths or nonplanar XYZ templates.
+    Carry the existing beta-O-4 partner with the chain tail, and seed the
+    existing alpha oxygen between the alpha carbons before UFF relaxation.
+    Compare both faces by relaxed product energy, respecting max_iterations,
+    and retain the winning initial placement for the builder's optimization.
     """
     # get monomer IDs
     monomer_id = monomer.nodes[monomer_C_b]['monomer_id']
@@ -961,114 +976,139 @@ def place_beta_1(chain, monomer, chain_C_1, monomer_C_b):
         position = _coordinates(monomer, node) + shift
         monomer.nodes[node].update(zip(('x', 'y', 'z'), map(float, position)))
 
-def edit_beta_1_topology(chain, monomer, chain_C_1, monomer_C_b):
-    """Apply the beta-1 scaffold edits in place and return the new ether O ID.
+    # This is the precursor's oxygen, not a newly created ether oxygen.
+    # The midpoint is only an initial ring-closure geometry (angstroms);
+    # UFF relaxes both C--O distances and the five-membered ring afterward.
+    oxygen = _find_attachment_atom(chain, 'O_a', chain_id)
+    position = (chain_alpha + _coordinates(monomer, monomer_C_a)) / 2
+    chain.nodes[oxygen].update(zip(('x', 'y', 'z'), map(float, position)))
 
-    Reduce both C_a--C_b double bonds. On the chain side, form the dienone
-    ring (C_2=C_3, C_5=C_6 and C_4=O_4), remove H_O4, and add O_b--H_Ob
-    at C_b along the less-clashing ring-normal direction using the alcohol
-    bond distances. Score both hydroxyl orientations against the completed
-    product, excluding atom pairs separated by up to three bonds.
-
-    Store the new O_a at the midpoint of the two alpha carbons in ``chain``
-    and bond it to chain C_a. ``connect_beta_1`` adds its bond to incoming
-    C_a and the C_1--C_b bond after merging the two graphs. This avoids
-    creating incomplete copies of incoming atoms in the chain graph.
-    """
-    monomer_id = monomer.nodes[monomer_C_b]['monomer_id']
-    chain_monomer_id = chain.nodes[chain_C_1]['monomer_id']
-    monomer_C_a = _find_attachment_atom(monomer, 'C_a', monomer_id)
-    chain_C_a = _find_attachment_atom(chain, 'C_a', chain_monomer_id)
-    chain_C_b = _find_attachment_atom(chain, 'C_b', chain_monomer_id)
-    # Resolve and validate both sides before making any edits.
-    for graph, alpha, beta in (
-        (monomer, monomer_C_a, monomer_C_b),
-        (chain, chain_C_a, chain_C_b),
-    ):
-        if not graph.has_edge(alpha, beta) or graph.edges[alpha, beta].get('bond_order') != 2:
-            raise ValueError("Expected a C_a--C_b double bond before beta-1 edits.")
-
-    H_O4 = _find_attachment_atom(chain, 'H_O4', chain_monomer_id)
-    chain_C_2 = _find_attachment_atom(chain, 'C_2', chain_monomer_id)
-    chain_C_3 = _find_attachment_atom(chain, 'C_3', chain_monomer_id)
-    chain_C_4 = _find_attachment_atom(chain, 'C_4', chain_monomer_id)
-    chain_C_5 = _find_attachment_atom(chain, 'C_5', chain_monomer_id)
-    chain_C_6 = _find_attachment_atom(chain, 'C_6', chain_monomer_id)
-    chain_O_4 = _find_attachment_atom(chain, 'O_4', chain_monomer_id)
-    ring_bonds = (
-        (chain_C_1, chain_C_2, 1), (chain_C_2, chain_C_3, 2),
-        (chain_C_3, chain_C_4, 1), (chain_C_4, chain_C_5, 1),
-        (chain_C_5, chain_C_6, 2), (chain_C_6, chain_C_1, 1),
-        (chain_C_4, chain_O_4, 2),
-    )
-    if any(not chain.has_edge(left, right) for left, right, _ in ring_bonds):
-        raise ValueError("Expected an intact six-ring and C_4--O_4 bond before beta-1 edits.")
-
-    # Allocate across both graphs before deleting H_O4, so IDs cannot collide
-    # with incoming atoms or reuse the ID of the removed hydrogen.
-    oxygen_id = max(max(chain), max(monomer)) + 1
-    hydrogen_id = oxygen_id + 1
-    ether_oxygen_id = oxygen_id + 2
-    monomer_type = chain.nodes[chain_C_a]['monomer_type']
-    distances = dictionaries.dictBondDistances()
-    normal = ring_normal(chain, chain_monomer_id)
-    oxygen_position = _coordinates(chain, chain_C_b) + distances[('C-O', 'alcohol')] * normal
-    hydrogen_position = oxygen_position + distances[('O-H', 'alcohol')] * normal
-    ether_position = (_coordinates(chain, chain_C_a) + _coordinates(monomer, monomer_C_a)) / 2
-
-    monomer.edges[monomer_C_a, monomer_C_b]['bond_order'] = 1
-    chain.edges[chain_C_a, chain_C_b]['bond_order'] = 1
-    chain.remove_node(H_O4)
-    for left, right, order in ring_bonds:
-        chain.edges[left, right]['bond_order'] = order
-
-    # Both the beta hydroxyl and the alpha ether belong to the selected chain monomer.
-    for node, label, element, position in (
-        (oxygen_id, 'O_b', 'O', oxygen_position),
-        (hydrogen_id, 'H_Ob', 'H', hydrogen_position),
-        (ether_oxygen_id, 'O_a', 'O', ether_position),
-    ):
-        chain.add_node(
-            node, index=node, element=element, atom_label=label,
-            template_label=label, monomer_id=chain_monomer_id,
-            monomer_type=monomer_type,
-            x=float(position[0]), y=float(position[1]), z=float(position[2]),
+    # The attached beta-ether partner can overlap the incoming unit on one
+    # face. A local minimum may then retain severely strained bonds despite
+    # UFF reporting convergence. Relax copies of both complete products and
+    # compare their energies (kcal/mol), rather than assuming one face works
+    # for every H/G/S combination. Actual connectivity is committed later.
+    nodes = list(monomer)
+    original = np.array([_coordinates(monomer, node) for node in nodes])
+    reflected = original - 2 * ((original - chain_alpha) @ normal)[:, None] * normal
+    best_energy, best_positions = float('inf'), None
+    for positions in (original, reflected):
+        candidate_chain, candidate_monomer = chain.copy(), monomer.copy()
+        for node, candidate_position in zip(nodes, positions):
+            candidate_monomer.nodes[node].update(zip(('x', 'y', 'z'), map(float, candidate_position)))
+        bridge_position = (
+            chain_alpha + _coordinates(candidate_monomer, monomer_C_a)
+        ) / 2
+        candidate_chain.nodes[oxygen].update(zip(('x', 'y', 'z'), map(float, bridge_position)))
+        edit_spirodienone_beta_1_topology(
+            candidate_chain, candidate_monomer, chain_C_1, monomer_C_b,
         )
-    chain.add_edge(chain_C_b, oxygen_id, bond_order=1)
-    chain.add_edge(oxygen_id, hydrogen_id, bond_order=1)
-    chain.add_edge(chain_C_a, ether_oxygen_id, bond_order=1, linkage='beta-1')
+        product = nx.compose(candidate_chain, candidate_monomer)
+        product.add_edge(chain_C_1, monomer_C_b, bond_order=1)
+        product.add_edge(oxygen, monomer_C_a, bond_order=1)
+        relaxed = globalHelpers.optimize_structure(product, max_iterations=max_iterations)
+        energy = relaxed.graph['uff_optimization']['final_energy']
+        if energy < best_energy:
+            best_energy, best_positions = energy, positions.copy()
 
-    # Include the actual cross-monomer bonds when exempting nearby bonded
-    # atoms. Score only the movable hydroxyl against the rest of the product,
-    # so other close contacts cannot obscure the difference between sides.
-    product = nx.compose(chain, monomer)
-    product.add_edge(chain_C_1, monomer_C_b, bond_order=1)
-    product.add_edge(ether_oxygen_id, monomer_C_a, bond_order=1)
-    hydroxyl_nodes = {oxygen_id, hydrogen_id}
-    fixed_nodes = set(product) - hydroxyl_nodes
-    excluded_pairs = {
-        (fixed, moving)
-        for moving in hydroxyl_nodes
-        for fixed in nx.single_source_shortest_path_length(product, moving, cutoff=3)
-        if fixed in fixed_nodes
-    }
-    beta_position = _coordinates(chain, chain_C_b)
-    offsets = (oxygen_position - beta_position, hydrogen_position - beta_position)
-    best_score, best_positions = float('inf'), None
-    for sign in (1, -1):
-        positions = [beta_position + sign * offset for offset in offsets]
-        for node, position in zip((oxygen_id, hydrogen_id), positions):
-            product.nodes[node].update(zip(('x', 'y', 'z'), map(float, position)))
-        score = clash_score(product.subgraph(fixed_nodes), product.subgraph(hydroxyl_nodes),
-                            excluded_pairs=excluded_pairs)
-        if score < best_score:
-            best_score, best_positions = score, positions
-    for node, position in zip((oxygen_id, hydrogen_id), best_positions):
-        chain.nodes[node].update(zip(('x', 'y', 'z'), map(float, position)))
+    for node, position in zip(nodes, best_positions):
+        monomer.nodes[node].update(zip(('x', 'y', 'z'), map(float, position)))
+    position = (chain_alpha + _coordinates(monomer, monomer_C_a)) / 2
+    chain.nodes[oxygen].update(zip(('x', 'y', 'z'), map(float, position)))
 
-    for node, degree in chain.degree():
-        chain.nodes[node]['degree'] = degree
-    for node, degree in monomer.degree():
-        monomer.nodes[node]['degree'] = degree
 
-    return ether_oxygen_id
+def _spirodienone_precursor_atoms(chain, monomer_id):
+    """Return labeled atom IDs after checking an eligible beta-O-4 precursor.
+
+    The target unit needs an aromatic, free phenolic ring, an unetherified
+    alpha OH, and a saturated alpha--beta bond with beta linked to another
+    unit's O_4. Check actual connectivity so selecting an older chain unit
+    follows the same chemistry as completing the preceding recipe unit.
+    Coordinates and input graphs are unchanged.
+    """
+    labels = [f'C_{i}' for i in range(1, 7)] + [
+        'C_a', 'C_b', 'O_4', 'H_O4', 'O_a', 'H_Oa',
+    ]
+    message = (
+        "Spirodienone requires a beta-O-4 precursor with a free phenolic OH "
+        "and alpha OH on the selected unit."
+    )
+    try:
+        atoms = {label: _find_attachment_atom(chain, label, monomer_id) for label in labels}
+    except ValueError as exc:
+        raise ValueError(message) from exc
+
+    # The ring starts aromatic (template Kekule form); the alpha OH and
+    # phenolic OH must still carry the hydrogens consumed by this coupling.
+    required_bonds = (
+        ('C_1', 'C_2', 1), ('C_2', 'C_3', 2), ('C_3', 'C_4', 1),
+        ('C_4', 'C_5', 2), ('C_5', 'C_6', 1), ('C_6', 'C_1', 2),
+        ('C_1', 'C_a', 1), ('C_a', 'C_b', 1), ('C_a', 'O_a', 1),
+        ('O_a', 'H_Oa', 1), ('C_4', 'O_4', 1), ('O_4', 'H_O4', 1),
+    )
+    if any(
+        not chain.has_edge(atoms[left], atoms[right])
+        or chain.edges[atoms[left], atoms[right]].get('bond_order') != order
+        for left, right, order in required_bonds
+    ):
+        raise ValueError(message)
+    if (set(chain[atoms['O_a']]) != {atoms['C_a'], atoms['H_Oa']}
+            or set(chain[atoms['O_4']]) != {atoms['C_4'], atoms['H_O4']}):
+        raise ValueError(message)
+
+    # A beta OH cap is not the native beta-O-4 context. Require an actual
+    # ether to another unit's ring C_4, retaining either recipe direction.
+    partners = []
+    for oxygen in chain[atoms['C_b']]:
+        data = chain.nodes[oxygen]
+        if (data.get('template_label') != 'O_4'
+                or data.get('monomer_id') == monomer_id
+                or chain.edges[atoms['C_b'], oxygen].get('bond_order') != 1):
+            continue
+        others = set(chain[oxygen]) - {atoms['C_b']}
+        if len(others) != 1:
+            continue
+        carbon = others.pop()
+        if (chain.nodes[carbon].get('template_label') == 'C_4'
+                and chain.nodes[carbon].get('monomer_id') == data['monomer_id']
+                and chain.edges[oxygen, carbon].get('bond_order') == 1):
+            partners.append(oxygen)
+    if len(partners) != 1:
+        raise ValueError(message)
+    return atoms
+
+
+def edit_spirodienone_beta_1_topology(chain, monomer, chain_C_1, monomer_C_b):
+    """Edit precursor graphs in place and return the existing alpha oxygen ID.
+
+    Reuse the selected beta-O-4 unit's O_a, removing H_Oa and its phenolic
+    H_O4. Convert that ring to a dienone and reduce only the incoming
+    alpha--beta double bond. No oxygen is added and the beta ether remains
+    intact. The connector adds beta--C_1 and alpha--O_a after merging the
+    graphs. Validation precedes edits; this helper does not need coordinates.
+    """
+    chain_id = chain.nodes[chain_C_1]['monomer_id']
+    incoming_id = monomer.nodes[monomer_C_b]['monomer_id']
+    atoms = _spirodienone_precursor_atoms(chain, chain_id)
+    incoming_alpha = _find_attachment_atom(monomer, 'C_a', incoming_id)
+    if (not monomer.has_edge(incoming_alpha, monomer_C_b)
+            or monomer.edges[incoming_alpha, monomer_C_b].get('bond_order') != 2):
+        raise ValueError("Spirodienone requires an incoming C_a--C_b double bond.")
+
+    # Oxidative coupling loses two hydrogens; the pre-existing alpha oxygen
+    # becomes the cyclic ether. The precursor alpha--beta bond is already
+    # single and its beta--O_4 bond is preserved without adding a beta OH.
+    chain.remove_nodes_from([atoms['H_Oa'], atoms['H_O4']])
+    monomer.edges[incoming_alpha, monomer_C_b]['bond_order'] = 1
+    for left, right, order in (
+        ('C_1', 'C_2', 1), ('C_2', 'C_3', 2), ('C_3', 'C_4', 1),
+        ('C_4', 'C_5', 1), ('C_5', 'C_6', 2), ('C_6', 'C_1', 1),
+        ('C_4', 'O_4', 2),
+    ):
+        chain.edges[atoms[left], atoms[right]]['bond_order'] = order
+    chain.edges[atoms['C_a'], atoms['O_a']]['linkage'] = 'spirodienone-beta-1'
+
+    for graph in (chain, monomer):
+        for node, degree in graph.degree():
+            graph.nodes[node]['degree'] = degree
+    return atoms['O_a']

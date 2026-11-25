@@ -18,8 +18,8 @@ class LigninBuilder(Builder):
         
     SUPPORTED_MONOMERS = frozenset({'H', 'G', 'S'})
     SUPPORTED_LINKERS = frozenset({
-        'beta-O-4', 'beta-5', 'beta-beta', '5-5', '4-O-beta',
-        '5-O-4', 'beta-1',
+        'beta-O-4', 'phenylcoumaran-beta-5', 'resinol-beta-beta', '5-5', '4-O-beta',
+        '5-O-4', 'spirodienone-beta-1',
     })
 
     def load_monomer(self, monomer, monomer_id=0, start_index=0):
@@ -43,14 +43,16 @@ class LigninBuilder(Builder):
             return liginConnectionLogic.connect_4_O_beta(chain, monomer, chain_monomer_id)
         elif linker == 'beta-O-4':
             return liginConnectionLogic.connect_beta_O_4(chain, monomer, chain_monomer_id)
-        elif linker == 'beta-5':
-            return liginConnectionLogic.connect_beta_5(chain, monomer, chain_monomer_id)
-        elif linker == 'beta-beta':
-            return liginConnectionLogic.connect_beta_beta(
+        elif linker == 'phenylcoumaran-beta-5':
+            return liginConnectionLogic.connect_phenylcoumaran_beta_5(chain, monomer, chain_monomer_id)
+        elif linker == 'resinol-beta-beta':
+            return liginConnectionLogic.connect_resinol_beta_beta(
                 chain, monomer, chain_monomer_id, max_iterations=self.max_iterations,
             )
-        elif linker == 'beta-1':
-            return liginConnectionLogic.connect_beta_1(chain, monomer, chain_monomer_id)
+        elif linker == 'spirodienone-beta-1':
+            return liginConnectionLogic.connect_spirodienone_beta_1(
+                chain, monomer, chain_monomer_id, max_iterations=self.max_iterations,
+            )
         else:
             raise NotImplementedError(f"Linkage {linker!r} is not implemented yet.")
 
@@ -66,18 +68,13 @@ class LigninBuilder(Builder):
         return {
             ('beta-O-4', '4-O-beta'): 'beta position of the shared monomer is already occupied',
             ('4-O-beta', 'beta-O-4'): 'O-4 position of the shared monomer is already occupied',
-            ('4-O-beta', 'beta-5'): 'O-4 position of the shared monomer is already occupied',
-            ('4-O-beta', 'beta-1'): 'O-4 position of the shared monomer is already occupied; reduction would cleave the existing ether bond',
-            ('beta-5', '4-O-beta'): 'beta position of the shared monomer is already occupied',
-            ('beta-5', 'beta-beta'): 'beta position of the shared monomer is already occupied',
-            ('beta-O-4', 'beta-beta'): 'beta position of the shared monomer is already occupied',
-            ('beta-O-4', 'beta-1'): 'beta position of the shared monomer is already occupied; C_a--C_b is no longer a double bond',
-            ('beta-beta', '4-O-beta'): 'beta position of the shared monomer is already occupied',
-            ('beta-1', 'beta-beta'): 'beta position of the shared monomer is already occupied',
-            ('beta-1', '4-O-beta'): 'beta position of the shared monomer is already occupied',
-            ('beta-1', 'beta-1'): 'beta position of the shared monomer is already occupied',
-            ('beta-5', 'beta-1'): 'beta position of the shared monomer is already occupied',
-            ('beta-beta', 'beta-1'): 'beta position of the shared monomer is already occupied',
+            ('4-O-beta', 'phenylcoumaran-beta-5'): 'O-4 position of the shared monomer is already occupied',
+            ('phenylcoumaran-beta-5', '4-O-beta'): 'beta position of the shared monomer is already occupied',
+            ('phenylcoumaran-beta-5', 'resinol-beta-beta'): 'beta position of the shared monomer is already occupied',
+            ('beta-O-4', 'resinol-beta-beta'): 'beta position of the shared monomer is already occupied',
+            ('resinol-beta-beta', '4-O-beta'): 'beta position of the shared monomer is already occupied',
+            ('spirodienone-beta-1', 'resinol-beta-beta'): 'beta position of the shared monomer is already occupied',
+            ('spirodienone-beta-1', '4-O-beta'): 'beta position of the shared monomer is already occupied',
         }
 
     @staticmethod
@@ -88,7 +85,7 @@ class LigninBuilder(Builder):
         Each monomer value is an explicit H, G, or S; no wildcards are used.
         """
         return {
-            ('S', 'beta-5'): 'S does not have a free 5 position',
+            ('S', 'phenylcoumaran-beta-5'): 'S does not have a free 5 position',
         }
         
     def validate_recipe(self):
@@ -125,6 +122,14 @@ class LigninBuilder(Builder):
 
         forbidden = self._forbidden_monomer_linkages()
         for i, linker in enumerate(linkers):
+            # The preceding beta ether creates the middle unit's alpha OH.
+            # Completing spirodienone adds one unit to this existing dimer;
+            # the two linker entries together describe the three-unit motif.
+            if linker == 'spirodienone-beta-1' and (i == 0 or linkers[i - 1] != 'beta-O-4'):
+                raise ValueError(
+                    f"Spirodienone at linker index {i} requires a preceding "
+                    "'beta-O-4' linkage and its free alpha OH."
+                )
             combination = (monomers[i], linker)
             if combination in forbidden:
                 raise ValueError(
