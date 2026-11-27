@@ -25,11 +25,10 @@ These monolignols are connected via different linkers. Common linkers are:
 * ``5-5`` / ``4-O-beta``
 * ``5-O-4``
 * ``spirodienone-beta-1``
-* ``4-O-beta``
 
 .. note::
 
-   Currently available linkers are: ``beta-O-4``, ``phenylcoumaran-beta-5``, ``resinol-beta-beta``, ``spirodienone-beta-1``, ``4-O-beta``
+   The ``5-5`` and ``5-O-4`` linkers are not yet implemented in MakroLyzer.
 
 Linker names use the following convention:
 
@@ -39,6 +38,53 @@ Linker names use the following convention:
 In MakroLyzer, the user specifies a monolignol sequence and a corresponding linker sequence.
 The builder constructs the lignin strand by adding monolignols sequentially from left to right, connecting each new monolignol via the specified linker.
 After each addition, the structure is optimized using the Universal Force Field (UFF) [1]_ implemented in RDKit [2]_.
+
+Linkers
+--------------
+
+Use the arrows to browse the linker structures and their requirements.
+Purple labels identify the incoming unit, pink labels the chain unit, and
+orange labels the existing beta-O-4 partner in the spirodienone trimer.
+The drawings show specific H/G/S examples, while the tables describe the allowed
+unit types when the required sites are available.
+
+.. container:: linker-gallery
+
+   .. raw:: html
+
+      <div class="linker-gallery-controls" hidden>
+        <button type="button" class="linker-previous" aria-label="Previous linker">&#8592;</button>
+        <span class="linker-current" role="status" aria-live="polite" aria-atomic="true"></span>
+        <button type="button" class="linker-next" aria-label="Next linker">&#8594;</button>
+      </div>
+
+   .. figure:: linkerVisualization/pics/beta-O-4.svg
+      :figclass: linker-slide
+      :width: 100%
+      :alt: Beta-O-4 structure, with all H/G/S types allowed on both sides; incoming beta and free chain phenolic OH are required.
+
+      ``beta-O-4``
+
+   .. figure:: linkerVisualization/pics/phenylcoumaran-beta-5.svg
+      :figclass: linker-slide
+      :width: 100%
+      :alt: Phenylcoumaran beta-5 structure; incoming H/G/S and chain H/G are allowed, requiring incoming beta and chain C5 and free phenolic OH.
+
+      ``phenylcoumaran-beta-5``
+
+   .. figure:: linkerVisualization/pics/resinol-beta-beta.svg
+      :figclass: linker-slide
+      :width: 100%
+      :alt: Resinol beta-beta structure; both units allow H/G/S and require an alpha-beta double bond and a free gamma OH.
+
+      ``resinol-beta-beta``
+
+   .. figure:: linkerVisualization/pics/beta-O-4_spirodienone-beta-1.svg
+      :figclass: linker-slide
+      :width: 100%
+      :alt: Spirodienone beta-1 trimer; all H/G/S types are allowed, with a preceding beta-O-4 precursor bearing free alpha and phenolic OH groups.
+
+      ``spirodienone-beta-1``
 
 Command Line Input
 ------------------

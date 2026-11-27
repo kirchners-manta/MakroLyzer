@@ -39,7 +39,9 @@ default_dark_mode = False
 html_static_path = ["_static"]
 html_css_files = [
     "custom.css",
+    "linker-gallery.css",
 ]
+html_js_files = ["linker-gallery.js"]
 
 # -- Options for EPUB output
 epub_show_urls = 'footnote'
