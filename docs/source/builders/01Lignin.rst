@@ -27,13 +27,13 @@ Linkers
 * ``phenylcoumaran-beta-5``
 * ``resinol-beta-beta``
 * ``5-5`` / ``4-O-beta``
-* ``5-O-4``
+* ``biphenyl-ether-5-O-4``
 * ``spirodienone-beta-1``
 * ``1,2-diarylpropane-1,3-diol-beta-1``
 
 .. note::
 
-   The ``5-5`` and ``5-O-4`` linkers are not yet implemented in MakroLyzer.
+   The ``5-5`` linker is not yet implemented in MakroLyzer.
 
 Linker names use the following convention:
 
@@ -95,6 +95,34 @@ unit types when the required sites are available.
 
       ``1,2-diarylpropane-1,3-diol-beta-1``
 
+   .. figure:: linkerVisualization/pics/biphenyl-ether-5-O-4.svg
+      :figclass: linker-slide
+      :width: 100%
+      :alt: Biphenyl ether 5-O-4 with incoming G and chain S; incoming H/G and chain H/G/S are allowed, requiring free incoming C5-H and chain phenolic O4-H.
+
+      ``biphenyl-ether-5-O-4``
+
+Diaryl ether 5-O-4 construction
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Use ``biphenyl-ether-5-O-4`` to connect the incoming unit's C5 to the chain unit's
+existing phenolic O4. Incoming H/G units are allowed; S has no free C5-H.
+The chain unit can be H, G or S, provided its phenolic O4-H is still free.
+Construction removes incoming C5-H and chain O4-H, keeping both side chains
+and all aromatic bond orders. For example:
+
+.. code-block:: json
+
+   {"monomer": ["S", "G"], "linker": ["biphenyl-ether-5-O-4"]}
+
+Placement initially aligns ring normals, places C5 one ether bond length
+beyond O4 along the chain C4-to-O4 direction, and searches rotations about
+the new bond to reduce close contacts. UFF then relaxes the product.
+This constructs a diaryl ether product using the current directional recipe
+workflow; native oligomer coupling and provider-role changes remain future work.
+See the :doc:`structural references <linker-references>` for the diaryl ether
+context in model lignins.
+
 Direct acyclic beta-1 construction
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -107,7 +135,7 @@ This is direct product construction, not a simulation of spirodienone
 acidolysis. The removed side-chain atoms are omitted from the output;
 coproducts are not generated. Removal is allowed only when the side-chain
 branch contains no other lignin units. In a linear recipe, this linker can
-be the first entry or follow ``4-O-beta``. Other preceding linkers are
+be the first entry or follow ``4-O-beta`` or ``biphenyl-ether-5-O-4``. Other preceding linkers are
 rejected to avoid deleting existing units or breaking a cyclic motif.
 The incoming beta position is occupied afterward, but its free ring sites
 can support further ``beta-O-4`` or ``phenylcoumaran-beta-5`` additions
@@ -187,8 +215,9 @@ its beta position has been consumed. A recipe starting with
 ``spirodienone-beta-1`` lacks the required precursor and is rejected.
 
 The former ``beta-1`` name and its beta-hydroxyl dimer construction have been
-replaced. The conventional acyclic 1,2-diarylpropane-1,3-diol variant is not
-implemented yet. These recipes provide no stereoisomer selection; the
+replaced. For the conventional acyclic variant, use the direct
+``1,2-diarylpropane-1,3-diol-beta-1`` construction described above.
+These recipes provide no stereoisomer selection; the
 placement and UFF relaxation produce a model geometry, without assigning
 the stereochemistry occurring in native lignin.
 

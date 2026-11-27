@@ -24,6 +24,15 @@ from rdkit.Chem.Draw import rdMolDraw2D
 # Label tokens a/b/g are converted to Greek SVG text after RDKit places them.
 MOTIFS = (
     (
+        'biphenyl-ether-5-O-4',
+        '[c:4]1(-[O:2]-[c:5]2[c]([OH])[c][c][c]([#6])[c]2)'
+        '[c][c][c]([#6])[c][c]1',
+        # Ring context distinguishes incoming C5 (beside its free phenol)
+        # from chain C4 (para to its side chain), without relying on XYZ order.
+        {4: '4', 2: None, 5: '5'},
+        {4: 'chain', 5: 'incoming'},
+    ),
+    (
         '1,2-diarylpropane-1,3-diol-beta-1',
         '[c:1]-[CH:2](-[CH2:3]-[OH])-[CH:4](-[OH])-c',
         # The retained chain ring supplies C1; the incoming unit supplies
@@ -74,6 +83,13 @@ FONT_FAMILY = 'Arial, Helvetica, sans-serif'
 # H/G/S identify unit types; existing bonds must also leave the listed sites
 # available. S lacks C5-H, so it cannot supply phenylcoumaran's chain-side C5.
 PANEL_CONTENT = {
+    'biphenyl-ether-5-O-4': {
+        'incoming_types': 'HG',
+        'chain_types': 'HGS',
+        'incoming_sites': ('5 (free C5-H)',),
+        'chain_sites': ('4 (free phenolic OH)',),
+        'notes': ('Incoming S has no free 5 position.', 'Chain O4 forms the ether.'),
+    },
     '1,2-diarylpropane-1,3-diol-beta-1': {
         'chain_types': 'HGS',
         'incoming_sites': ('β (α–β double bond)',),
@@ -304,7 +320,9 @@ def add_information_panel(svg, motif):
     for index, unit in enumerate('HGS'):
         y = top + 72 + index * 32
         text(62, y, unit, bold=True, centered=True)
-        text(incoming_center, y + 2, '✓', centered=True, font_size=25)
+        # Most motifs accept all incoming types; the C5 donor excludes S.
+        text(incoming_center, y + 2, '✓' if unit in content.get('incoming_types', 'HGS') else '✗',
+             centered=True, font_size=25)
         text(chain_center, y + 2, '✓' if unit in content['chain_types'] else '✗',
              centered=True, font_size=25)
     line(12, top + 150, special_edge, top + 150)

@@ -1,8 +1,8 @@
 Linker structure references
 ================================
 
-These papers show the structures represented by the five entries in the
-:doc:`Lignin Builder gallery <01Lignin>`.
+These papers show the structures constructed by the
+:doc:`Lignin Builder <01Lignin>`, including the six illustrated gallery entries.
 
 .. list-table:: Linker names and structural references
    :header-rows: 1
@@ -28,6 +28,10 @@ These papers show the structures represented by the five entries in the
        Stereoisomers in Lignin
        <https://research.fs.usda.gov/download/treesearch/54786.pdf#page=1>`_
      - Figure 1: guaiacyl-spirodienone trimer model.
+   * - ``biphenyl-ether-5-O-4``
+     - `Abu-Omar et al. (2021), Guidelines for performing lignin-first biorefining
+       <https://pubs.rsc.org/ee/article/14/1/262/685503/Guidelines-for-performing-lignin-first-biorefining>`_
+     - Figure 1, E: diaryl ether (4-O-5) connection between oligomer units.
    * - ``1,2-diarylpropane-1,3-diol-beta-1``
      - `Kuroda et al. (2007), Thermal Behavior of beta-1 Subunits in Lignin:
        Pyrolysis of 1,2-Diarylpropane-1,3-diol-type Lignin Model Compounds

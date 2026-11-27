@@ -34,6 +34,10 @@ drawings from new inputs. See RDKit's `bond inference documentation
 <https://www.rdkit.org/docs/source/rdkit.Chem.rdDetermineBonds.html>`_.
 
 The supplied beta-O-4 example is a G chain unit joined to an incoming H unit.
+The biphenyl ether example joins incoming G at C5 to chain S at O4.
+Its yellow core covers C5--O--C4, with purple C5 and pink C4 labels.
+Its panel excludes incoming S, which lacks C5-H, and requires a free chain
+phenolic OH. The existing chain O4 becomes the ether oxygen.
 Yellow highlights cover all three atoms and both bonds of its
 C-beta--O--C4 path. Greek position labels identify the participating carbons.
 For phenylcoumaran and resinol, the complete cyclic cores are highlighted,
@@ -78,7 +82,7 @@ is displayed without a bullet. Store complete statements in ``PANEL_CONTENT``;
 the renderer handles line wrapping.
 
 Motifs are recognized by connectivity rather than filenames or atom order.
-Other structures can be drawn, but only the five supplied motifs have
+Other structures can be drawn, but only the six supplied motifs have
 highlight and label rules. The SVG has
 a shared 920 x 690 pixel canvas with the same table position in each figure.
 Structures are centred above the table at a consistent bond/label scale;

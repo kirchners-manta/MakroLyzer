@@ -585,7 +585,7 @@ def edit_phenylcoumaran_beta_5_topology(chain, monomer, C_5, alpha_atom, beta_at
         monomer.nodes[node]['degree'] = degree
         
 # -----------------------------------------------------------------------------------------------
-# resinol-beta-beta -------------------------------------------------------------------------------------
+# resinol-beta-beta -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------------------------
 
 def connect_resinol_beta_beta(chain, monomer, chain_monomer_id, *, max_iterations=1500):
@@ -1257,6 +1257,141 @@ def edit_diarylpropane_diol_beta_1_topology(chain, monomer, C_1, beta_atom):
         )
     monomer.add_edge(alpha, oxygen, bond_order=1)
     monomer.add_edge(oxygen, hydrogen, bond_order=1)
+    for graph in (chain, monomer):
+        for node, degree in graph.degree():
+            graph.nodes[node]['degree'] = degree
+
+# -----------------------------------------------------------------------------------------------
+# biphenyl-ether-5-O-4 --------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------
+
+def connect_biphenyl_ether_5_O_4(chain, monomer, chain_monomer_id):
+    """Return a 5-O-4 diaryl ether without changing either input graph.
+
+    Incoming C5 bonds to the selected chain unit's existing phenolic O4.
+    Remove incoming C5-H and chain O4-H; retain aromatic bond orders and
+    both side chains. This is direct product construction using the current
+    directional recipe convention, not a simulation of native oligomer coupling.
+    """
+    if set(chain).intersection(monomer):
+        raise ValueError("Chain and incoming monomer must have disjoint node IDs.")
+    chain, monomer = chain.copy(), monomer.copy()
+    incoming_ids = {data['monomer_id'] for _, data in monomer.nodes(data=True)}
+    if len(incoming_ids) != 1:
+        raise ValueError("Incoming graph must contain exactly one monomer.")
+    incoming_id = incoming_ids.pop()
+    if any(data['monomer_id'] == incoming_id for _, data in chain.nodes(data=True)):
+        raise ValueError("Incoming monomer ID must not already occur in the chain.")
+    C_5 = _find_attachment_atom(monomer, 'C_5', incoming_id)
+    C_4 = _find_attachment_atom(chain, 'C_4', chain_monomer_id)
+    O_4 = _find_attachment_atom(chain, 'O_4', chain_monomer_id)
+
+    # Validate and remove the two consumed hydrogens on private copies.
+    # Placement then scores exactly the retained atoms of the product.
+    edit_biphenyl_ether_5_O_4_topology(chain, monomer, C_5, C_4, O_4)
+    place_biphenyl_ether_5_O_4(chain, monomer, C_5, C_4, O_4)
+    result = chain.copy()
+    result.add_nodes_from(monomer.nodes(data=True))
+    result.add_edges_from(monomer.edges(data=True))
+    result.add_edge(O_4, C_5, bond_order=1, linkage='biphenyl-ether-5-O-4')
+    for node, degree in result.degree():
+        result.nodes[node]['degree'] = degree
+    return result
+
+
+def place_biphenyl_ether_5_O_4(chain, monomer, C_5, C_4, O_4):
+    """Place incoming C5 along chain C4->O4, modifying incoming coordinates.
+
+    Initially align ring normals and point the incoming C5 substituent
+    direction toward O4. Put C5 one C--O ether bond length (angstroms)
+    beyond O4. Search 20-degree twists about O4--C5 for minimal clashes.
+    Twisting may move the rings out of their initial parallel planes.
+    Keep chain coordinates, incoming internal distances and topology intact;
+    the builder later relaxes the deliberately linear C4--O4--C5 seed by UFF.
+    """
+    chain_id = chain.nodes[O_4]['monomer_id']
+    incoming_id = monomer.nodes[C_5]['monomer_id']
+    normal = ring_normal(chain, chain_id)
+    direction = unit_vector(_coordinates(chain, O_4) - _coordinates(chain, C_4))
+    rotate_nodes(monomer, list(monomer),
+                 alignment_rotation(ring_normal(monomer, incoming_id), normal),
+                 ring_center(monomer, incoming_id))
+
+    # Ring normals leave an in-plane angle free. Aim C5's outward direction
+    # back toward the chain, keeping the incoming ring beyond the new bond.
+    outward = _coordinates(monomer, C_5) - ring_center(monomer, incoming_id)
+    source = unit_vector(outward - np.dot(outward, normal) * normal)
+    target = -unit_vector(direction - np.dot(direction, normal) * normal)
+    angle = np.arctan2(np.dot(normal, np.cross(source, target)), np.dot(source, target))
+    rotate_nodes(monomer, list(monomer), Rotation.from_rotvec(angle * normal),
+                 _coordinates(monomer, C_5))
+    origin = _coordinates(monomer, C_5)
+    attachment = (_coordinates(chain, O_4)
+                  + dictionaries.dictBondDistances()[('C-O', 'ether')] * direction)
+    nodes = list(monomer)
+    original = np.array([_coordinates(monomer, node) for node in nodes]) - origin
+
+    # Also support placement on unedited templates without scoring the two
+    # hydrogens that will be removed. The caller's graph remains untouched.
+    fixed, moving = chain.copy(), monomer.copy()
+    for graph, identity, label in ((fixed, chain_id, 'H_O4'), (moving, incoming_id, 'H_5')):
+        graph.remove_nodes_from([node for node, data in graph.nodes(data=True)
+                                 if data['monomer_id'] == identity
+                                 and data['template_label'] == label])
+    chain_depth = nx.single_source_shortest_path_length(fixed, O_4, cutoff=2)
+    incoming_depth = nx.single_source_shortest_path_length(moving, C_5, cutoff=2)
+    # Bonded 1-2, 1-3 and 1-4 pairs span at most three bonds across the new
+    # O4--C5 bond. Only these pairs are exempt; unrelated contacts still count.
+    excluded = {(left, right) for left, dl in chain_depth.items()
+                for right, dr in incoming_depth.items() if dl + 1 + dr <= 3}
+    best_score, best_positions = float('inf'), None
+    for degrees in range(0, 360, 20):
+        rotation = Rotation.from_rotvec(direction * np.deg2rad(degrees))
+        positions = rotation.apply(original) + attachment
+        for node, position in zip(nodes, positions):
+            if node in moving:
+                moving.nodes[node].update(zip(('x', 'y', 'z'), map(float, position)))
+        score = clash_score(fixed, moving, excluded_pairs=excluded)
+        if score < best_score:
+            best_score, best_positions = score, positions.copy()
+        if best_score == 0:
+            break
+    for node, position in zip(nodes, best_positions):
+        monomer.nodes[node].update(zip(('x', 'y', 'z'), map(float, position)))
+    if best_score > 0:
+        import warnings
+        warnings.warn(
+            "All 5-O-4 placements have close nonbonded contacts; using the "
+            "least-overlapping candidate before optimization.", RuntimeWarning, stacklevel=2,
+        )
+
+
+def edit_biphenyl_ether_5_O_4_topology(chain, monomer, C_5, C_4, O_4):
+    """Remove incoming C5-H and chain phenolic O4-H in place, adding no atoms.
+
+    Require free C5-H (H/G incoming units) and a free phenolic chain OH.
+    Validate both sites before deleting either hydrogen. The connector later
+    supplies the single C5--O4 bond; existing aromatic bonds remain unchanged.
+    """
+    incoming_id = monomer.nodes[C_5]['monomer_id']
+    chain_id = chain.nodes[O_4]['monomer_id']
+    if monomer.nodes[C_5]['monomer_type'] == 'S':
+        raise ValueError("5-O-4 requires incoming H or G; S has no free 5 position.")
+    hydrogen_5 = _find_attachment_atom(monomer, 'H_5', incoming_id)
+    if (not monomer.has_edge(C_5, hydrogen_5)
+            or monomer.edges[C_5, hydrogen_5].get('bond_order') != 1
+            or monomer.degree(C_5) != 3):
+        raise ValueError("5-O-4 requires an incoming C5-H site.")
+    # Etherified O4 and spirodienone carbonyl O4 are both ineligible.
+    phenolic_hydrogens = [node for node in chain.neighbors(O_4)
+                         if chain.nodes[node].get('template_label') == 'H_O4'
+                         and chain.nodes[node]['monomer_id'] == chain_id]
+    if (len(phenolic_hydrogens) != 1 or set(chain[O_4]) != {C_4, phenolic_hydrogens[0]}
+            or chain.edges[C_4, O_4].get('bond_order') != 1
+            or chain.edges[O_4, phenolic_hydrogens[0]].get('bond_order') != 1):
+        raise ValueError("5-O-4 requires a free chain phenolic O4-H; site is already occupied or altered.")
+    monomer.remove_node(hydrogen_5)
+    chain.remove_node(phenolic_hydrogens[0])
     for graph in (chain, monomer):
         for node, degree in graph.degree():
             graph.nodes[node]['degree'] = degree

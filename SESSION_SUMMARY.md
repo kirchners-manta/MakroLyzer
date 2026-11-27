@@ -1,28 +1,31 @@
 # Session summary
 
-Updated: 2026-11-27. Topic: direct acyclic beta-1 builder, gallery, and structural references.
+Updated: 2026-11-27. Topic: completed directional 5-O-4 diaryl ether implementation.
 
-## Implemented and agreed scope
+## Agreed scope and implemented changes
 
-- Completed the direct diol connector, placement and topology edits in `liginConnectionLogic.py`; registered `1,2-diarylpropane-1,3-diol-beta-1` in builder recipes/dispatch and documented it.
-- Placement aligns ring normals, makes incoming C_b→C_g parallel to C_1→C_a, and puts incoming beta at old chain alpha. Incoming ring points away from the chain; gamma substituents move rigidly. UFF relaxation follows.
-- Replaces the isolated chain C3 tail with incoming beta, reduces incoming alpha–beta, and adds explicit alpha OH. Inputs remain unchanged. User chose to reject removal of earlier units. Recipes can start with the diol or place it after `4-O-beta`; beta reuse is forbidden and eligible ring growth remains allowed.
-- This constructs the retained product, omitting coproducts. Physical acidolysis would release a glyceraldehyde-2-aryl ether. Coproduct retention and explicit stereoisomer selection remain unimplemented.
-- Added supplied S-incoming/H-chain diol XYZ/SVG as fifth gallery slide, with role labels, yellow core and eligibility panel. Extended drawing recognition/README; all five canvases are 920x690. Gallery baseline committed as `efc131e`; diol work remains uncommitted. No commit/push performed.
-
-## Linker structures in the literature
-
-The lasting [linker reference table](docs/source/builders/linker-references.rst) covers all five gallery entries and is linked from the manual's Builders navigation. Keep this pointer when refreshing the session summary; maintain the table in the documentation. At the user's request, Abu-Omar et al. (2021), *Guidelines for performing lignin-first biorefining*, replaces Ralph (2004) in the table; Elder (2017) and the user's exact Kuroda (2007) link remain. Earlier chemistry research notes retain their separate supporting references.
+- Completed the user's `connect_biphenyl_ether_5_O_4`, placement and topology stubs in `polymer_analysis/src/MakroLyzer/builder_modules/liginConnectionLogic.py`, following their docstrings. Recipe name and new bond label are `biphenyl-ether-5-O-4`, renamed from the initial short identifier at the user’s request. Updated dispatch, validation, linker inventory, tests and documentation; chemical shorthand 5-O-4 remains in explanatory prose.
+- Incoming C5 connects to selected chain phenolic O4, retaining the existing chain oxygen. Corrected hydrogen removal to incoming `H_5` and chain `H_O4` (not a carbon-bound H4). Both side chains and aromatic bond orders remain unchanged; no atoms are added.
+- Placement initially aligns ring normals, points the incoming ring away from the chain, places C5 one C–O ether bond length beyond O4 along C4→O4, and searches 20-degree rotations around O4–C5 for minimal clashes. Scoring omits consumed hydrogens and exempts only bonded 1-2/1-3/1-4 pairs. Twists can leave the initial parallel planes; normal builder UFF optimization follows.
+- Connector copies inputs and validates free sites before moving atoms. Incoming H/G allowed, S rejected at recipe validation. Chain H/G/S allowed with free phenolic O4-H. Added dispatch and consecutive-site restrictions: `4-O-beta`→`biphenyl-ether-5-O-4` and `biphenyl-ether-5-O-4`→phenylcoumaran are rejected. Repeated 5-O-4 and other eligible growth work.
+- A following direct diol addition is allowed after 5-O-4 because the earlier connection is through the ring and leaves the tail isolated. Earlier units remain intact. Updated builder documentation and removed obsolete claims that 5-O-4 and the diol were unimplemented.
+- Added 5-O-4 to the lasting [linker literature table](docs/source/builders/linker-references.rst); keep this pointer when refreshing summaries. Added the user-supplied G-incoming/S-chain biphenyl ether XYZ as the sixth gallery slide. Generated its SVG with yellow C5–O–C4 path, purple incoming 5/pink chain 4 labels and eligibility panel. Extended incoming-type ticks to exclude S for this motif; previous five SVGs unchanged. Updated drawing README and reference-table description.
 
 ## Verification and environment
 
-- Final commit-readiness review: zero actionable standards/correctness or spec findings. Removed one trailing space in the edited builder documentation; `git diff --check` now passes. Remote `Builder` checked via `git ls-remote`: still `efc131e`, matching local HEAD. No commit/push performed.
+- Final commit-readiness checks after rename/gallery: full source-checkout suite **505 passed in 27.41 s** in `/tmp/makrolyzer-diol-check`; whitespace checks pass. Remote `Builder` is `e410a99`, matching HEAD. Standards/correctness and requirements reviews found no blockers. No commit or push performed.
 
-- Lasting reference-table HTML build passed; checked all five rows, three replacement RSC links, retained Kuroda link, and absence of Ralph from the table.
+- Sixth-slide addition: visually inspected PNG; HTML/EPUB builds passed with existing warnings. Verified six slides, asset/full-size link and visible fallbacks. All six SVGs reproduce exactly and share 920x690 geometry. Preview `/tmp/makrolyzer-biphenyl-ether-gallery.png`; builds `/tmp/makrolyzer-six-linkers-html` and `/tmp/makrolyzer-six-linkers-epub`.
 
-- Full suite: **482 passed**, independently confirmed by user in lowercase conda `makro` (Python 3.12/pytest 9/RDKit 2026.09.2); one initial-placement warning. Previously missing RDKit caused 94 failures. Repaired via editable `.[test,builder]` installation. Uppercase `Makro` is a separate environment with a stale installation.
-- Five-slide HTML/EPUB builds passed (Sphinx 7.1.2; pinned 9.1.1 unverified), with existing inventory/duplicate-target/EPUB warnings. Inspected diol image; verified links/fallbacks. All SVGs reproduce byte-for-byte; previous four unchanged. Preview: `/tmp/makrolyzer-diol-gallery.png`. Whitespace checks passed.
+- Identifier renamed at user request to `biphenyl-ether-5-O-4` in recipes, bond metadata, validation, inventory, tests and docs. Final focused source-checkout tests: **73 passed** (biphenyl ether, diol, builder options); HTML rebuild and whitespace checks passed. Lowercase `makro` again resolves to an installed copy with the old identifier, so reinstall the checkout there before testing the rename; verified source using `/tmp/makrolyzer-diol-check`.
 
-## Next task
+- **505 passed, 1 existing beta-O-4 placement warning**, full suite from `polymer_analysis/` in lowercase conda `makro` (Python 3.12/RDKit 2026.09.2). New file `test/test_BiphenylEther.py`: 23 tests covering six allowed type pairs, independent formulas/valences, relaxed bonds, rotated placement, rigid distances, input preservation, validation, continued growth and actual CLI/XYZ output.
+- HTML documentation build passed with existing inventory/duplicate-target warnings; `/tmp/makrolyzer-5o4-docs`. `git diff --check` passed.
+- Lowercase `makro` had reverted to an installed copy; restored editable `.[test,builder]` with `--no-build-isolation --no-deps`, and verified imports resolve to this checkout. Separate uppercase `Makro` remains distinct. Earlier missing RDKit caused 94 failures; dependencies are now installed.
+- User previously committed diol/gallery/reference work as `e410a99`. Current 5-O-4 changes remain uncommitted. Leave unrelated local recipe JSONs and `test.py` out of commits.
 
-Review/commit diol changes; leave local recipes, `test.py` and `polymer_analysis/test.out` out. Then implement 5-5/5-O-4, followed by editable projects/GUI/statistical generation. Preserve connectivity, identities and coordinates beyond XYZ. See [plan](.scratch/lignin-builder/spec.md), [chemistry and retained references](.scratch/lignin-builder/beta-1-nomenclature.md), and `GLOSSARY.md`.
+## Next task and references
+
+User reviews 5-O-4, then implements 5-5 as usual. Agreed: finish remaining chemistry with current incoming/chain convention, then refactor provider roles across all linkers together before automatic generation. Explicit sites, arbitrary eligible targets/orientations and fragment coupling are future work; no provider refactor implemented. Preserve complete connectivity/identities beyond XYZ. [Longer plan](.scratch/lignin-builder/spec.md); [chemistry notes and retained references](.scratch/lignin-builder/beta-1-nomenclature.md); `GLOSSARY.md`.
+
+5-O-4 reference: [Abu-Omar et al. (2021), Figure 1 E](https://pubs.rsc.org/ee/article/14/1/262/685503/Guidelines-for-performing-lignin-first-biorefining), showing native diaryl ether context from oligomer coupling. Current recipe implementation directly constructs the product and does not simulate that formation mechanism.
