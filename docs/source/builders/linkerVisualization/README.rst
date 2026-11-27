@@ -39,6 +39,11 @@ C-beta--O--C4 path. Greek position labels identify the participating carbons.
 For phenylcoumaran and resinol, the complete cyclic cores are highlighted,
 including their ether closures. For spirodienone, the highlight covers the
 spiro ether ring, dienone ring and carbonyl, and the existing beta-O-4 path.
+For the acyclic diarylpropane diol, the highlight covers the incoming
+alpha/beta/gamma backbone and the retained chain ring's C1. The supplied
+example has an incoming S unit and a retained H ring. Its panel describes
+direct product construction: only an isolated chain tail can be removed,
+and coproducts are omitted.
 Primes distinguish participating units: resinol uses primed/unprimed alpha,
 beta and gamma; spirodienone uses primes for the dienone unit and double
 primes for its beta-ether partner. These are local figure labels.
@@ -73,7 +78,7 @@ is displayed without a bullet. Store complete statements in ``PANEL_CONTENT``;
 the renderer handles line wrapping.
 
 Motifs are recognized by connectivity rather than filenames or atom order.
-Other structures can be drawn, but only the four supplied motifs have
+Other structures can be drawn, but only the five supplied motifs have
 highlight and label rules. The SVG has
 a shared 920 x 690 pixel canvas with the same table position in each figure.
 Structures are centred above the table at a consistent bond/label scale;

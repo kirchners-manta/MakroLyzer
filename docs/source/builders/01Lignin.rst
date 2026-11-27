@@ -17,7 +17,11 @@ The three **monolignols** are shown in the image below.
    :align: center
    :alt: Monolignols
 
-These monolignols are connected via different linkers. Common linkers are:
+
+These monolignols are connected via different linkers.
+
+Linkers
+--------------
 
 * ``beta-O-4``
 * ``phenylcoumaran-beta-5``
@@ -25,6 +29,7 @@ These monolignols are connected via different linkers. Common linkers are:
 * ``5-5`` / ``4-O-beta``
 * ``5-O-4``
 * ``spirodienone-beta-1``
+* ``1,2-diarylpropane-1,3-diol-beta-1``
 
 .. note::
 
@@ -38,9 +43,6 @@ Linker names use the following convention:
 In MakroLyzer, the user specifies a monolignol sequence and a corresponding linker sequence.
 The builder constructs the lignin strand by adding monolignols sequentially from left to right, connecting each new monolignol via the specified linker.
 After each addition, the structure is optimized using the Universal Force Field (UFF) [1]_ implemented in RDKit [2]_.
-
-Linkers
---------------
 
 Use the arrows to browse the linker structures and their requirements.
 Purple labels identify the incoming unit, pink labels the chain unit, and
@@ -85,6 +87,31 @@ unit types when the required sites are available.
       :alt: Spirodienone beta-1 trimer; all H/G/S types are allowed, with a preceding beta-O-4 precursor bearing free alpha and phenolic OH groups.
 
       ``spirodienone-beta-1``
+
+   .. figure:: linkerVisualization/pics/1,2-diarylpropane-1,3-diol-beta-1.svg
+      :figclass: linker-slide
+      :width: 100%
+      :alt: Acyclic beta-1 diol with incoming S and retained chain H ring; all H/G/S combinations are allowed, requiring incoming alpha-beta double bond and an isolated removable chain tail. Coproducts are omitted.
+
+      ``1,2-diarylpropane-1,3-diol-beta-1``
+
+Direct acyclic beta-1 construction
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Use ``1,2-diarylpropane-1,3-diol-beta-1`` to construct the retained acyclic
+diol structure. This replaces the selected chain unit's three-carbon side
+chain with a bond to the incoming unit's beta carbon and adds an alpha OH
+to the incoming unit. All H/G/S combinations are supported.
+
+This is direct product construction, not a simulation of spirodienone
+acidolysis. The removed side-chain atoms are omitted from the output;
+coproducts are not generated. Removal is allowed only when the side-chain
+branch contains no other lignin units. In a linear recipe, this linker can
+be the first entry or follow ``4-O-beta``. Other preceding linkers are
+rejected to avoid deleting existing units or breaking a cyclic motif.
+The incoming beta position is occupied afterward, but its free ring sites
+can support further ``beta-O-4`` or ``phenylcoumaran-beta-5`` additions
+when their usual requirements are met.
 
 Command Line Input
 ------------------

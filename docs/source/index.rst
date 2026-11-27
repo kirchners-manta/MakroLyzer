@@ -55,6 +55,7 @@ The program has three main functionalities:
    :caption: Builders
 
    builders/01Lignin.rst
+   builders/linker-references.rst
 
 .. toctree::
    :maxdepth: 1

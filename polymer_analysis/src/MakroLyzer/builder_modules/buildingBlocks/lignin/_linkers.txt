@@ -4,3 +4,4 @@ resinol-beta-beta
 5-5 / 4-O-beta
 5-O-4
 spirodienone-beta-1
+1,2-diarylpropane-1,3-diol-beta-1

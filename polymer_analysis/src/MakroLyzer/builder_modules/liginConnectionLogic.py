@@ -1112,3 +1112,151 @@ def edit_spirodienone_beta_1_topology(chain, monomer, chain_C_1, monomer_C_b):
         for node, degree in graph.degree():
             graph.nodes[node]['degree'] = degree
     return atoms['O_a']
+
+
+# -----------------------------------------------------------------------------------------------
+# 1,2-diarylpropane-1,3-diol-beta-1 -------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------
+
+def connect_diarylpropane_diol_beta_1(chain, monomer, chain_monomer_id):
+    """Return a direct acyclic beta-1 product without modifying the inputs.
+
+    Replace the selected unit's isolated C3 tail with the incoming beta
+    carbon, and hydrate the incoming alpha--beta bond. This constructs the
+    retained diol only; it does not simulate acidolysis or export coproducts.
+    Reject tails attached to other units instead of deleting existing lignin.
+    """
+    if set(chain).intersection(monomer):
+        raise ValueError("Chain and incoming monomer must have disjoint node IDs.")
+    chain, monomer = chain.copy(), monomer.copy()
+    incoming_ids = {data['monomer_id'] for _, data in monomer.nodes(data=True)}
+    if len(incoming_ids) != 1:
+        raise ValueError("Incoming graph must contain exactly one monomer.")
+    incoming_id = incoming_ids.pop()
+    if any(data['monomer_id'] == incoming_id for _, data in chain.nodes(data=True)):
+        raise ValueError("Incoming monomer ID must not already occur in the chain.")
+    beta_atom = _find_attachment_atom(monomer, 'C_b', incoming_id)
+    C_1 = _find_attachment_atom(chain, 'C_1', chain_monomer_id)
+
+    # Validate both edits before moving atoms; the old alpha position is the
+    # placement anchor and must still exist when the placement runs.
+    _diarylpropane_diol_tail(chain, C_1)
+    alpha = _find_attachment_atom(monomer, 'C_a', incoming_id)
+    if (not monomer.has_edge(alpha, beta_atom)
+            or monomer.edges[alpha, beta_atom].get('bond_order') != 2):
+        raise ValueError("Diarylpropane diol requires an incoming C_a--C_b double bond.")
+    place_diarylpropane_diol_beta_1(chain, monomer, C_1, beta_atom)
+    edit_diarylpropane_diol_beta_1_topology(chain, monomer, C_1, beta_atom)
+    result = chain.copy()
+    result.add_nodes_from(monomer.nodes(data=True))
+    result.add_edges_from(monomer.edges(data=True))
+    result.add_edge(beta_atom, C_1, bond_order=1,
+                    linkage='1,2-diarylpropane-1,3-diol-beta-1')
+    for node, degree in result.degree():
+        result.nodes[node]['degree'] = degree
+    return result
+
+
+def place_diarylpropane_diol_beta_1(chain, monomer, C_1, beta_atom):
+    """Place the incoming unit in the selected chain ring's layer, in place.
+
+    Align ring normals, make incoming C_b->C_g parallel and codirectional
+    with its C_1->C_a, then put incoming C_b at the old chain C_a position.
+    Orient the incoming ring away from the chain ring within their common
+    plane. Move the gamma branch with its hydrogens/OH, preserving lengths.
+    This seeds the geometry in angstroms; the builder subsequently runs UFF.
+    The chain coordinates and both graphs' connectivity remain unchanged.
+    """
+    chain_id = chain.nodes[C_1]['monomer_id']
+    incoming_id = monomer.nodes[beta_atom]['monomer_id']
+    normal = ring_normal(chain, chain_id)
+    incoming_C_1 = _find_attachment_atom(monomer, 'C_1', incoming_id)
+    alpha = _find_attachment_atom(monomer, 'C_a', incoming_id)
+    gamma = _find_attachment_atom(monomer, 'C_g', incoming_id)
+    chain_alpha = _find_attachment_atom(chain, 'C_a', chain_id)
+    rotate_nodes(monomer, list(monomer),
+                 alignment_rotation(ring_normal(monomer, incoming_id), normal),
+                 ring_center(monomer, incoming_id))
+
+    # The normal alignment leaves one in-plane rotation free. Point the
+    # incoming side chain toward the old ring so its own ring stays outside.
+    outward = _coordinates(chain, chain_alpha) - _coordinates(chain, C_1)
+    target = -unit_vector(outward - np.dot(outward, normal) * normal)
+    direction = _coordinates(monomer, alpha) - _coordinates(monomer, incoming_C_1)
+    direction = unit_vector(direction - np.dot(direction, normal) * normal)
+    angle = np.arctan2(np.dot(normal, np.cross(direction, target)),
+                       np.dot(direction, target))
+    rotate_nodes(monomer, list(monomer), Rotation.from_rotvec(angle * normal),
+                 _coordinates(monomer, beta_atom))
+
+    # Bend only the terminal branch around beta, carrying all substituents.
+    desired = _coordinates(monomer, alpha) - _coordinates(monomer, incoming_C_1)
+    rotation = alignment_rotation(
+        _coordinates(monomer, gamma) - _coordinates(monomer, beta_atom), desired,
+    )
+    rotate_nodes(monomer, branch_nodes(monomer, beta_atom, gamma), rotation,
+                 _coordinates(monomer, beta_atom))
+    shift = _coordinates(chain, chain_alpha) - _coordinates(monomer, beta_atom)
+    for node in monomer:
+        position = _coordinates(monomer, node) + shift
+        monomer.nodes[node].update(zip(('x', 'y', 'z'), map(float, position)))
+
+
+def _diarylpropane_diol_tail(chain, C_1):
+    """Return an isolated removable tail; reject loss of other lignin units."""
+    identity = chain.nodes[C_1]['monomer_id']
+    alpha = _find_attachment_atom(chain, 'C_a', identity)
+    # A saturated spiro carbon is not an aromatic substitution site. This
+    # direct constructor starts from a monolignol-derived aromatic ring.
+    ring_neighbors = [_find_attachment_atom(chain, label, identity)
+                      for label in ('C_2', 'C_6')]
+    if (set(chain[C_1]) != set(ring_neighbors + [alpha])
+            or sum(chain.edges[C_1, node]['bond_order'] for node in ring_neighbors) != 3):
+        raise ValueError("Diarylpropane diol requires an aromatic C_1 with a removable tail.")
+    tail = branch_nodes(chain, C_1, alpha)
+    if any(chain.nodes[node]['monomer_id'] != identity for node in tail):
+        raise ValueError("Diarylpropane diol tail removal would delete other lignin units.")
+    return tail
+
+
+def edit_diarylpropane_diol_beta_1_topology(chain, monomer, C_1, beta_atom):
+    """Remove an isolated chain tail and add incoming alpha OH, in place.
+
+    Reduce incoming C_a--C_b to single, retaining H_a and H_b. Add explicit
+    O_a/H_Oa at alcohol bond lengths in angstroms, initially along the ring
+    normal. The connector supplies the replacement C_1--C_b bond afterward.
+    Coproduct atoms are outside this direct retained-product model.
+    """
+    identity = monomer.nodes[beta_atom]['monomer_id']
+    alpha = _find_attachment_atom(monomer, 'C_a', identity)
+    tail = _diarylpropane_diol_tail(chain, C_1)
+    if (not monomer.has_edge(alpha, beta_atom)
+            or monomer.edges[alpha, beta_atom].get('bond_order') != 2):
+        raise ValueError("Diarylpropane diol requires an incoming C_a--C_b double bond.")
+
+    # Allocate beyond BOTH graphs before deletion so merging cannot overwrite
+    # an existing atom, even when input node IDs have gaps or interleave.
+    oxygen = max(max(chain), max(monomer)) + 1
+    hydrogen = oxygen + 1
+    direction = ring_normal(monomer, identity)
+    distances = dictionaries.dictBondDistances()
+    oxygen_position = (_coordinates(monomer, alpha)
+                       + distances[('C-O', 'alcohol')] * direction)
+    hydrogen_position = oxygen_position + distances[('O-H', 'alcohol')] * direction
+    chain.remove_nodes_from(tail)
+    monomer.edges[alpha, beta_atom]['bond_order'] = 1
+    for node, label, element, position in (
+        (oxygen, 'O_a', 'O', oxygen_position),
+        (hydrogen, 'H_Oa', 'H', hydrogen_position),
+    ):
+        monomer.add_node(
+            node, index=node, element=element, atom_label=label,
+            template_label=label, monomer_id=identity,
+            monomer_type=monomer.nodes[alpha]['monomer_type'],
+            x=float(position[0]), y=float(position[1]), z=float(position[2]),
+        )
+    monomer.add_edge(alpha, oxygen, bond_order=1)
+    monomer.add_edge(oxygen, hydrogen, bond_order=1)
+    for graph in (chain, monomer):
+        for node, degree in graph.degree():
+            graph.nodes[node]['degree'] = degree

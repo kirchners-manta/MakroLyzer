@@ -19,7 +19,7 @@ class LigninBuilder(Builder):
     SUPPORTED_MONOMERS = frozenset({'H', 'G', 'S'})
     SUPPORTED_LINKERS = frozenset({
         'beta-O-4', 'phenylcoumaran-beta-5', 'resinol-beta-beta', '5-5', '4-O-beta',
-        '5-O-4', 'spirodienone-beta-1',
+        '5-O-4', 'spirodienone-beta-1', '1,2-diarylpropane-1,3-diol-beta-1',
     })
 
     def load_monomer(self, monomer, monomer_id=0, start_index=0):
@@ -49,6 +49,10 @@ class LigninBuilder(Builder):
             return liginConnectionLogic.connect_resinol_beta_beta(
                 chain, monomer, chain_monomer_id, max_iterations=self.max_iterations,
             )
+        elif linker == '1,2-diarylpropane-1,3-diol-beta-1':
+            return liginConnectionLogic.connect_diarylpropane_diol_beta_1(
+                chain, monomer, chain_monomer_id,
+            )
         elif linker == 'spirodienone-beta-1':
             return liginConnectionLogic.connect_spirodienone_beta_1(
                 chain, monomer, chain_monomer_id, max_iterations=self.max_iterations,
@@ -75,6 +79,8 @@ class LigninBuilder(Builder):
             ('resinol-beta-beta', '4-O-beta'): 'beta position of the shared monomer is already occupied',
             ('spirodienone-beta-1', 'resinol-beta-beta'): 'beta position of the shared monomer is already occupied',
             ('spirodienone-beta-1', '4-O-beta'): 'beta position of the shared monomer is already occupied',
+            ('1,2-diarylpropane-1,3-diol-beta-1', 'resinol-beta-beta'): 'beta position of the shared monomer is already occupied',
+            ('1,2-diarylpropane-1,3-diol-beta-1', '4-O-beta'): 'beta position of the shared monomer is already occupied',
         }
 
     @staticmethod
@@ -129,6 +135,15 @@ class LigninBuilder(Builder):
                 raise ValueError(
                     f"Spirodienone at linker index {i} requires a preceding "
                     "'beta-O-4' linkage and its free alpha OH."
+                )
+            diol = '1,2-diarylpropane-1,3-diol-beta-1'
+            # Only 4-O-beta attaches the preceding unit through the selected
+            # ring, leaving its tail isolated. Other implemented predecessors
+            # attach through that tail (or a cycle) and cannot be discarded.
+            if linker == diol and i > 0 and linkers[i - 1] != '4-O-beta':
+                raise ValueError(
+                    f"Diarylpropane diol at linker index {i}: tail removal "
+                    "would delete other lignin units or break a cyclic motif."
                 )
             combination = (monomers[i], linker)
             if combination in forbidden:

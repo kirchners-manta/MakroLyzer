@@ -24,6 +24,14 @@ from rdkit.Chem.Draw import rdMolDraw2D
 # Label tokens a/b/g are converted to Greek SVG text after RDKit places them.
 MOTIFS = (
     (
+        '1,2-diarylpropane-1,3-diol-beta-1',
+        '[c:1]-[CH:2](-[CH2:3]-[OH])-[CH:4](-[OH])-c',
+        # The retained chain ring supplies C1; the incoming unit supplies
+        # the alpha/beta/gamma diol backbone. Its old chain tail is absent.
+        {1: '1', 2: 'b', 3: 'g', 4: 'a'},
+        {1: 'chain', 2: 'incoming', 3: 'incoming', 4: 'incoming'},
+    ),
+    (
         'beta-O-4',
         '[c:4]-[O:2]-[CH:1](-[CH2]-[OH])-[CH](-[O])-[#6]',
         {1: 'b', 2: None, 4: '4'},
@@ -66,6 +74,12 @@ FONT_FAMILY = 'Arial, Helvetica, sans-serif'
 # H/G/S identify unit types; existing bonds must also leave the listed sites
 # available. S lacks C5-H, so it cannot supply phenylcoumaran's chain-side C5.
 PANEL_CONTENT = {
+    '1,2-diarylpropane-1,3-diol-beta-1': {
+        'chain_types': 'HGS',
+        'incoming_sites': ('β (α–β double bond)',),
+        'chain_sites': ('1 with an isolated tail',),
+        'notes': ('Replaces the chain tail.', 'Coproducts are omitted.'),
+    },
     'beta-O-4': {
         'chain_types': 'HGS',
         'incoming_sites': ('β (α–β double bond)',),
@@ -98,7 +112,8 @@ def annotate_linkers(molecule):
     """Annotate supported motifs in place; return highlighted atom/bond indices.
 
     Highlight beta-O-4's three-atom C-beta--O--C4 path and complete cyclic
-    cores for phenylcoumaran, resinol, and spirodienone. Primed labels separate
+    cores for phenylcoumaran, resinol, and spirodienone, and the acyclic diol
+    backbone with its chain C1. Primed labels separate
     participating units; symmetric matches are labelled only once per core.
     """
     atoms = set()
